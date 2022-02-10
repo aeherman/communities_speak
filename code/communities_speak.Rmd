@@ -153,20 +153,16 @@ wrong <- ggmap::geocode(postalcode = "10368", output = "more")
 ```{r}
 clean_data <- function(df = survey, col = NULL) {
   lapply(colnames(df)[-1], function(col) {
+    
+    index <- which(survey_codebook$q == col)
+    values <- as.integer(unlist(stringr::str_split(survey_codebook$options[index], pattern = "[:punct:]")))
+    tags <- unlist(str_split(survey_codebook$choices[index], "; "))
+    named <- setNames(values, tags)
+    
     if(col %in% c(likert, simple)) {
-      index <- which(survey_codebook$q == col)
-      values <- as.integer(unlist(stringr::str_split(survey_codebook$options[index], pattern = "[:punct:]")))
-      tags <- unlist(str_split(survey_codebook$choices[index], "; "))
-      named <- setNames(values, tags)
-      
       out <- survey[c("responseid", col)] %>% mutate_at(vars(col), funs(labelled(as.integer(.), named)))
       
     } else if(col %in% mavr){
-      index <- which(survey_codebook$q == col)
-      values <- as.integer(unlist(stringr::str_split(survey_codebook$options[index],
-                                                     pattern = "[:punct:]")))
-      tags <- unlist(str_split(survey_codebook$choices[index], "; "))
-      named <- setNames(values, tags)
       
       sym_col <- sym(col)
       sym_new <- sym(paste(col, "new", sep = "_")) # new idea
