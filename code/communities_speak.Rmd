@@ -86,15 +86,7 @@ Get important metadata on each of the questions that facilitates wrangling
 
 # Data Cleaning
 
-## divide up question types
-```{r}
-simple <- survey_codebook %>% filter(type == "mc", selector == "savr", !str_detect(q, "text")) %>% pull(q)
-text <- survey_codebook %>% filter(type == "te" | str_detect(q, "text")) %>% pull(q) # this should have the text questions in them
-likert <- survey_codebook %>% filter(selector == "likert", subselector != "multipleanswer") %>% pull(q)
-mavr <- survey_codebook %>% filter(type == "mc" & selector == "mavr" | subselector == "multipleanswer", !str_detect(q, "text")) %>% pull(q)
-```
-
-```{r visual_check}
+```{r visual_check, eval=F}
 select(survey, contains("25")) %>% unlist %>% table
 survey[likert] %>% unlist %>% table
 survey[mavr] %>% unlist %>% table
@@ -154,6 +146,8 @@ wrong <- ggmap::geocode(postalcode = "10368", output = "more")
 clean_data <- function(df = survey, col = NULL) {
   lapply(colnames(df)[-1], function(col) {
     
+    
+#for (col in colnames(survey)[-1]) {
     index <- which(survey_codebook$q == col)
     values <- as.integer(unlist(stringr::str_split(survey_codebook$options[index], pattern = "[:punct:]")))
     tags <- unlist(str_split(survey_codebook$choices[index], "; "))
@@ -175,21 +169,25 @@ clean_data <- function(df = survey, col = NULL) {
         distinct %>% na_if("NA")
       
       # haven label dummies
-      cols_to_label <- out %>% ungroup %>% select_if(is.integer) %>% colnames
-      relabelled <- lapply(1:length(cols_to_label), function(i){
-        dummy <- cols_to_label[i]
+      cols_to_label <- out %>% ungroup %>% select_if(is.integer) %>% colnames %>% sort
+      relabelled <- lapply(cols_to_label, function(dummy){
+        i <- which(cols_to_label == dummy)
         values <- c(0, 1)
         names(values) <- c(paste("not", tags[i]), tags[i])
-        out %>% ungroup %>% transmute_at(vars(dummy), funs(labelled(as.integer(.), values)))
+        out %>% ungroup %>% transmute_at(vars(dummy), labelled(as.integer(.), values)))
       }) %>% reduce(bind_cols)
       
       out[cols_to_label] <- relabelled
         
         #r_zaiyctblk6t1z33
+    } else if(all(!str_detect(survey[[col]], "[:alpha:]"), na.rm = TRUE) & any(!is.na(survey$q6_5_text))) {
+      out <- survey[c("responseid", col)] %>% mutate_at(vars(col), as.integer)
     } else {
-      out <- survey[c("responseid", col)]
+      out <- survey[c("responseid", col)]  
     }
     
+ #print(col)   
+#}    
     return(out)
   }) %>% reduce(full_join, by = c("responseid")) %>%
     mutate(q5 = as.integer(str_replace_all(q5, "[:alpha:]|[:punct:]|\\+|\\>", ""))) %>%
@@ -236,10 +234,13 @@ q41_bi <- final_clean %>% select(responseid, source, contains("41")) %>%
   mutate_at(vars(contains("41")), ~!str_detect(haven::as_factor(.), "almost|never")) #%>% rename_at(vars(contains("41")), ~glue::glue("{.x}_bi"))
 names(q41_bi)[match(key_41, names(q41_bi))] <- paste(label_41, "bi", sep = "_")
 
+remove_test <- final_clean %>% filter(if_any(everything(), ~str_detect(.x, "test\\b")))
 
-wrangled <- final_clean %>% mutate(completion = rowSums(!is.na(final_clean))/ncol(final_clean)) %>%
+wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/ncol(final_clean)) %>%
   # remove invalid responses
-  filter(completion >= min_completion, duration >= min_duration) %>%
+  filter(completion >= min_completion,
+         duration >= min_duration) %>%
+  anti_join(remove_test) %>%
   mutate(
     ## 6.2
     race_twomore = str_detect(q7, ";"),
@@ -255,13 +256,13 @@ wrangled <- final_clean %>% mutate(completion = rowSums(!is.na(final_clean))/nco
       q13 < median_inc ~ 2,
       TRUE ~ 3), # label them with haven
     ## 13.4
-    inc_ab_med_b = ifelse(q13 > median_inc, 1, 0),
+    inc_ab_med_b = q13 > median_inc,
     ## 13.5
-    inc_be_med_b = ifelse(q13 < median_inc, 1, 0),
+    inc_be_med_b = q13 < median_inc,
     
-    inc_ab_med_a = ifelse(q14 > median_inc, 1, 0),
+    inc_ab_med_a = q14 > median_inc,
     
-    inc_be_med_a = ifelse(q14 < median_inc, 1, 0),
+    inc_be_med_a = q14 < median_inc,
     
     ## 24.1
     hh_64_bi = q25_1 >= 1,
@@ -295,55 +296,6 @@ wrangled %>% select(contains("41"))
 
 # hispanic latino and black
 ```
-```{r}
-View(wrangled)
-colnames(clean_data()) %>% as_tibble() %>% rename(q = )
-```
-
-
-```{r}
-list_cols <- paste0("q", c(15, 16, 21, paste(35, 1:8, sep = "_"), 42))
-c("covid", "family_left", "concern_aca", "other")
-```
-
-```{r eval=F}
-list_of_cols %in% survey_codebook$var
-colnames(wrangled)
-
-# 15, 16, 20, 21, 27, 28, 35, 42
-list_cols <- paste0("q", c(15, 16, 21, paste(35, 1:8, sep = "_"), 42))
-
-
-lapply(list_cols, function(col) {
-  resp.split <- strsplit(final_clean[[col]], ";")
-  index <- which(survey_codebook$q == col)
-  choices <- unlist(strsplit(survey_codebook$choices[index], "; "))
-  
-  if(col == "q21") {
-    shortened <- lapply(strsplit(choices, " "), str_sub, 1, 5)
-    lev <- paste(lapply(shortened, first), lapply(shortened, last), sep = "_")
-  } else if(col == "q42") {
-    shortened <- str_sub(lapply(strsplit(choices, " "), last), 1, 5)
-    lev <- lapply(shortened, function(label) {
-      if(!str_detect(label, "hesi")) {
-      lev <- paste("hes", label, sep = "_")
-      } else {
-        lev <- paste("not", label, sep = "_")
-      }
-    }
-  } else if()
-  
-      
-    }) %>% unlist()
-  } else{
-    lev <- str_sub(str_replace_all(choices, "-| ", ""), 1, 7)
-  }
-  
-  
-  resp.dummy <- lapply(resp.split, function(x) table(factor(x, levels = lev)))
-  with(final_clean, data.frame(responseid, do.call(rbind, resp.dummy)))
-})
-```
 
 # New Columns
 
@@ -352,7 +304,8 @@ lapply(list_cols, function(col) {
 final_clean %>%
   #select(inc_b) %>%
   #select_if(haven::is.labelled) %>%
-  labelled::generate_dictionary() %>% View
+  labelled::generate_dictionary() %>% filter(pos == 4) %>%
+  mutate(values = str_c(values, collapse = ",")) %>% .[["value_labels"]]
 colnames(wrangled) %>% unique %>% length
 sapply(colnames(survey), function(col) table(survey[col]))
 
@@ -387,55 +340,4 @@ drive_upload(media = "functions/fixup.R", path = paste0(googledrive_path, "code/
 
 drive_upload(media = paste0("../data/output/wrangled", today,".dta"), path = paste0(googledrive_path, "data/output/wrangled", today, ".dta"))
 drive_upload(media = paste0("../data/output/wrangled", today,".csv"), path = paste0(googledrive_path, "data/output/wrangled", today, ".csv"), type = "spreadsheet")
-```
-
-# Old code that may be useful later
-
-```{r eval=F}
-gs4_auth(email = "aeh2196@columbia.edu")
-drive_download("Combined dataset baseline individual survey.xlsx", type = "xlsx", overwrite = TRUE)
-#raw <- read_xlsx("Prolific_Baseline_06-15.xlsx")
-#raw <- read_xlsx("Combined dataset baseline individual survey.xlsx")
-consolidated <- read_xlsx("Consolidated_14th_Jan.xlsx", sheet = 2) %>%
-  rename_all(str_to_lower)
-  #rename_all(str_replace_all, pattern = "- ", replacement = "") %>%
-  #rename_all(str_replace_all, pattern = " ", replacement = "_")
-bors <- read_xlsx("Consolidated_14th_Jan.xlsx", sheet = 3)
-
-bor_dict <- bors[,1:2] %>% rename(Zipcode = `What is your zip code?`, Bor = `Borough...2`) %>% mutate(Zipcode = as.double(Zipcode)) %>%
-  bind_rows(bors[,3:4] %>% rename(Bor = `Borough...4`))
-
-colSums(is.na(bor_dict))
-filter(bor_dict, is.na(Zipcode))
-
-colSums(is.na(bors))
-
-```
-
-
-```{r eval=F}
-levels <- colnames(raw %>% select(contains("which of these groups")))
-unique_values <- raw %>% select(contains('which of these groups')) %>% unlist()
-table(unique_values)
-
-raw %>% select('Response ID', contains("Which of these groups")) %>%
-  # get rid of the handful of really weird responses, come back to how to handle those
-  filter(across())
-  
-  pivot_longer(cols = contains("Which of these groups"), names_to = "income", values_to = "year") %>% filter(!is.na(year)) %>%
-  group_by(`Response ID`, year) %>%
-  
-  summarize(income = paste(income, collapse = ",")) %>% # compiles people who responded multiple years
-  
-   #twice and 2021 once, think about how to fix this
-  group_by(`Response ID`, income) %>%
-#  filter(`Response ID` == "R_1CCGrlsHnlkQMyc")
-  tidytext::unnest_tokens(output = year, token = "regex", input = year, pattern = ",") %>%
-  # gets rid of people who responded with more than one income bracket
-  filter(income %in% levels) %>%
-  mutate(income = factor(income, levels = levels, labels = c(1:15)),
-         year = paste0("income", year)) %>%
-  #filter(`Response ID` == "R_1CCGrlsHnlkQMyc")
-  pivot_wider(id_cols = `Response ID`, names_from = year, values_from = "income") %>% unnest() %>% pull(income2019)
-  #filter(`Response ID` == "R_Ui7F7cVuKT0A1AR") # this one filled in 2019
 ```
