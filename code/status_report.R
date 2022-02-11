@@ -48,7 +48,7 @@ update <-  final_clean %>%
   group_by(source, completion = completion >= min_completion) %>% count %>%
   pivot_wider(id_cols = source, names_from = completion, values_from = n) %>%
   transmute(responded_more_than_half = `TRUE`,
-            total_responses = sum(`TRUE`, `FALSE`, rm.na = TRUE),
+            total_responses = sum(`TRUE`, `FALSE`, na.rm = TRUE),
             proportion = responded_more_than_half/total_responses) %>%
   ungroup %>% filter(!is.na(responded_more_than_half))
 
