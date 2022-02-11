@@ -2,46 +2,73 @@
 make_codebook <- function(df) {
   var_names <- names(df)
   
-  #lapply(df %>% dplyr::select_if(is.list), function(col) unnest(col))
-  var_types <- map_chr(df, function(col) paste(class(col), collapse = ", "))
+  var_types <- map_chr(df, function(col) paste(class(col), collapse = ", ")) %>%
+    as_tibble() %>% mutate(variable = var_names) %>% rename(type = value)
   
-  cols_as_lists <- lapply(df, unique)
-  var_lengths <- sapply(cols_as_lists, length) #%>% map_chr(format)
+  #cols_as_lists <- lapply(df, unique)
+  #var_lengths <- sapply(cols_as_lists, length) #%>% map_chr(format)
   
-  var_values <- lapply(cols_as_lists, function(element) {
-    
-    # 1. if type is numeric
-    if(is.numeric(element) & length(unique(element)) < 20) {
-      value <- paste(sort(unique(element)), collapse = "\n")
-      #value <- paste0(min(element, na.rm = TRUE), " to ", max(element, na.rm = TRUE))
+  
+  
+  var_values <- lapply(colnames(df), function(col) {
+    if(col %in% survey_codebook_labelled$label){
+      row <- survey_codebook_labelled[survey_codebook_labelled$label == col, ]
+      q <- row$q
+      question <- row$text
       
-      # 2. if type is many really long strings
-    } else if(any(str_length(element) > 10 & !is.na(element) | length(element) >= 5)) {
-      sub <- element[!is.na(element)][1:3]
-      trunc <- str_trunc(sub, side = c("right"), width = 30)
-      char <- paste0("'", trunc, "'")
-      value <- paste(char, collapse = ", ")
-      
-      # 3. all other
     } else {
-      value <- paste(sort(unique(element)), collapse = ", ")
+      q <- NA_character_
+      question <- NA_character_
     }
+
+#for(col in colnames(df)) {
+    variable <- as.character(col)  
+    if(haven::is.labelled(df[[col]])) {
+      pull_labels <- attributes(df[[col]])$labels
+      
+      value <- paste(pull_labels, collapse = "\n")
+      label <- paste(names(pull_labels), collapse = "\n")
+      
+    } else if(col %in% c("responseid", "source", "duration")) {
+      value <- "id column"
+      label <- NA_character_
+      
+    } else if(col %in% survey_codebook_labelled$label){
+      
+      if(str_detect(as.character(col), "text")) {
+        value <- "te"
+        label <- NA_character_
+      
+        } else {
+        value <- row$type
+        label <- row$choices
+      }
+      
+    } else {
+      sub <- sort(unique(df[[col]][!is.na(df[[col]])]))
+      value <- paste(sort(unique(sub)), collapse = "\n")
+      if(length(sub) > 5) {
+        value <- str_trunc(value, side = c("right"), width = 30)
+      }
+      if(anyNA(df[[col]])) {
+        value <- paste(c(value, "NA"), collapse = "\n")
+      }
+      label <- NA_character_
+    }
+#    print(col)
+#}
     
-    if(anyNA(element)) {
-      value <- paste(c(value, "NA"), collapse = "\n")
-    }
-    return(value)
-  }) %>% map_chr(format)
+    return(tibble(q, variable, value, label, question))
+  }) %>% reduce(bind_rows)
   
-  codebook <- tibble(variable = var_names,
-                     type = var_types,
-                     unique_values = var_lengths,
-                     values = var_values)
+  codebook <- var_values %>% left_join(var_types, by = c("variable")) %>%
+    select(q, variable, type, value, label, question)
   return(codebook)
 }
 
+codebook <- make_codebook(wrangled)
 
-sub <- survey_codebook_labelled %>% select(label, q, text, choices) %>% rename(variable = label) %>%
+sub <- survey_codebook_labelled %>% select(q, text) %>% rename(variable = label) %>%
   mutate(choices = str_replace_all(choices, "; ", "\n"))
 codebook <- make_codebook(wrangled) %>% left_join(sub)
 View(codebook)
