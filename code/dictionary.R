@@ -123,6 +123,11 @@ survey_codebook <- lapply(file$SurveyElements[9:54], function(element) {
 #  filter(!str_detect(q, "text")) %>%
 #  select(survey_q, q, label, text, choices_unnest, choices_to_label)
   
+simple <- survey_codebook %>% filter(type == "mc", selector == "savr", !str_detect(q, "text")) %>% pull(q)
+text <- survey_codebook %>% filter(type == "te" | str_detect(q, "text")) %>% pull(q) # this should have the text questions in them
+likert <- survey_codebook %>% filter(selector == "likert", subselector != "multipleanswer") %>% pull(q)
+mavr <- survey_codebook %>% filter(type == "mc" & selector == "mavr" | subselector == "multipleanswer", !str_detect(q, "text")) %>% pull(q)
+
 
 dummies <- survey_codebook %>% filter(q %in% mavr) %>%
   #mutate(to_label = ifelse(!is.na(part), part, choices)) %>%
@@ -137,7 +142,7 @@ dummies_to_label <- dummies %>% ungroup %>% select(part, to_label) %>% unlist %>
   as_tibble %>% rename(to_label = value) %>% filter(!is.na(to_label))
 
 write_sheet(dummies_to_label, id_var_labels, "dummies")
-write_sheet(to_label, id_var_labels, "from_r")
+#write_sheet(to_label, id_var_labels, "from_r")
 
 from_r <- id_var_labels %>% read_sheet(sheet = "Copy of dummies", na = c("na"))
 from_r
