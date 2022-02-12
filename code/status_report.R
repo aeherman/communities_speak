@@ -1,7 +1,8 @@
 library(tidyverse)
 source("thresholds.R")
 final_clean <- read_csv("../data/processed/final_clean.csv")
-wrangled <- read_dta("../data/output/wrangled20220206.dta")
+wrangled <- read_dta("../data/output/wrangled20220211.dta")
+today <- gsub("-|2022", "", Sys.Date())
 
 #demographic
 
@@ -37,6 +38,8 @@ dems <- lapply(variables, function(col) {
   
 }) %>% reduce(bind_rows) %>% select(category, n) %>% rename(prop = n)
 
+colnames(dems) <- c("category", paste0("prop", today))
+
 write_csv(dems, "../data/output/demographics.csv")
 
 update <-  final_clean %>%
@@ -44,7 +47,7 @@ update <-  final_clean %>%
     str_detect(source, "^(arabic|chinese|english)$") ~ source,
     TRUE ~ str_replace_all(source, "arabic|chinese|english|spanish|[:punct:]| ", "") 
   )) %>%
-  filter() %>%
+  #filter() %>%
   group_by(source, completion = completion >= min_completion) %>% count %>%
   pivot_wider(id_cols = source, names_from = completion, values_from = n) %>%
   transmute(responded_more_than_half = `TRUE`,
@@ -64,6 +67,15 @@ status <- update %>% bind_rows(
     source = trimws(source))
 
 
-track_id <- gs4_find() %>% filter(name == "Tracking Incoming Data") %>% pull(id)           
-write_sheet(data = status, track_id, sheet = "r_report")
-write_sheet(data = dems, track_id, sheet = "demographics")
+sym_today <- sym(today)
+track_id <- gs4_find() %>% filter(name == "Tracking Incoming Data") %>% pull(id)
+range_write(ss = track_id, data = dems,
+            sheet = "demographics", 
+            range = "C1:D36",
+            col_names = TRUE)
+range_write(ss = track_id, data = status,
+            sheet = "r_report",
+            range = "E1:H12",
+            col_names = TRUE)
+#write_sheet(data = status, track_id, sheet = paste0("r_report", today))
+#write_sheet(data = dems, track_id, sheet = paste0("demographics", today))
