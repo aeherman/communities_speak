@@ -14,18 +14,17 @@ library(tidyverse)
 library(stringr)
 library(haven)
 library(rjson)
-library(ggmap)
 library(googlesheets4)
 source("functions/fixup.R")
 source("dictionary.R")
 source("thresholds.R")
 
 id <- gs4_find() %>% filter(name == "New Codebook_12/09_IndiSurvey") %>% pull(id)
-codebook <-read_sheet(id, sheet = "Sheet1", na = c("NA", "", " ", "na", "Na")) %>%
-  mutate(survey_question_no = as.character(`Survey Instrument Question #`)) %>%
-  select(-`Question Assignment_Temp_Column`, -`Survey Instrument Question #`)
+#codebook <-read_sheet(id, sheet = "Sheet1", na = c("NA", "", " ", "na", "Na")) %>%
+#  mutate(survey_question_no = as.character(`Survey Instrument Question #`)) %>%
+#  select(-`Question Assignment_Temp_Column`, -`Survey Instrument Question #`)
 
-codebook
+#codebook
 
 boroughs <- read_xlsx("../data/input/Borough_for_Arielle.xlsx") %>%
   rename_all(str_to_lower) %>% mutate_all(str_to_lower)
@@ -36,20 +35,8 @@ boroughs <- read_xlsx("../data/input/Borough_for_Arielle.xlsx") %>%
 
 var_dict
 
-ids <- gs4_find() %>% filter(str_detect(name, "Individual Survey")) %>% select(id, name) %>%
-  mutate(name = str_replace_all(name, "Individual Survey- |_February.*", "")) %>%
-  filter(name != "General Radio")
-survey <- map2(ids$id, ids$name, ~read_sheet(.x, sheet = "Sheet1",
-                        na = c("NA", "", " ", "na", "Na", "n/a", "N/A", "N/a", "Not applicable")) %>%
-              filter(row_number() != 1) %>%
-                mutate_all(as.character) %>%
-                mutate(source = .y)) %>%
-  reduce(bind_rows) %>% rename_all(str_to_lower) %>% mutate_all(str_to_lower) %>%
-  rename(duration = "duration (in seconds)") %>%
-  dplyr::select(responseid, source, duration, contains("q"), -q44, -q45) %>% na_if("null")
 
-survey
-  
+readRDS("../data/processed/survey.rds")  
 
 #data_path <- "../data/input"
 #files <- dir(path = data_path, pattern = ".csv")[c(-1, -3, -5)]
@@ -100,47 +87,6 @@ hh <- select(survey, contains("25")) %>% unlist
 table(hh[is.na(as.integer(hh))])
 ```
 
-## geocode
-
-```{r eval=F}
-
-# doesn't always but the name of the borough
-
-today <- gsub("-", "", Sys.Date())
-borough_names <- c("manhattan", "new york", "bronx", "staten island", "brooklyn", "queens")
-geocoded_file_path <- paste0("../data/processed/zipcodes_geocoded", today, ".csv")
-
-if(file.exists(geocoded_file_path)) {
-  zipcodes_geocoded <- read_csv(geocoded_file_path)
-} else {
-  zipcodes <- survey %>% filter(!is.na(q3))
-  zipcodes_geocoded <- zipcodes %>%
-    ggmap::mutate_geocode(q3, output = "more") %>%
-    #filter(borough_coded = str_extract())
-    select(responseid, q3, address)
-  write_csv(zipcodes_geocoded, geocoded_file_path)
-}
-
-zipcodes_geocoded %>% group_by(burough) %>% count
-
-# coding the intersections is less accurate
-#intersections <- survey %>% filter(!is.na(q4))
-#geocoded <- intersections %>% ggmap::mutate_geocode(q4, output = "more")
-
-## however, there are three postal codes that the geocoding fails to recognize
-zipcodes_geocoded %>%
-  arrange(responseid) %>% select(responseid, address, q3, q4, type) %>%
-  filter(responseid %in% c("r_1gafr4up5ko8gyd", "r_1qb2mivxdjbz2q1", "r_2tnhe7vqp6gyj3z"))
-
-## example
-wrong <- ggmap::geocode(postalcode = "10368", output = "more")
-
-## also doesn't work to paste intersection and geocode together
-#geocode_full_address <- survey %>%
-#  filter(!is.na(q3) | !is.na(q4)) %>%
-#  mutate(full_address = paste(q4, q3, sep = ", ")) %>%  mutate_geocode(full_address, output = "more")
-1+1
-```
 
 ```{r}
 clean_data <- function(df = survey, col = NULL) {
@@ -151,16 +97,23 @@ clean_data <- function(df = survey, col = NULL) {
     index <- which(survey_codebook$q == col)
     values <- as.integer(unlist(stringr::str_split(survey_codebook$options[index], pattern = "[:punct:]")))
     tags <- unlist(str_split(survey_codebook$choices[index], "; "))
+    
+    if(all.equal(values, c(1,2)) == TRUE) {
+      df[[col]] <- 2 - as.integer(df[[col]])
+      values <- 2 - values
+    }
+    
     named <- setNames(values, tags)
     
     if(col %in% c(likert, simple)) {
-      out <- survey[c("responseid", col)] %>% mutate_at(vars(col), funs(labelled(as.integer(.), named)))
+      out <- df[c("responseid", col)] %>%
+        mutate_at(vars(col), funs(labelled(as.integer(.), named)))
       
     } else if(col %in% mavr){
       
       sym_col <- sym(col)
       #sym_new <- sym(paste(col, "new", sep = "_")) # new idea
-      out <- survey[c("responseid", col)] %>%
+      out <- df[c("responseid", col)] %>%
         fastDummies::dummy_cols(col, split = ",", ignore_na = TRUE) %>%
         tidytext::unnest_tokens(output = !!sym_col, token = "regex",
                                 input = col, pattern = ",") %>%
@@ -180,10 +133,10 @@ clean_data <- function(df = survey, col = NULL) {
       out[cols_to_label] <- relabelled
         
         #r_zaiyctblk6t1z33
-    } else if(all(!str_detect(survey[[col]], "[:alpha:]"), na.rm = TRUE) & any(!is.na(survey$q6_5_text))) {
-      out <- survey[c("responseid", col)] %>% mutate_at(vars(col), as.integer)
+    } else if(all(!str_detect(df[[col]], "[:alpha:]"), na.rm = TRUE) & any(!is.na(df[[col]]))) {
+      out <- df[c("responseid", col)] %>% mutate_at(vars(col), as.integer)
     } else {
-      out <- survey[c("responseid", col)]  
+      out <- df[c("responseid", col)]  
     }
     
  #print(col)   
@@ -191,7 +144,7 @@ clean_data <- function(df = survey, col = NULL) {
     return(out)
   }) %>% reduce(full_join, by = c("responseid")) %>%
     ###
-    mutate(q5 = lapply(survey$q5, function(element){
+    mutate(q5 = lapply(df[["q5"]], function(element){
       if(str_detect(element, "[:digit:]{2}.*[:digit:]{2}") & !is.na(element)) {
         round(mean(as.integer(unlist(str_split(element, "[:punct:]")))))
       } else {
