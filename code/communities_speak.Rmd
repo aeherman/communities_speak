@@ -159,7 +159,7 @@ clean_data <- function(df = survey, col = NULL) {
     } else if(col %in% mavr){
       
       sym_col <- sym(col)
-      sym_new <- sym(paste(col, "new", sep = "_")) # new idea
+      #sym_new <- sym(paste(col, "new", sep = "_")) # new idea
       out <- survey[c("responseid", col)] %>%
         fastDummies::dummy_cols(col, split = ",", ignore_na = TRUE) %>%
         tidytext::unnest_tokens(output = !!sym_col, token = "regex",
@@ -169,12 +169,12 @@ clean_data <- function(df = survey, col = NULL) {
         distinct %>% na_if("NA")
       
       # haven label dummies
-      cols_to_label <- out %>% ungroup %>% select_if(is.integer) %>% colnames %>% sort
+      cols_to_label <- out %>% ungroup %>% select_if(is.integer) %>% colnames
       relabelled <- lapply(cols_to_label, function(dummy){
-        i <- which(cols_to_label == dummy)
+        i <- as.integer(str_replace(dummy, paste0(col, "_"), ""))
         values <- c(0, 1)
         names(values) <- c(paste("not", tags[i]), tags[i])
-        out %>% ungroup %>% transmute_at(vars(dummy), labelled(as.integer(.), values)))
+        out %>% ungroup %>% transmute_at(vars(dummy), ~labelled(as.integer(.), values))
       }) %>% reduce(bind_cols)
       
       out[cols_to_label] <- relabelled
@@ -190,10 +190,18 @@ clean_data <- function(df = survey, col = NULL) {
 #}    
     return(out)
   }) %>% reduce(full_join, by = c("responseid")) %>%
-    mutate(q5 = as.integer(str_replace_all(q5, "[:alpha:]|[:punct:]|\\+|\\>", ""))) %>%
+    ###
+    mutate(q5 = lapply(survey$q5, function(element){
+      if(str_detect(element, "[:digit:]{2}.*[:digit:]{2}") & !is.na(element)) {
+        round(mean(as.integer(unlist(str_split(element, "[:punct:]")))))
+      } else {
+        as.double(str_replace_all(element, "[:alpha:]|[:punct:]|\\+|\\>", ""))
+      }
+    }) %>% unlist) %>%
+    ###
     mutate_at(vars(contains("25")),
-            funs(
-              as.integer(str_replace_all(., pattern = str_c(dict$pattern, collapse = "|"), replacement = fixup))))
+            ~as.integer(str_replace_all(., pattern = str_c(dict$pattern, collapse = "|"),
+                                        replacement = fixup)))
 
                 
 }
@@ -203,13 +211,12 @@ final_clean <- clean_data() %>% left_join(distinct(boroughs), by = c("q3" = "zip
 final_clean <- final_clean %>% mutate(completion = rowSums(!is.na(final_clean))/ncol(final_clean))
 
 final_clean %>% filter(responseid == "r_1ffk0gc9znaxxhh") %>% select(q3, borough)
-str(final_clean)
+#str(final_clean)
 getwd()
-final_clean
 
-clean_data()
+#clean_data()
 write_csv(final_clean, "../data/processed/final_clean.csv")
-final_clean %>% select(contains("36"))
+#final_clean %>% select(contains("36"))
 ```
 
 
@@ -241,15 +248,17 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
   filter(completion >= min_completion,
          duration >= min_duration) %>%
   anti_join(remove_test) %>%
+  # make new variables
   mutate(
     ## 6.2
     race_twomore = str_detect(q7, ";"),
+    race_black_his = str_detect(q7, "black|hispanic"),
     ## 6.3
     #race_his_lat = str_detect(q7, "hispanic or latinx"),
     ## 6.4
     #race_afam = str_detect(q7, "black"),
     ## 13.2
-    inc_neg = ifelse(q14 >= q13, 0, 1),
+    inc_neg = q14 >= q13,
     ## 13.3 
     inc_dist = case_when(
       q13 < poverty_line ~ 1,
@@ -269,13 +278,13 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     hh_4_17_bi = q25_3 >= 1,
     hh_0_4_bi = q25_4 >= 1,
     ## 24.2
-    hh_ch_0_17 = q25_3 >=1 | q25_4 >=1,
+    hh_ch_0_17_bi = q25_3 >=1 | q25_4 >=1,
     
     ## 34.1
     exp_ab_or_vi = str_detect(q36, "yes"),
     exp_ab_and_vi = str_detect(q36, "verbal abuse") & str_detect(q36, "physical violence")) %>%
-  left_join(q41_bi) %>%
-  mutate_at(vars(q20, q27), ~haven::as_factor(.)) #%>% sjlabelled::label_to_colnames() #%>%
+  left_join(q41_bi) #%>%
+  #mutate_at(vars(q20, q27), ~haven::as_factor(.)) #%>% sjlabelled::label_to_colnames() #%>%
 
 indeces <- which(column_names$q %in% colnames(wrangled))
 key <- column_names$q[indeces]
@@ -293,13 +302,13 @@ wrangled$exp
 wrangled %>% select(contains("36"))
 wrangled %>% select(contains("41"))
 ?match
-
+wrangled
 # hispanic latino and black
 ```
 
 # New Columns
 
-```{r}
+```{r eval=F}
 
 final_clean %>%
   #select(inc_b) %>%
@@ -307,11 +316,11 @@ final_clean %>%
   labelled::generate_dictionary() %>% filter(pos == 4) %>%
   mutate(values = str_c(values, collapse = ",")) %>% .[["value_labels"]]
 colnames(wrangled) %>% unique %>% length
-sapply(colnames(survey), function(col) table(survey[col]))
+#sapply(colnames(survey), function(col) table(survey[col]))
 
 
-final_clean %>% rename_all(~str_replace(., "q[:digit:]+_?[:digit:]?",
-                                        survey_codebook$var[. == survey_codebook$q]))
+#final_clean %>% rename_all(~str_replace(., "q[:digit:]+_?[:digit:]?",
+#                                        survey_codebook$var[. == survey_codebook$q]))
 ```
 
 
@@ -320,12 +329,12 @@ final_clean %>% rename_all(~str_replace(., "q[:digit:]+_?[:digit:]?",
 ```{r eval=F}
 today <- gsub("-", "", Sys.Date())
 
-write_dta(wrangled, path = paste0("../data/output/wrangled", today,".dta"))
-write_csv(wrangled, path = paste0("../data/output/wrangled", today, ".csv"))
+write_dta(wrangled, path = paste0("../data/output/wrangled", today,".dta"), version = 15)
+write_excel_csv(wrangled, file = paste0("../data/output/wrangled", today, ".csv"))
 
 googledrive_path <- "Communities Speak/Subteams/Data Subteam/Individual Survey-2(POA/Codebook/Census Figures)/cleaning/"
 
-write_csv(survey_codebook, paste0("../data/codebook/survey_question_codebook_", today, ".csv"))
+write_excel_csv(survey_codebook, paste0("../data/codebook/survey_question_codebook_", today, ".csv"))
 #drive_upload(media = paste0("../data/codebook/survey_question_codebook_", today, ".csv"),
 #             path = paste0(googledrive_path, "data/survey_question_codebook_",
 #                           today, ".csv"),
