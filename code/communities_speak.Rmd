@@ -133,7 +133,7 @@ clean_data <- function(df = survey, col = NULL) {
       }
       
       # haven label dummies
-      cols_to_label <- out %>% ungroup %>% select_if(is.integer) %>% colnames
+      cols_to_label <- out %>% ungroup %>% select_if(is.numeric) %>% colnames
       relabelled <- lapply(cols_to_label, function(dummy){
         i <- as.integer(str_replace(dummy, paste0(col, "_"), ""))
         values <- c(0, 1)
@@ -184,14 +184,7 @@ write_csv(final_clean, "../data/processed/final_clean.csv")
 ```
 
 
-## Brief Cleaning Process Validation
-
-```{r}
-sum(is.na(final_clean))
-sum(is.na(survey))
-#cbind(sort(colSums(is.na(survey))), sort(colSums(is.na(final_clean))))
-final_clean
-```
+## Brief Cleaning Process Validation?
 
 # Wrangle
 
@@ -276,8 +269,6 @@ key <- column_names$q[indeces]
 value <- column_names$label[indeces]
 
 names(wrangled)[match(key, names(wrangled))] <- value
-
-wrangled %>% mutate(race_pnta = ifelse())
 #wrangled <- wrangled %>%
 #  fastDummies::dummy_columns("ny_resi_type", ignore_na = TRUE) %>%
 #  fastDummies::dummy_columns("in_prsn_sch", ignore_na = TRUE) %>%
@@ -290,7 +281,6 @@ wrangled %>% select(contains("41"))
 wrangled
 # hispanic latino and black
 
-final_clean %>% mutate_at(vars(contains("q38_", "q7_"), !contains("_pnta")), ~str_replace()) %>% select(contains("q7")) %>% filter(str_detect(q7, "prefer not to answer"))
 sum(is.na(wrangled$exp_ab_and_vi))
 mean(is.na(final_clean$q36))
 
