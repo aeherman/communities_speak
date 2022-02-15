@@ -98,12 +98,17 @@ clean_data <- function(df = survey, col = NULL) {
     values <- as.integer(unlist(stringr::str_split(survey_codebook$options[index], pattern = "[:punct:]")))
     tags <- unlist(str_split(survey_codebook$choices[index], "; "))
     
-    if(all.equal(values, c(1,2)) == TRUE) {
-      df[[col]] <- 2 - as.integer(df[[col]])
-      values <- 2 - values
+    recode_na <- str_detect(tags, "not applicable")
+    
+    if(any(all.equal(values, c(1,2)) == TRUE, !is.na(recode_na) & recode_na)) {
+      df[[col]] <- 2 - as.integer(df[[col]] %>%
+                                    # hard code 3 - not applicable
+                                    na_if("3"))
+      values <- (2 - values) %>% na_if(-1)
+      
     }
     
-    named <- setNames(values, tags)
+    named <- setNames(values, tags) %>% na.omit
     
     if(col %in% c(likert, simple)) {
       out <- df[c("responseid", col)] %>%
@@ -150,7 +155,7 @@ clean_data <- function(df = survey, col = NULL) {
       out <- df[c("responseid", col)]  
     }
     
- #print(col)   
+# print(col)   
 #}    
     return(out)
   }) %>% reduce(full_join, by = c("responseid")) %>%
@@ -230,6 +235,8 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     
     inc_be_med_a = q14 < median_inc,
     
+    inc_drop_med = q13 >= median_inc & q14 < median_inc,
+    
     ## 24.1
     hh_64_bi = q25_1 >= 1,
     hh_4_17_bi = q25_3 >= 1,
@@ -242,24 +249,29 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     
     ## 34.1
     exp_ab_or_vi = str_detect(q36, "yes"),
-    exp_ab_and_vi = str_detect(q36, "verbal abuse") & str_detect(q36, "physical violence")) %>%
+    exp_ab_and_vi = str_detect(q36, "verbal abuse") & str_detect(q36, "physical violence"),
+    
+    con_num = lapply(str_split(q29, ";"), function(item) if(!is.na(item)) {unlist(length(item))} else {NA})) %>%
   left_join(q41_bi)
   #mutate_at(vars(q20, q27), ~haven::as_factor(.)) #%>% sjlabelled::label_to_colnames() #%>%
 
-new_vars_to_label <- lapply(new_vars$var_name, function(col) {
-  index <- which(new_vars$var_name == col)
-  values <- as.integer(unlist(stringr::str_split(new_vars$var_value[index], pattern = "[:punct:]")))
-  tags <- unlist(str_split(new_vars$var_label[index], "; "))
-  named <- setNames(values, tags)
+to_label <- new_vars$var_name[new_vars$var_name %in% colnames(wrangled)]
+new_vars_to_label <- lapply(to_label, function(col) {
+  if(col %in% colnames(wrangled)) {
+    index <- which(new_vars$var_name == col)
+    values <- as.integer(unlist(stringr::str_split(new_vars$var_value[index], pattern = "[:punct:]")))
+    tags <- unlist(str_split(new_vars$var_label[index], "; "))
+    named <- setNames(values, tags)
+    out <- wrangled[col] %>% mutate_at(vars(col), funs(labelled(as.integer(.), named)))
+    return(out)
+  }
   
-  out <- wrangled[col] %>% mutate_at(vars(col), funs(labelled(as.integer(.), named)))
-  return(out)
   #labelled(as.integer(wrangled[[col]]), named)
 }) %>% reduce(bind_cols)
 
 dim_before <- dim(wrangled)
 
-wrangled[new_vars$var_name] <- new_vars_to_label
+wrangled[to_label] <- new_vars_to_label
 
 dim_after <- dim(wrangled)
 all.equal(dim_before, dim_after)
