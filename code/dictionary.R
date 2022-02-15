@@ -14,6 +14,7 @@ var_dict <- id_var_labels %>%
          #q = ifelse(str_detect(helpnyc, "_"), paste(helpnyc, "text", sep = "_"), helpnyc)
          ) %>%
   select(qid, q, no, label)
+new_vars <- id_var_labels %>% read_sheet(sheet = "new_vars")
 
 fileNYC <- fromJSON(file = "../data/input/Individual_Survey-_English_-_helpNYC.qsf")
 file <- fromJSON(file = "../data/input/Individual_Survey-_English_-_helpNYC_1.qsf")
