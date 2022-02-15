@@ -68,13 +68,12 @@ make_codebook <- function(df) {
 
 codebook <- make_codebook(wrangled)
 
-#sub <- survey_codebook_labelled %>% select(q, label, text) %>% rename(variable = label) %>%
-#  mutate(choices = str_replace_all(choices, "; ", "\n"))
-#codebook <- make_codebook(wrangled) %>% left_join(sub)
 today <- gsub("-", "", Sys.Date())
 View(codebook)
-write_excel_csv(codebook, "../data/codebook.csv")
-drive_upload(media = paste0("../data/codebook.csv"),
-             path = paste0(googledrive_path, "data/output/codebook", today), type = "spreadsheet")
 
-     
+write_excel_csv(codebook, "~/communities_speak/data/codebook/codebook.csv")
+
+googledrive_path <- "Communities Speak/Subteams/Data Subteam/Individual Survey-2(POA/Codebook/Census Figures)/cleaning/"
+
+drive_upload(media = paste0("~/communities_speak/data/codebook/codebook.csv"),
+             path = paste0(googledrive_path, "data/output/codebook", today), type = "spreadsheet")
