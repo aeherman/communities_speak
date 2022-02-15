@@ -19,15 +19,15 @@ source("functions/fixup.R")
 source("dictionary.R")
 source("thresholds.R")
 
-id <- gs4_find() %>% filter(name == "New Codebook_12/09_IndiSurvey") %>% pull(id)
-#codebook <-read_sheet(id, sheet = "Sheet1", na = c("NA", "", " ", "na", "Na")) %>%
-#  mutate(survey_question_no = as.character(`Survey Instrument Question #`)) %>%
-#  select(-`Question Assignment_Temp_Column`, -`Survey Instrument Question #`)
+  #select(-`Question Assignment_Temp_Column`, -`Survey Instrument Question #`)
 
 #codebook
-
+#bor_list <- c("brooklyn", "manhattan", "queens", "bronx", "si")
 boroughs <- read_xlsx("../data/input/Borough_for_Arielle.xlsx") %>%
-  rename_all(str_to_lower) %>% mutate_all(str_to_lower)
+  rename_all(str_to_lower) %>% mutate_all(str_to_lower)# %>%
+  #mutate(borough = factor(borough, levels = bor_list, labels = c(1:5)))
+
+
 
 #survey <- read_csv("../data/input/individual_survey_eng_20220124_num.csv") %>%
 #  mutate_all(str_to_lower) %>% rename_all(str_to_lower) %>% filter(!row_number() %in% c(1:2)) %>%
@@ -108,11 +108,11 @@ clean_data <- function(df = survey, col = NULL) {
     if(col %in% c(likert, simple)) {
       out <- df[c("responseid", col)] %>%
         mutate_at(vars(col), funs(labelled(as.integer(.), named)))
-      
+    
+      # multiple answer  
     } else if(col %in% mavr){
       
       sym_col <- sym(col)
-      #sym_new <- sym(paste(col, "new", sep = "_")) # new idea
       out <- df[c("responseid", col)] %>%
         fastDummies::dummy_cols(col, split = ",", ignore_na = TRUE) %>%
         tidytext::unnest_tokens(output = !!sym_col, token = "regex",
@@ -121,18 +121,29 @@ clean_data <- function(df = survey, col = NULL) {
         group_by(responseid) %>% mutate_at(col, ~paste(., collapse = ";")) %>%
         distinct %>% na_if("NA")
       
+      
+      # don't double count prefer not to answer
+      if(any(str_detect(tags, "prefer not to answer"))) {
+        pnta <- which(names(named) == "prefer not to answer")
+        pnta_col <- paste(c(col, pnta), collapse = "_")
+        out <- out %>% mutate_at(pnta_col,
+                          funs(ifelse(str_detect(!!sym_col, "prefer not to answer;|;prefer not to answer"),
+                                      0, !!sym(pnta_col)))) %>%
+          mutate_at(col, ~str_replace(., "prefer not to answer;|;prefer not to answer", ""))
+      }
+      
       # haven label dummies
       cols_to_label <- out %>% ungroup %>% select_if(is.integer) %>% colnames
       relabelled <- lapply(cols_to_label, function(dummy){
         i <- as.integer(str_replace(dummy, paste0(col, "_"), ""))
         values <- c(0, 1)
         names(values) <- c(paste("not", tags[i]), tags[i])
-        out %>% ungroup %>% transmute_at(vars(dummy), ~labelled(as.integer(.), values))
+        out %>% ungroup %>% transmute_at(dummy, ~labelled(as.integer(.), values))
       }) %>% reduce(bind_cols)
       
       out[cols_to_label] <- relabelled
-        
-        #r_zaiyctblk6t1z33
+      
+      #r_zaiyctblk6t1z33
     } else if(all(!str_detect(df[[col]], "[:alpha:]"), na.rm = TRUE) & any(!is.na(df[[col]]))) {
       out <- df[c("responseid", col)] %>% mutate_at(vars(col), as.integer)
     } else {
@@ -163,9 +174,9 @@ final_clean <- clean_data() %>% left_join(distinct(boroughs), by = c("q3" = "zip
 
 final_clean <- final_clean %>% mutate(completion = rowSums(!is.na(final_clean))/ncol(final_clean))
 
-final_clean %>% filter(responseid == "r_1ffk0gc9znaxxhh") %>% select(q3, borough)
+#final_clean %>% filter(responseid == "r_1ffk0gc9znaxxhh") %>% select(q3, borough)
 #str(final_clean)
-getwd()
+#getwd()
 
 #clean_data()
 write_csv(final_clean, "../data/processed/final_clean.csv")
@@ -205,13 +216,13 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
   mutate(
     ## 6.2
     race_twomore = str_detect(q7, ";"),
-    race_black_his = str_detect(q7, "black|hispanic"),
+    race_black_his = str_detect(q7, "black") & str_detect(q7, "(?<!-)hispanic"),
     ## 6.3
     #race_his_lat = str_detect(q7, "hispanic or latinx"),
     ## 6.4
     #race_afam = str_detect(q7, "black"),
     ## 13.2
-    inc_neg = q14 >= q13,
+    inc_neg = q14 < q13,
     ## 13.3 
     inc_dist = case_when(
       q13 < poverty_line ~ 1,
@@ -233,11 +244,32 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     ## 24.2
     hh_ch_0_17_bi = q25_3 >=1 | q25_4 >=1,
     
+    # discrim
+    discrim_bi = q37 == 1 | q37 == 2,
+    
     ## 34.1
     exp_ab_or_vi = str_detect(q36, "yes"),
     exp_ab_and_vi = str_detect(q36, "verbal abuse") & str_detect(q36, "physical violence")) %>%
-  left_join(q41_bi) #%>%
+  left_join(q41_bi)
   #mutate_at(vars(q20, q27), ~haven::as_factor(.)) #%>% sjlabelled::label_to_colnames() #%>%
+
+new_vars_to_label <- lapply(new_vars$var_name, function(col) {
+  index <- which(new_vars$var_name == col)
+  values <- as.integer(unlist(stringr::str_split(new_vars$var_value[index], pattern = "[:punct:]")))
+  tags <- unlist(str_split(new_vars$var_label[index], "; "))
+  named <- setNames(values, tags)
+  
+  out <- wrangled[col] %>% mutate_at(vars(col), funs(labelled(as.integer(.), named)))
+  return(out)
+  #labelled(as.integer(wrangled[[col]]), named)
+}) %>% reduce(bind_cols)
+
+dim_before <- dim(wrangled)
+
+wrangled[new_vars$var_name] <- new_vars_to_label
+
+dim_after <- dim(wrangled)
+all.equal(dim_before, dim_after)
 
 indeces <- which(column_names$q %in% colnames(wrangled))
 key <- column_names$q[indeces]
@@ -245,7 +277,7 @@ value <- column_names$label[indeces]
 
 names(wrangled)[match(key, names(wrangled))] <- value
 
-
+wrangled %>% mutate(race_pnta = ifelse())
 #wrangled <- wrangled %>%
 #  fastDummies::dummy_columns("ny_resi_type", ignore_na = TRUE) %>%
 #  fastDummies::dummy_columns("in_prsn_sch", ignore_na = TRUE) %>%
@@ -257,6 +289,12 @@ wrangled %>% select(contains("41"))
 ?match
 wrangled
 # hispanic latino and black
+
+final_clean %>% mutate_at(vars(contains("q38_", "q7_"), !contains("_pnta")), ~str_replace()) %>% select(contains("q7")) %>% filter(str_detect(q7, "prefer not to answer"))
+sum(is.na(wrangled$exp_ab_and_vi))
+mean(is.na(final_clean$q36))
+
+
 ```
 
 # New Columns
@@ -282,23 +320,23 @@ colnames(wrangled) %>% unique %>% length
 ```{r eval=F}
 today <- gsub("-", "", Sys.Date())
 
-write_dta(wrangled, path = paste0("../data/output/wrangled", today,".dta"), version = 15)
+write_dta(wrangled, path = paste0("../data/output/wrangled", today,".dta"))
 write_excel_csv(wrangled, file = paste0("../data/output/wrangled", today, ".csv"))
 
 googledrive_path <- "Communities Speak/Subteams/Data Subteam/Individual Survey-2(POA/Codebook/Census Figures)/cleaning/"
 
-write_excel_csv(survey_codebook, paste0("../data/codebook/survey_question_codebook_", today, ".csv"))
+#write_excel_csv(survey_codebook, paste0("../data/codebook/survey_question_codebook_", today, ".csv"))
 #drive_upload(media = paste0("../data/codebook/survey_question_codebook_", today, ".csv"),
 #             path = paste0(googledrive_path, "data/survey_question_codebook_",
 #                           today, ".csv"),
 #             overwrite = TRUE, # for some reason, it is not effectively overwriting
 #             type = "spreadsheet")
 
-drive_upload(media = "communities_speak.Rmd",
-             path = paste0(googledrive_path, "code/cleaning_script_", today, ".Rmd"),
-             overwrite = TRUE)
+#drive_upload(media = "communities_speak.Rmd",
+#             path = paste0(googledrive_path, "code/cleaning_script_", today, ".Rmd"),
+#             overwrite = TRUE)
 #drive_upload(media = "communities_speak.pdf", path = paste0(googledrive_path, "code/cleaning_script_", today, ".pdf"))
-drive_upload(media = "functions/fixup.R", path = paste0(googledrive_path, "code/functions/fixup.R"), overwrite = TRUE)
+#drive_upload(media = "functions/fixup.R", path = paste0(googledrive_path, "code/functions/fixup.R"), overwrite = TRUE)
 
 drive_upload(media = paste0("../data/output/wrangled", today,".dta"), path = paste0(googledrive_path, "data/output/wrangled", today, ".dta"))
 drive_upload(media = paste0("../data/output/wrangled", today,".csv"), path = paste0(googledrive_path, "data/output/wrangled", today, ".csv"), type = "spreadsheet")
