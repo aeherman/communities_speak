@@ -5,11 +5,6 @@ make_codebook <- function(df) {
   var_types <- map_chr(df, function(col) paste(class(col), collapse = ", ")) %>%
     as_tibble() %>% mutate(variable = var_names) %>% rename(type = value)
   
-  #cols_as_lists <- lapply(df, unique)
-  #var_lengths <- sapply(cols_as_lists, length) #%>% map_chr(format)
-  
-  
-  
   var_values <- lapply(colnames(df), function(col) {
     if(col %in% survey_codebook_labelled$label){
       row <- survey_codebook_labelled[survey_codebook_labelled$label == col, ]
