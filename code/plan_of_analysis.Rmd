@@ -3,22 +3,24 @@ title: "plan_of_analysis"
 author: "Arielle Herman"
 date: "2/11/2022"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, warning=F, message=F}
 library(tidyverse)
 library(haven)
-wrangled <- read_dta("../data/output/wrangled20220211.dta") %>%
+wrangled <- read_dta("../data/output/wrangled20220214.dta") %>%
   mutate_if(is.character, na_if, "")
+source("functions/communities_speak_theme.R")
+theme_set(project_theme)
 ```
 
 # employment
 
 ```{r warning=F, message=F}
 demographics <- c("borough", "age", "gen", "not_eng", "mar", "sch_level",
-                  "hh_64_bi", "hh_ch_0_17", "inc_dist", "res_type") # k
+                  "hh_64_bi", "hh_ch_0_17_bi", "inc_dist", "res_type") # k
 
 lapply(demographics, function(dem) {
   sym_dem <- sym(dem)
@@ -27,15 +29,49 @@ lapply(demographics, function(dem) {
     reshaped <- reshape %>% arrange(n)
   } else if(haven::is.labelled(reshape[[dem]])){
     reshaped <- reshape %>% arrange(!!sym_dem) %>%
-      mutate_at(vars(!!sym_dem), haven::as_factor)
+      mutate_at(vars(!!sym_dem), ~stringr::str_to_sentence(haven::as_factor(.)))
   } else if (dem == "age") {
     reshaped <- reshape %>% mutate_at(vars(!!sym_dem), ~as.factor(floor(./10)*10)) %>%
       group_by(emp_change, !!sym_dem) %>% summarize(n = sum(n))
   } else {
-    reshaped <- reshape %>% mutate_at(vars(!!sym_dem), ~as.factor(.)) %>% arrange(n)
+    reshaped <- reshape %>% mutate_at(vars(!!sym_dem), ~stringr::str_to_sentence(as.factor(.))) %>% arrange(n)
   } 
   p <- reshaped %>%
     ggplot(aes(x = n, y = !!sym_dem, fill = emp_change, alpha = n)) +
+    geom_col(position = "fill") + xlab(NULL) + ylab(NULL) +
+    scale_fill_manual(labels = rev(c(FALSE, TRUE)), values = project_pal) +
+    scale_x_reverse()
+  return(p)
+})
+
+# does not yet fix for double counting
+wrangled %>%
+  group_by(responseid, emp_change = emp_b != emp_a) %>%
+  select(responseid, contains("race_"), -race_text, -race_twomore) %>%
+  pivot_longer(cols = c("race_white", "race_black", "race_his_lat"),
+               names_to = "category", values_to = "value") %>%
+  filter(value != 0) %>% ungroup %>% count(category, emp_change) %>%
+  ggplot(aes(x = n, y = category, fill = emp_change, alpha = n)) + geom_col(position = "fill") +
+  scale_fill_manual(labels = rev(c(FALSE, TRUE)), values = project_pal) + scale_x_reverse()
+```
+
+```{r warning=F, message=F, eval=F}
+lapply(demographics, function(dem) {
+  sym_dem <- sym(dem)
+  reshape <- wrangled %>% count(inc_a, !!sym_dem)
+  if(is.character(reshape[[dem]])) {
+    reshaped <- reshape %>% arrange(n)
+  } else if(haven::is.labelled(reshape[[dem]])){
+    reshaped <- reshape %>% arrange(!!sym_dem) %>%
+      mutate_at(vars(!!sym_dem), haven::as_factor)
+  } else if (dem == "age") {
+    reshaped <- reshape %>% mutate_at(vars(!!sym_dem), ~as.factor(floor(./10)*10)) %>%
+      group_by(inc_a, !!sym_dem) %>% summarize(n = sum(n))
+  } else {
+    reshaped <- reshape %>% mutate_at(vars(!!sym_dem), ~as.factor(.)) %>% arrange(n)
+  } 
+  p <- reshaped %>%
+    ggplot(aes(x = n, y = !!sym_dem, fill = inc_a, alpha = n)) +
     geom_col(position = "fill")# + xlab(dem)
   return(p)
 })
