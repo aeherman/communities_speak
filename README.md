@@ -6,6 +6,7 @@ This document describes the content of this respository and its relationship to 
 	- [functions](https://github.com/aeherman/communities_speak/tree/main/code/functions)/ written for cleaning scripts
 	- cleaning scripts
 	- plan of analysis, uploaded to the google drive [here](https://drive.google.com/drive/folders/1fxr-PJrE87jGIhf7UntuwXAgqcZd4vgw)
+- [visuals](https://github.com/aeherman/communities_speak/tree/main/visuals)/
 - [data](https://drive.google.com/drive/folders/18B_HR7-r3ADnz9CP_gUBzjTVNeSv42ky)/ important data elements are uploaded directly to google drive and not saved here
 	- [output](https://drive.google.com/drive/folders/123P_7tdkG-0cv0iDHbCZj5u4lRjWqS1V)/
 	- [input](https://drive.google.com/drive/folders/1g0skssrMXluWm9BdH-voSk3R6W2ce_v3)/
