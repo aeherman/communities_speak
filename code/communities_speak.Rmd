@@ -18,6 +18,8 @@ library(googlesheets4)
 source("functions/fixup.R")
 source("dictionary.R")
 source("thresholds.R")
+#source("compile.R")
+readRDS("../data/processed/survey.rds")
 
   #select(-`Question Assignment_Temp_Column`, -`Survey Instrument Question #`)
 
@@ -62,6 +64,10 @@ test %>% select(!contains("TEXT")) %>% rename_with(~glue::glue("q{as.integer(.x)
 test %>% select(`1`) %>% rename_with(~str_replace(.x, "[:digit:]{1}", "as.integer({.x})"), .cols = matches(paste(1:9, collapse = "|")))
 
 lapply(function(file) rename_if(file, str_detect("[:digit:]") & !str_detect("q")), paste0("q", .))
+
+q25 <- survey %>% select(contains("25")) %>% unlist
+table(q25[str_detect(q25, "[:alpha:]")])
+
 ```
 
 # Var Dictionary
@@ -251,7 +257,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     exp_ab_or_vi = str_detect(q36, "yes"),
     exp_ab_and_vi = str_detect(q36, "verbal abuse") & str_detect(q36, "physical violence"),
     
-    con_num = lapply(str_split(q29, ";"), function(item) if(!is.na(item)) {unlist(length(item))} else {NA})) %>%
+    con_num = as.integer(unlist(lapply(str_split(q29, ";"), function(item) if(!is.na(item)) {unlist(length(item))} else {NA})))) %>% # make this an integer
   left_join(q41_bi)
   #mutate_at(vars(q20, q27), ~haven::as_factor(.)) #%>% sjlabelled::label_to_colnames() #%>%
 
@@ -339,7 +345,4 @@ googledrive_path <- "Communities Speak/Subteams/Data Subteam/Individual Survey-2
 #             overwrite = TRUE)
 #drive_upload(media = "communities_speak.pdf", path = paste0(googledrive_path, "code/cleaning_script_", today, ".pdf"))
 #drive_upload(media = "functions/fixup.R", path = paste0(googledrive_path, "code/functions/fixup.R"), overwrite = TRUE)
-
-drive_upload(media = paste0("../data/output/wrangled", today,".dta"), path = paste0(googledrive_path, "data/output/wrangled", today, ".dta"))
-drive_upload(media = paste0("../data/output/wrangled", today,".csv"), path = paste0(googledrive_path, "data/output/wrangled", today, ".csv"), type = "spreadsheet")
 ```
