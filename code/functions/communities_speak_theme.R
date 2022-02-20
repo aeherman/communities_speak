@@ -1,6 +1,9 @@
 # 
 project_theme <- 
   ggthemes::theme_tufte(ticks = FALSE) +
-  ggplot2::theme(text = element_text(family = "open sans"))
+  # get open sans: https://cran.r-project.org/web/packages/gfonts/vignettes/gfonts.html
+  ggplot2::theme(text = element_text(family = "sans"),
+                 plot.title = element_text(hjust = 0.5))
 
-project_pal <- c("#073552", "#bbd9eb")
+project_pal <- c("#bbd9eb", "#9585AB", "#864C67", "#073552")
+                 #"#bbd9eb")
