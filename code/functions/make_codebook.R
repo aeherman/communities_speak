@@ -14,6 +14,7 @@ make_codebook <- function(df) {
     } else {
       q <- NA_character_
       question <- NA_character_
+      #survey_q <- NA_integer_
     }
 
 #for(col in colnames(df)) {
@@ -67,8 +68,3 @@ today <- gsub("-", "", Sys.Date())
 View(codebook)
 
 write_excel_csv(codebook, "~/communities_speak/data/codebook/codebook.csv")
-
-googledrive_path <- "Communities Speak/Subteams/Data Subteam/Individual Survey-2(POA/Codebook/Census Figures)/cleaning/"
-
-drive_upload(media = paste0("~/communities_speak/data/codebook/codebook.csv"),
-             path = paste0(googledrive_path, "data/output/codebook", today), type = "spreadsheet")
