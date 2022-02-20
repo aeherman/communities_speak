@@ -10,6 +10,37 @@ library(tidyverse)
 readRDS("../data/processed/survey.rds")
 ```
 
+```{r eval=F}
+#jsonlite::fromJSON("https://data.cityofnewyork.us/resource/7t3b-ywvw.json")
+
+nybb <- sf::st_read("../data/input/borough_boundaries/borough_boundary.shp")
+sf_geocoded <- zipcodes_geocoded %>% filter(lon < 42) %>% select(responseid, lat, lon) %>% na.omit() %>% sf::st_as_sf(coords = c("lon", "lat"), crs = 4326)
+zipcodes_geocoded$address
+sf_inter <- intersections_geocoded[c("lon", "lat")] %>% na.omit() %>% sf::st_as_sf(coords = c("lon", "lat"), crs = 4326)
+ggplot() + geom_sf(data = nybb) + geom_sf(data = sf_geocoded)
+ggplot()  + #geom_sf(data = nybb) +
+  geom_sf(data = )
+  geom_sf(data = sf_geocoded)
+  
+  range(zipcodes_geocoded$lat, na.rm = TRUE)
+  
+xmin <- -74.25559
+ymin <- 40.49613
+xmax <- -73.70001
+ymax <- 40.91553
+
+filter(zipcodes_geocoded) %>% filter(lat < xmax)
+zipcodes_geocoded$lat %>% range(na.rm = TRUE)
+
+dist <- wrangled %>% count(borough) %>% mutate_at(vars(borough), ~str_to_title(str_replace(., "si", "staten island"))) %>% na.omit
+
+dist
+
+nybb %>% left_join(dist, by = c("boro_name" = "borough")) %>%
+  ggplot() + geom_sf(aes(fill = n))
+
+```
+
 
 ## geocode
 
@@ -26,13 +57,18 @@ if(file.exists(geocoded_file_path)) {
 } else {
   zipcodes <- survey %>% filter(!is.na(q3))
   zipcodes_geocoded <- zipcodes %>%
-    ggmap::mutate_geocode(q3, output = "more") %>%
+    ggmap::mutate_geocode(q3, output = "more")# %>%
     #filter(borough_coded = str_extract())
-    select(responseid, q3, address)
+    #select(responseid, q3, address, lon, lat)
   write_csv(zipcodes_geocoded, geocoded_file_path)
+  intersections_geocoded <- survey %>% filter(!is.na(q4)) %>% ggmap::mutate_geocode(q4, output = "more")
 }
 
-zipcodes_geocoded %>% group_by(burough) %>% count
+geocoded <-lapply(list(zipcodes_geocoded, intersections_geocoded), function(df) {
+  df %>% select(responseid, address, lon, lat)
+}) %>% reduce(full_join, by = c("responseid")) %>% mutate(kept = responseid %in% wrangled$responseid)
+
+saveRDS(geocoded, "../data/output/geocoded.rds")
 
 # coding the intersections is less accurate
 #intersections <- survey %>% filter(!is.na(q4))
@@ -43,6 +79,8 @@ zipcodes_geocoded %>%
   arrange(responseid) %>% select(responseid, address, q3, q4, type) %>%
   filter(responseid %in% c("r_1gafr4up5ko8gyd", "r_1qb2mivxdjbz2q1", "r_2tnhe7vqp6gyj3z"))
 
+zipcodes_geocoded %>% select(responseid, lat, lon) %>%
+  full_join(intersections)
 ## example
 wrong <- ggmap::geocode(postalcode = "10368", output = "more")
 
@@ -50,5 +88,10 @@ wrong <- ggmap::geocode(postalcode = "10368", output = "more")
 #geocode_full_address <- survey %>%
 #  filter(!is.na(q3) | !is.na(q4)) %>%
 #  mutate(full_address = paste(q4, q3, sep = ", ")) %>%  mutate_geocode(full_address, output = "more")
-1+1
+geocoded %>% arrange(responseid) %>% select(responseid, lat, lon) %>% filter(responseid == "r_03b2jtpcmbdrzup") %>% distinct
+```
+
+```{r}
+map <- urbnmapr::get_urbn_map("states", sf = TRUE)
+filter(state_abv == "NY")
 ```
