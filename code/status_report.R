@@ -1,12 +1,12 @@
 library(tidyverse)
-source("thresholds.R")
-final_clean <- read_csv("../data/processed/final_clean.csv")
-wrangled <- read_dta("../data/output/wrangled20220211.dta")
+source("~/communities_speak/code/thresholds.R")
+final_clean <- read_csv("~/communities_speak/data/processed/final_clean.csv")
+wrangled <- read_dta("~/communities_speak/data/output/wrangled20220218.dta")
 today <- gsub("-|2022", "", Sys.Date())
 
 #demographic
 
-variables <- c("gen", "race", "hh_64_bi", "hh_ch_0_17", "inc_a", "borough")
+variables <- c("gen", "race", "hh_64_bi", "hh_ch_0_17_bi", "inc_a", "borough")
 
 dems <- lapply(variables, function(col) {
   sym_col <- sym(col)
@@ -71,11 +71,11 @@ sym_today <- sym(today)
 track_id <- gs4_find() %>% filter(name == "Tracking Incoming Data") %>% pull(id)
 range_write(ss = track_id, data = dems,
             sheet = "demographics", 
-            range = "C1:D36",
+            range = "E1:F37",
             col_names = TRUE)
 range_write(ss = track_id, data = status,
             sheet = "r_report",
-            range = "E1:H12",
+            range = "K1:N14",
             col_names = TRUE)
 #write_sheet(data = status, track_id, sheet = paste0("r_report", today))
 #write_sheet(data = dems, track_id, sheet = paste0("demographics", today))
