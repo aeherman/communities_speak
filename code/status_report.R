@@ -4,6 +4,18 @@ final_clean <- read_csv("~/communities_speak/data/processed/final_clean.csv")
 wrangled <- read_dta("~/communities_speak/data/output/wrangled20220218.dta")
 today <- gsub("-|2022", "", Sys.Date())
 
+
+qf_id <- gs4_find() %>% filter(name == "QuickFacts Feb-21-2022") %>% pull(id)
+qf <- read_sheet(census_id)
+qf <- qf %>% rename_all(~str_replace_all(str_to_lower(.), "[:punct:]* ", "_")) %>% 
+  select(!contains("note")) %>% mutate_all(as.character) %>% na_if("NA") %>% na.omit %>%
+  filter(str_detect(fact, "percent"))
+
+qf %>% pull(fact)
+
+lapply(dems$category, function(cat) {
+  str_which(qf$fact, cat)
+})
 #demographic
 
 variables <- c("gen", "race", "hh_64_bi", "hh_ch_0_17_bi", "inc_a", "borough")
@@ -69,13 +81,13 @@ status <- update %>% bind_rows(
 
 sym_today <- sym(today)
 track_id <- gs4_find() %>% filter(name == "Tracking Incoming Data") %>% pull(id)
-range_write(ss = track_id, data = dems,
-            sheet = "demographics", 
-            range = "E1:F37",
-            col_names = TRUE)
-range_write(ss = track_id, data = status,
-            sheet = "r_report",
-            range = "K1:N14",
-            col_names = TRUE)
+#range_write(ss = track_id, data = dems,
+#            sheet = "demographics", 
+#            range = "E1:F37",
+#            col_names = TRUE)
+#range_write(ss = track_id, data = status,
+#            sheet = "r_report",
+#            range = "K1:N14",
+#            col_names = TRUE)
 #write_sheet(data = status, track_id, sheet = paste0("r_report", today))
 #write_sheet(data = dems, track_id, sheet = paste0("demographics", today))
