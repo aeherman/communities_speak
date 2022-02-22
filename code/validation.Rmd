@@ -1,11 +1,13 @@
 ---
-title: "validation"
+title: "Validating Nonresponse"
 author: "Arielle Herman"
 date: "2/21/2022"
 output: pdf_document
 ---
 
-```{r setup}
+```{r setup, include=F}
+library(tidyverse)
+library(labelled)
 load("../data/processed/final_clean.rdata")
 source("thresholds.R")
 source("functions/communities_speak_theme.R")
@@ -16,9 +18,10 @@ theme_set(project_theme)
 
 # When do we lose respondents?
 
-lost respondents: respondents who completed less than half of the survey
+Analyzing when we lose respondents will help us shape the structure and questions of the next survey to better retain respondents throughout the survey.  The below graphs and analysis are based on the newly compiled data (as of Feb 22).
 
-```{r}
+
+```{r include=F}
 selected <- final_clean %>% #filter(completion < min_completion) %>%
   select(contains("q")) %>% select(!matches("text"))
 
@@ -27,18 +30,18 @@ one_response <- selected %>% filter(if_all(-q2, is.na)) %>% nrow
 
 n <- final_clean %>% nrow
 
-final_clean %>% filter(q2 == 0) %>% pull(completion)
+#final_clean %>% filter(q2 == 0) %>% pull(completion)
 ```
-Out of `r n` total responses, `r no_response` respondents didn't fill any responses at all and `r one_response` respondents only completed the first question.  We can see the major drop offs in respondents who completed less than half the survey in the below graph:
-
-```{r}
+Out of **`r n`** total responses, **`r no_response`** respondents didn't fill any responses at all and **`r one_response`** respondents only completed the first question.  We can see the major drop offs in respondents in the below graph:
+  
+  
+  
+```{r echo=F}
 to_plot <- final_clean %>%
   #filter(completion < .50) %>%
   select(contains("q")) %>%
   filter(!if_all(everything(), is.na)) %>% # about 100 where they didn't fill out anything
   select(!matches("text")) %>%  is.na
-
-(to_plot)
 
 to_plot_tibble <- distinct(tibble(no = as.integer(str_extract(colnames(to_plot), "[:digit:]{1,2}")),
                                   #question = colnames(to_plot),
@@ -46,36 +49,79 @@ to_plot_tibble <- distinct(tibble(no = as.integer(str_extract(colnames(to_plot),
                                   #sum = colSums(to_plot))
 
 to_plot_tibble %>% ggplot(aes(x = no, y = mean)) + geom_line(lty = "dashed") +
-  geom_point(aes(color = no %in% c(3, 13, 21, 25, 32, 40))) +
+  geom_point(aes(color = no %in% c(3, 13, 21, 25, 32))) +
   scale_y_continuous(label = scales::percent) +
   labs(title = "Proportion Incomplete Responses per Question") +#,
        #subtitle = "among respondents who completed less than 50% of the survey") +
   ylab(NULL) + xlab(NULL) +
-  ggrepel::geom_text_repel(aes(x = no, y = mean, label = ifelse(no %in% c(3, 13, 21, 25, 32, 40), paste0("q", no), ""))) +
+  ggrepel::geom_text_repel(aes(x = no, y = mean, label = ifelse(no %in% c(3, 13, 21, 25, 32), paste0("q", no), ""))) +
   theme(legend.position = "none") +
-  annotate("text", x = 29, y = .95, label = "Childhood questions q26-q31", hjust = 0) +
-  annotate("text", x = 16, y = .95, label = "Unemployment questions q17-q18", hjust = 1) +
-  annotate("text", x = 40, y = .10, label = glue::glue("{nrow(to_plot)} respondents"))
+  annotate("text", x = 29, y = .96, label = "Conditional\nChildren Qs: q26-q31", hjust = 0) +
+  annotate("text", x = 16, y = .96, label = "Conditional\nUnemployment Qs: q17-q18", hjust = 1) +
+  annotate("text", x = 40, y = .51, label = "Conditional\nBooster\nQuestion q40", hjust = 0.5) +
+  annotate("text", x = 40, y = .10, label = glue::glue("{nrow(to_plot)} Total\nRespondents"))
 ```
-```{r}
-final_clean %>% #select(contains("q25")) 
-  filter(q25_3 < 1 | q25_4 < 1) %>% nrow
-  select(contains("q25"), "q32") %>% is.na %>% colMeans
-# 9% of people without children drop out of the survey once they hit the children specific questions
-## 1011*.09 = 91
-  ### consider putting the children questions later
-# 13% of people with children drop out of the survey after children questions
-## 278*.123 = 34 people
+The major drop-offs come at:
+
+1. second question (q3), asks about zipcode.
+2. twelth question (q13), the first income question
+3. twentieth question (q21), that asks about experienced difficulties
+4. thirtieth question (q32), that asks about government information
+
+## Second Question (q3)
+
+This drop-off charts respondents who marked that they were NYC residents but did not complete the next question.  Possible reasons for quitting the survey include:
+
+- unwillingness to complete the survey
+- said they were a NYC resident but their permanent zipcode is not in NYC
+- lack of a permnanet address / zipcode
+
+Regarding the last expanation, we may want to include a `don't know` category to encourage any respondents that didn't continue due to lack of a permanent address.
+
+## Twelth Question (q13)
+
+Respondents also drop off right before the first income bracket question.  Possible explanations include:
+
+- difficulty getting this information
+
+This may be especially difficult for low-income or hourly wage workers, who may not know their income bracket without significant thought.  If this is the case, this question may cause selection bias toward higher income brackets.
+
+## Twentieth Question (q21)
+
+Respondents avoid this question, but appear to continue with the question following.  It is so far unclear why this is the case, and the NA responses seem pretty evenly distributed across partners.  I have yet to test it on other demographics.  Some possible explanations that require more thought include:
+
+- question wasn't required in qualtrics survey
+- respondents were discouraged from completing this question
+
+## Thirtieth Question (q32)
+
+Respondents with and without children are not responding to q32:
 
 
-278*.123
-final_clean[c("q25_3", "q25_4")] %>% filter(!is.na(q25_4), is.na(q25_4))
-
+```{r echo=F}
 # of people who answered childhood questions, how many completed 32
+out <- final_clean %>%
+  count(has_child = ifelse(q25_3 >= 1 | q25_4 >= 1, "household with children", "household without children"),
+        answered_q32 = ifelse(!is.na(q32), "answered question q32", "did not answer q32")) %>%
+  group_by(has_child) %>% filter(!is.na(has_child)) %>%
+  mutate(prop = scales::percent(n/sum(n), digits = 4))
+
+kableExtra::kable(out)
+```
+
+We lose the largest number of respondents from the demographic of no household children, but the larger proportion of respondents from households with children.  If respondents from households without children are quitting the survey because of the skip logic, we may want to encourage them to complete it by moving the children questions later in the survey.  However, it is unclear why there is a drop off between these two questions, and more thought is required.
+
+
+```{r eval=F, include=F}
+survey %>% select(contains("25")) %>% is.na %>% mean
+final_clean %>%
+  filter(q25_3 < 1 | q25_4 < 1) %>%
+  select(contains("q25"), "q32") %>% is.na %>% colMeans
+
 ```
 
 
-```{r}
+```{r include=F}
 # did the people who left 26-31 (childhood questions) blank have children q25_3, q25_4?
 
 lapply(paste0("q", 26:31), function(q) {
@@ -93,14 +139,18 @@ final_clean %>% count(!is.na(q25_3), !is.na(q25_4), q31) %>% mutate_if(is.labell
 
 
 
+final_clean %>% count(source, is.na(q21)) %>%
+  group_by(source) %>%
+  mutate(prop = scales::percent(n/sum(n))) %>%
+  filter(n > 10)
+
+
 # what was the percent completion of the people who had weird combinations of
 ```
 
 
-We lose about 20% of resp
-
-```{r}
-
+```{r include=F, eval=F}
+#We lose about 20% of resp
 # look at which groups of variables are mostly complete
 final_clean %>% filter(completion < min_completion, completion > .1) %>%
   select(!matches("q[1-9]{1,2}_")) %>%
