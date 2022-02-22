@@ -210,6 +210,9 @@ completion <- lapply(final_clean$responseid, function(id) {
     row <- row %>% select(-q28)
   }
   
+  if(row$q39 != 1 | is.na(row$q39)) {
+    row <- row %>% select(-q40)
+  }
   # residence logic
   ## will need to disqualify respondents not just based on completion, but also...
   if(row$q2 == 0 & !is.na(row$q2)) { # goes to the end because it removes all the columns (can't test the other conditions)
@@ -294,7 +297,8 @@ remove_test <- final_clean %>% filter(if_any(everything(), ~str_detect(.x, "test
 wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/ncol(final_clean)) %>%
   # remove invalid responses
   filter(completion >= min_completion,
-         duration >= min_duration) %>%
+         duration >= min_duration,
+         q2 == 1) %>%
   anti_join(remove_test) %>%
   # make new variables
   mutate(
@@ -409,6 +413,7 @@ colnames(wrangled) %>% unique %>% length
 today <- gsub("-", "", Sys.Date())
 
 write_dta(wrangled, path = paste0("../data/output/wrangled", today,".dta"))
+saveRDS(wrangled, file = paste0("../data/output/wrangled", today, ".rds"))
 write_excel_csv(wrangled, file = paste0("../data/output/wrangled", today, ".csv"))
 
 googledrive_path <- "Communities Speak/Subteams/Data Subteam/Individual Survey-2(POA/Codebook/Census Figures)/cleaning/"
