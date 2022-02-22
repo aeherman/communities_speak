@@ -1,4 +1,5 @@
 # 
+library(ggplot2)
 project_theme <- 
   ggthemes::theme_tufte(ticks = FALSE) +
   # get open sans: https://cran.r-project.org/web/packages/gfonts/vignettes/gfonts.html
