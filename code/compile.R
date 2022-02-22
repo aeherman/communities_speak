@@ -14,7 +14,7 @@ survey <- map2(ids$id, ids$name, ~read_sheet(.x, sheet = "Sheet1",
                  mutate(source = .y)) %>%
   reduce(bind_rows) %>% rename_all(str_to_lower) %>% mutate_all(str_to_lower) %>%
   rename(duration = "duration (in seconds)") %>%
-  dplyr::select(responseid, source, duration, contains("q"), -q44, -q45) %>% na_if("null") %>%
+  dplyr::select(responseid, source, duration, recordeddate, contains("q"), -q44, -q45) %>% na_if("null") %>%
   # gets rid of prolific id
   mutate(q2 = ifelse(source == "prolific", "1", q2))
 
@@ -27,7 +27,7 @@ general_radio <- read_sheet(general_radio_id$id, sheet = "Sheet1", na = c("NA", 
   mutate(source = general_radio_id$name) %>%
   rename_all(str_to_lower) %>% mutate_all(str_to_lower) %>%
   rename(duration = "duration (in seconds)") %>%
-  dplyr::select(responseid, source, duration, contains("q"), -q43, -q44) %>% na_if("null")
+  dplyr::select(responseid, source, duration, recordeddate, contains("q"), -q43, -q44) %>% na_if("null")
 
 to_rename <- colnames(general_radio)[str_detect(colnames(general_radio), "[:digit:]")]
 replacement <- as.character(as.integer(str_extract(to_rename, "[:digit:]{1,2}")) + 1)
