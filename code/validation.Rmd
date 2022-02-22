@@ -1,0 +1,125 @@
+---
+title: "validation"
+author: "Arielle Herman"
+date: "2/21/2022"
+output: pdf_document
+---
+
+```{r setup}
+load("../data/processed/final_clean.rdata")
+source("thresholds.R")
+source("functions/communities_speak_theme.R")
+
+theme_set(project_theme)
+```
+
+
+# When do we lose respondents?
+
+lost respondents: respondents who completed less than half of the survey
+
+```{r}
+selected <- final_clean %>% #filter(completion < min_completion) %>%
+  select(contains("q")) %>% select(!matches("text"))
+
+no_response <- selected %>% filter(if_all(everything(), is.na)) %>% nrow
+one_response <- selected %>% filter(if_all(-q2, is.na)) %>% nrow
+
+n <- final_clean %>% nrow
+
+final_clean %>% filter(q2 == 0) %>% pull(completion)
+```
+Out of `r n` total responses, `r no_response` respondents didn't fill any responses at all and `r one_response` respondents only completed the first question.  We can see the major drop offs in respondents who completed less than half the survey in the below graph:
+
+```{r}
+to_plot <- final_clean %>%
+  #filter(completion < .50) %>%
+  select(contains("q")) %>%
+  filter(!if_all(everything(), is.na)) %>% # about 100 where they didn't fill out anything
+  select(!matches("text")) %>%  is.na
+
+(to_plot)
+
+to_plot_tibble <- distinct(tibble(no = as.integer(str_extract(colnames(to_plot), "[:digit:]{1,2}")),
+                                  #question = colnames(to_plot),
+                                  mean = round(colMeans(to_plot), digits = 2))) %>% na.omit()
+                                  #sum = colSums(to_plot))
+
+to_plot_tibble %>% ggplot(aes(x = no, y = mean)) + geom_line(lty = "dashed") +
+  geom_point(aes(color = no %in% c(3, 13, 21, 25, 32, 40))) +
+  scale_y_continuous(label = scales::percent) +
+  labs(title = "Proportion Incomplete Responses per Question") +#,
+       #subtitle = "among respondents who completed less than 50% of the survey") +
+  ylab(NULL) + xlab(NULL) +
+  ggrepel::geom_text_repel(aes(x = no, y = mean, label = ifelse(no %in% c(3, 13, 21, 25, 32, 40), paste0("q", no), ""))) +
+  theme(legend.position = "none") +
+  annotate("text", x = 29, y = .95, label = "Childhood questions q26-q31", hjust = 0) +
+  annotate("text", x = 16, y = .95, label = "Unemployment questions q17-q18", hjust = 1) +
+  annotate("text", x = 40, y = .10, label = glue::glue("{nrow(to_plot)} respondents"))
+```
+```{r}
+final_clean %>% #select(contains("q25")) 
+  filter(q25_3 < 1 | q25_4 < 1) %>% nrow
+  select(contains("q25"), "q32") %>% is.na %>% colMeans
+# 9% of people without children drop out of the survey once they hit the children specific questions
+## 1011*.09 = 91
+  ### consider putting the children questions later
+# 13% of people with children drop out of the survey after children questions
+## 278*.123 = 34 people
+
+
+278*.123
+final_clean[c("q25_3", "q25_4")] %>% filter(!is.na(q25_4), is.na(q25_4))
+
+# of people who answered childhood questions, how many completed 32
+```
+
+
+```{r}
+# did the people who left 26-31 (childhood questions) blank have children q25_3, q25_4?
+
+lapply(paste0("q", 26:31), function(q) {
+  sym_q <- q
+  final_clean %>% count(!is.na(q25_3), !is.na(q25_4), !is.na(!!q)) %>% filter(n > 10)
+})
+
+final_clean %>% count(!is.na(q25_3), !is.na(q25_4), !is.na(q26)) %>% filter(n > 10)
+
+
+final_clean %>% count(!is.na(q25_3), !is.na(q25_4), q30) %>% mutate_if(is.labelled, labelled::to_factor)
+
+# 844 people marked marked that they had children, but didn't respond to q31 on whether or not they needed healthcare but couldn't find it
+final_clean %>% count(!is.na(q25_3), !is.na(q25_4), q31) %>% mutate_if(is.labelled, labelled::to_factor)
+
+
+
+# what was the percent completion of the people who had weird combinations of
+```
+
+
+We lose about 20% of resp
+
+```{r}
+
+# look at which groups of variables are mostly complete
+final_clean %>% filter(completion < min_completion, completion > .1) %>%
+  select(!matches("q[1-9]{1,2}_")) %>%
+  select_if(~mean(!is.na(.))>0.5)
+
+final_clean %>% filter(responseid == "r_unbyhfbce2gl4lt") %>% select(!matches("q[1-9]{1,2}_"))
+
+hist(log(final_clean$duration))
+hist(final_clean$completion)
+final_clean %>% ggplot(aes(x = completion, y = log(duration))) + geom_point() + geom_smooth()
+
+
+final_clean %>% select(responseid, source, duration, contains("25"), !matches("text")) %>%
+  mutate_at(vars(contains("q")), is.na) %>% filter(responseid == "r_unbyhfbce2gl4lt") %>%
+  pivot_longer(cols = contains("q"), names_to = "question", values_to = "values") %>%
+  mutate(question_no = as.integer(str_extract(question, "[:digit:]{1,2}"))) %>% arrange(question_no)
+  ggplot(aes(x = question, y = values)) + geom_point()
+  
+  final_clean %>% filter(responseid == "r_unbyhfbce2gl4lt") %>% select(matches("q1[:digit:]?"))
+
+str_which(c("abb", "garda", "arielle"), "a_(?!bb)")
+```
