@@ -87,7 +87,7 @@ survey[mavr] %>% unlist %>% table
 survey["q5"] %>% table
 
 age <- survey$q5
-table(age[is.na(as.integer(age))])
+table(age[is.na(as.integer(age))]) # fix 83 1/2
 
 hh <- select(survey, contains("25")) %>% unlist
 table(hh[is.na(as.integer(hh))])
@@ -96,7 +96,7 @@ table(hh[is.na(as.integer(hh))])
 
 ```{r}
 clean_data <- function(df = survey, col = NULL) {
-  by_col <- lapply(colnames(df)[-1], function(col) {
+  by_col <- lapply(setdiff(colnames(df), c("responseid", "recordeddate")), function(col) {
     
     
 #for (col in colnames(survey)[-1]) {
@@ -183,11 +183,13 @@ clean_data <- function(df = survey, col = NULL) {
                 
 }
 
+
+final_clean <- survey[c('responseid', 'recordeddate')] %>% left_join(clean_data()) %>% left_join(distinct(boroughs), by = c("q3" = "zipcode"))
+
 # all NA if any NA
 q35_sub <- final_clean %>% select(contains("35"))
 q35_sub %>% transmute(mean = rowMeans(is.na(q35_sub))) %>% table
 
-final_clean <- clean_data() %>% left_join(distinct(boroughs), by = c("q3" = "zipcode"))
 
 completion <- lapply(final_clean$responseid, function(id) {
 #for(id in final_clean$responseid) {
@@ -228,7 +230,9 @@ final_clean$completion <- completion
 hist(final_clean$completion)
 mean(!is.na(final_clean$q2))
 save(final_clean, file = "../data/processed/final_clean.rdata")
+
 ```
+
 
 ```{r eval=F}
 # validate calculation of completion rate
@@ -305,6 +309,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     ## 6.2
     race_twomore = str_detect(q7, ";"),
     race_black_his = str_detect(q7, "black") & str_detect(q7, "(?<!-)hispanic"),
+    race_white_alone = str_detect(q7, "white") & str_detect(q7, ";", negate = TRUE),
     ## 6.3
     #race_his_lat = str_detect(q7, "hispanic or latinx"),
     ## 6.4
@@ -387,6 +392,18 @@ sum(is.na(wrangled$exp_ab_and_vi))
 mean(is.na(final_clean$q36))
 
 
+weights <- wrangled %>% count(race = str_replace(race, ".*;.*", "two or more races")) %>%
+  ungroup() %>% filter(!race %in% c("prefer not to answer", "other")) %>%
+  mutate(actual = round(n/sum(n), digits = 3)) %>% left_join(census) %>%
+  mutate(weight = target/actual)
+
+# extra NAs account for prefer not to answer and other
+wrangled <-
+  wrangled %>%
+  mutate(race_weight = str_replace_all(race,
+                                       c(".*;.*" = "two or more races",
+                                         "prefer not to answer|other" = NA_character_))) %>%
+  left_join(select(weights, race, weight), by = c("race_weight" = "race"))
 ```
 
 # New Columns
@@ -430,4 +447,5 @@ googledrive_path <- "Communities Speak/Subteams/Data Subteam/Individual Survey-2
 #             overwrite = TRUE)
 #drive_upload(media = "communities_speak.pdf", path = paste0(googledrive_path, "code/cleaning_script_", today, ".pdf"))
 #drive_upload(media = "functions/fixup.R", path = paste0(googledrive_path, "code/functions/fixup.R"), overwrite = TRUE)
+dim(wrangled)
 ```
