@@ -1,19 +1,20 @@
 ---
-title: "geocode"
+title: "Geographic Distribution"
 author: "Arielle Herman"
 date: "2/12/2022"
 output:
   pdf_document: default
   html_document: default
 ---
-```{r warning=F, message=F}
+```{r warning=F, message=F, include=F}
 library(ggmap)
 library(tidyverse)
-readRDS("../data/processed/survey.rds")
-wrangled <- haven::read_dta("../data/output/wrangled20220218.dta")
-```
+survey <- readRDS("../data/processed/survey.rds")
+wrangled <- readRDS("../data/output/wrangled20220225.rds")
 
-geocode
+source("../code/functions/communities_speak_theme.R")
+theme_set(project_theme)
+```
 
 ```{r include=F}
 
@@ -68,38 +69,117 @@ geocoded %>% arrange(responseid) %>% select(responseid, lat, lon) %>% filter(res
 #jsonlite::fromJSON("https://data.cityofnewyork.us/resource/7t3b-ywvw.json")
 
 nybb <- sf::st_read("../data/input/borough_boundaries/borough_boundary.shp")
-sf_geocoded <- zipcodes_geocoded %>% filter(lon < 42) %>% select(responseid, lat, lon) %>% na.omit() %>% sf::st_as_sf(coords = c("lon", "lat"), crs = 4326)
+nyc_zip <- sf::st_read("../data/input/ZIP_CODE_040114/ZIP_CODE_040114.shp") %>% sf::st_transform(crs = 4326)
+#sf_geocoded <- zipcodes_geocoded %>% filter(lon < 42) %>% select(responseid, lat, lon) %>% na.omit() %>% sf::st_as_sf(coords = c("lon", "lat"), crs = 4326)
 #zipcodes_geocoded$address
-sf_inter <- intersections_geocoded[c("lon", "lat")] %>% na.omit() %>% sf::st_as_sf(coords = c("lon", "lat"), crs = 4326)
-ggplot() + geom_sf(data = nybb) + geom_sf(data = sf_geocoded)
-ggplot()  + #geom_sf(data = nybb) +
-  geom_sf(data = )
-  geom_sf(data = sf_geocoded)
+#sf_inter <- intersections_geocoded[c("lon", "lat")] %>% na.omit() %>% sf::st_as_sf(coords = c("lon", "lat"), crs = 4326)
+#ggplot() + geom_sf(data = nybb) + geom_sf(data = sf_geocoded)
+#ggplot()  + #geom_sf(data = nybb) +
+#  geom_sf(data = )
+#  geom_sf(data = sf_geocoded)
   
-  range(zipcodes_geocoded$lat, na.rm = TRUE)
+#  range(zipcodes_geocoded$lat, na.rm = TRUE)
   
 xmin <- -74.25559
 ymin <- 40.49613
 xmax <- -73.70001
 ymax <- 40.91553
 
-filter(zipcodes_geocoded) %>% filter(lat < xmax)
-zipcodes_geocoded$lat %>% range(na.rm = TRUE)
+#filter(zipcodes_geocoded) %>% filter(lat < xmax)
+#zipcodes_geocoded$lat %>% range(na.rm = TRUE)
 
-dist <- wrangled %>% count(borough) %>% mutate_at(vars(borough), ~str_to_title(str_replace(., "si", "staten island"))) %>% na.omit
+dist <- wrangled %>% count(borough) %>% mutate_at(vars(borough), ~str_to_title(str_replace(., "si", "staten island"))) %>% na.omit %>%
+  ungroup() %>%
+  mutate(prop = n/sum(n))
+dist_zip <- wrangled %>%
+  mutate(zip = str_replace_all(zip, "-.*| and.*", "")) %>%
+  group_by(zip) %>% summarize(n = n()) %>% arrange(desc(n)) %>% ungroup() %>% mutate(prop = n/sum(n))
 
-dist
+dist_child_zip <- wrangled %>% filter(hh_ch_0_17_bi == 1) %>%
+  mutate(zip = str_replace_all(zip, "-.*| and.*", "")) %>%
+  group_by(zip) %>% summarize(n = n()) %>% arrange(desc(n)) %>% ungroup() %>% mutate(prop = n/sum(n))
+dist_zip %>% filter(!zip %in% nyc_zip$ZIPCODE) %>% arrange(desc(prop))
+
+
+mean(dist_zip$n == 1)
+"10469" %in% nyc_zip$ZIPCODE
 ```
 
-# Plot
+# Mapping Respondents by Residence
 
-First Draft for plotting the choropleth map of respondents.  Hope to get a point map also.
+The first plot illustrates respondents by Borough.
 
-```{r}
-nybb %>% left_join(dist, by = c("boro_name" = "borough")) %>%
-  ggplot() + geom_sf(aes(fill = n))
+The second plot illustrates a more granular geographic distribution of respondents.  The one zip code with the highest proportion of respondents is 10025, a zip code that includes a portion of Columbia University.  However, it is important to note that `r scales::percent(mean(dist_zip$n == 1))` of respondents are the only representative from their zip code.
+
+The third plot illustrates geographic distribution of the `r nrow(filter(wrangled, hh_ch_0_17_bi == 1))` respondents with children.  Here, `r scales::percent(mean(dist_child_zip$n == 1))` respondents are the sole representative of their zip code.
+
+
+
+
+```{r echo=F, warning=F, message=F}
+by_zip <- nyc_zip %>%
+  #sf::st_transform(crs = 4326) %>%
+  full_join(dist_zip, by = c("ZIPCODE" = "zip")) %>% #filter(is.na(prop)) %>%
+  ggplot() + geom_sf(aes(fill = prop)) +
+  scale_fill_continuous(NULL, high = "#132B43", low = "#56B1F7", labels = scales::percent) +
+  #theme(legend.position = "bottom") +
+  labs(
+    title = "Respondents by Zip code",
+    #Source: https://data.cityofnewyork.us/widgets/i8iw-xf4u\n
+    subtitle = glue::glue("Respondents: {nrow(wrangled)}\n{sf::st_crs(nyc_zip)$input}\n\n")) +
+  ggrepel::geom_label_repel(
+    data = filter(nyc_zip, ZIPCODE == dist_zip$zip[which.max(dist_zip$prop)]), aes(label = ZIPCODE, geometry = geometry),
+    stat = "sf_coordinates", force_pull = 10, force = 10,
+    min.segment.length = 0, seed = 1, nudge_x = -0.05, nudge_y = 0.1, fill = project_pal[1]) +
+  xlab(NULL) + ylab(NULL)
+
+
+by_zip_child <- nyc_zip %>%
+  #sf::st_transform(crs = 4326) %>%
+  full_join(dist_child_zip, by = c("ZIPCODE" = "zip")) %>% #filter(is.na(prop)) %>%
+  ggplot() + geom_sf(aes(fill = prop)) +
+  scale_fill_continuous(NULL, high = "#132B43", low = "#56B1F7", labels = scales::percent) +
+  #theme(legend.position = "bottom") +
+  labs(
+    title = "Respondents with Kids by Zip code",
+    #Source: https://data.cityofnewyork.us/widgets/i8iw-xf4u\n
+    subtitle = glue::glue("Respondents: {nrow(filter(wrangled, hh_ch_0_17_bi == 1))}\n{sf::st_crs(nyc_zip)$input}\n\n")) +
+  ggrepel::geom_label_repel(
+    data = filter(nyc_zip, ZIPCODE == dist_child_zip$zip[which.max(dist_child_zip$prop)]), aes(label = ZIPCODE, geometry = geometry),
+    stat = "sf_coordinates", force_pull = 10, force = 10,
+    min.segment.length = 0, seed = 1, nudge_x = -0.05, nudge_y = 0.1, fill = project_pal[1]) +
+  xlab(NULL) + ylab(NULL)
+
+by_bor <- nybb %>%
+  #sf::st_transform(crs = 4326) %>%
+  left_join(dist, by = c("boro_name" = "borough")) %>%
+  ggplot() + geom_sf(aes(fill = prop), color = project_pal[1]) +
+  scale_fill_continuous(NULL, high = "#132B43", low = "#56B1F7", labels = scales::percent) +
+  ggrepel::geom_label_repel(aes(label = glue::glue("{boro_name}: {scales::percent(prop)}"),
+                                geometry = geometry),
+                            stat = "sf_coordinates",
+                            min.segment.length = 0,
+                            force = 3, force_pull = 10,
+                            seed = 1, direction = "x",
+                            nudge_x = c(-1, 1, 1, 0, 1),
+                            nudge_y = c(0, 0, -0.1, -0.1, 0),
+                            fill = project_pal[1]) +
+  xlab(NULL) + ylab(NULL) +
+  labs(title = "Respondents by Borough",
+       subtitle = glue::glue("Respondents: {nrow(wrangled)}\nCRS: {sf::st_crs(nybb)$input}\n\n"))
+
+by_bor
+by_zip
+by_zip_child
+```
+
+```{r include=F}
+ggsave(by_bor, filename = "respondents_by_borough.png")
+ggsave(by_zip, filename = "respondents_by_zip.png")
+ggsave(by_zip_child, filename = "respondents_child_by_zip.png")
 
 ```
+
 
 ```{r include=F, eval=F}
 map <- urbnmapr::get_urbn_map("states", sf = TRUE)
