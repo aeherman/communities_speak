@@ -27,9 +27,51 @@ selected <- final_clean %>% #filter(completion < min_completion) %>%
 
 no_response <- selected %>% filter(if_all(everything(), is.na)) %>% nrow
 one_response <- selected %>% filter(if_all(-q2, is.na)) %>% nrow
-
+non_ny <- selected %>% filter(q2 == 0) %>% nrow
 n <- final_clean %>% nrow
+```
 
+# validate disqualification criteria
+
+```{r}
+by_reqs <- final_clean %>% group_by(
+  q2 == 1,
+  completion >= 0.5,
+  duration >= 100
+) %>% count
+
+kableExtra::kable(by_reqs)
+```
+
+```{r include=F}
+
+max(final_clean$duration)
+
+final_clean %>%
+  filter(duration <= 200) %>%
+  ggplot(aes(x = duration)) + geom_histogram(aes(fill = q2 == 1)) +
+  scale_x_continuous(labels = scales::comma)
+
+final_clean %>% ggplot(aes(x = recordeddate, y = q2)) + geom_line()
+final_clean$recordeddate
+
+final_clean %>% count(q2)
+
+final_clean %>%
+  #filter(q2 == 1) %>%
+  group_by(week = base::cut(recordeddate, breaks = "1 week")) %>% summarize(mean = mean(q2, na.rm = TRUE), sum = sum(q2, na.rm = TRUE)) %>%
+  ungroup %>% mutate(group = 1) %>%
+  ggplot(aes(x = week, y = mean, group = 1)) + geom_line(lty = "dashed") + geom_point(aes(color = mean, size = sum)) +
+  scale_y_continuous(labels = scales::percent) +
+  xlab(NULL) + ylab(NULL) + ggtitle("Proportion Respondents Living in NYC over Time") +
+  labs(subtitle =
+         glue::glue("{round(mean(final_clean$q2, na.rm = TRUE)*100, digits = 2)}% of {nrow(final_clean)} total respondents live in NYC")) +
+  #annotate(geom = "text", x = 13, y = .87, label = "test") +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1))
+
+final_clean %>% count(q2 = labelled::to_character(q2), week = base::cut(recordeddate, breaks = "1 week")) %>%
+  ggplot(aes(x = week, y = n, color = q2, group = q2)) + geom_point() + geom_line() +
+  theme(legend.position = "bottom")
 #final_clean %>% filter(q2 == 0) %>% pull(completion)
 ```
 Out of **`r n`** total responses, **`r no_response`** respondents didn't fill any responses at all and **`r one_response`** respondents only completed the first question.  We can see the major drop offs in respondents in the below graph:
@@ -38,6 +80,7 @@ Out of **`r n`** total responses, **`r no_response`** respondents didn't fill an
   
 ```{r echo=F}
 to_plot <- final_clean %>%
+  filter(q2 == 1) %>%
   #filter(completion < .50) %>%
   select(contains("q")) %>%
   filter(!if_all(everything(), is.na)) %>% # about 100 where they didn't fill out anything
@@ -59,7 +102,8 @@ to_plot_tibble %>% ggplot(aes(x = no, y = mean)) + geom_line(lty = "dashed") +
   annotate("text", x = 29, y = .96, label = "Conditional\nChildren Qs: q26-q31", hjust = 0) +
   annotate("text", x = 16, y = .96, label = "Conditional\nUnemployment Qs: q17-q18", hjust = 1) +
   annotate("text", x = 40, y = .51, label = "Conditional\nBooster\nQuestion q40", hjust = 0.5) +
-  annotate("text", x = 40, y = .10, label = glue::glue("{nrow(to_plot)} Total\nRespondents"))
+  annotate("text", x = 40, y = .10, label = glue::glue("{nrow(to_plot)} Total\nRespondents")) +
+  scale_color_manual(values = project_pal[c(4, 3)])
 ```
 The major drop-offs come at:
 
