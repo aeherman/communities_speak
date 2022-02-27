@@ -7,6 +7,13 @@ drive_upload(media = paste0("~/communities_speak/data/codebook/codebook.csv"), p
 drive_upload(media = paste0("~/communities_speak/data/output/wrangled", today,".dta"), path = paste0(googledrive_path, "data/output/wrangled", today, ".dta"))
 drive_upload(media = paste0("~/communities_speak/data/output/wrangled", today,".csv"), path = paste0(googledrive_path, "data/output/wrangled", today, ".csv"), type = "spreadsheet")
 
-drive_upload(media = paste0("~/communities_speak/code/validation.pdf"), path = paste0(googledrive_path, "visuals/nonresponse", today, ".pdf"))
+drive_upload(media = paste0("~/communities_speak/code/validation.pdf"), path = paste0(googledrive_path, "visuals/nonresponse", today, ".pdf"), overwrite = TRUE)
+
+# maps
+drive_upload(media = paste0("~/communities_speak/visuals/respondents_by_borough.png"), path = paste0(googledrive_path, "visuals/respondents_by_borough", today, ".png"), overwrite = TRUE)
+drive_upload(media = paste0("~/communities_speak/visuals/respondents_by_zip.png"), path = paste0(googledrive_path, "visuals/respondents_by_zip", today, ".png"), overwrite = TRUE)
+drive_upload(media = paste0("~/communities_speak/visuals/respondents_child_by_zip.png"), path = paste0(googledrive_path, "visuals/respondents_child_by_zip", today, ".png"), overwrite = TRUE)
+drive_upload(media = paste0("~/communities_speak/visuals/geocode.pdf"), path = paste0(googledrive_path, "visuals/geocode", today, ".pdf"), overwrite = TRUE)
+
 
 #drive_upload(media = "~/communities_speak/code/geocode.pdf", path = paste0(googledrive_path, "visuals/geocode", today, ".pdf"))
