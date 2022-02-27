@@ -3,6 +3,7 @@ dict <- tribble(~pattern, ~replacement,
                 "o", "0",
                 "two", "2",
                 "none", "0",
+                "ninguna", "0",
                 "zero", "0",
                 "si", "1", # not sure if I should interpret yes as "1"
                 "adult 62", "1", # don't like hardcoding...
