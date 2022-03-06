@@ -78,10 +78,13 @@ Out of **`r n`** total responses, **`r no_response`** respondents didn't fill an
   
   
   
+Of people who make it through half of the survey, 25% don't answer that question.
+  
 ```{r echo=F}
 to_plot <- final_clean %>%
   filter(q2 == 1) %>%
   #filter(completion < .50) %>%
+  filter(completion >= .5, q2 == 1, duration >= 100) %>%
   select(contains("q")) %>%
   filter(!if_all(everything(), is.na)) %>% # about 100 where they didn't fill out anything
   select(!matches("text")) %>%  is.na
@@ -104,6 +107,8 @@ to_plot_tibble %>% ggplot(aes(x = no, y = mean)) + geom_line(lty = "dashed") +
   annotate("text", x = 40, y = .51, label = "Conditional\nBooster\nQuestion q40", hjust = 0.5) +
   annotate("text", x = 40, y = .10, label = glue::glue("{nrow(to_plot)} Total\nRespondents")) +
   scale_color_manual(values = project_pal[c(4, 3)])
+
+to_plot_tibble
 ```
 The major drop-offs come at:
 
@@ -216,4 +221,14 @@ final_clean %>% select(responseid, source, duration, contains("25"), !matches("t
   final_clean %>% filter(responseid == "r_unbyhfbce2gl4lt") %>% select(matches("q1[:digit:]?"))
 
 str_which(c("abb", "garda", "arielle"), "a_(?!bb)")
+```
+
+
+```{r}
+wrangled %>% select(responseid, age, hh_sn_65, hh_ad_18_64, hh_ch_4_17, hh_ch_0_4) %>%
+  filter(!if_all(contains("hh"), is.na)) %>%
+  mutate(test = case_when(
+    age > 65 & hh_sn_65 > 0 | age > 17 & age < 65 & hh_ad_18_64 > 0 | age < 17 & age > 4 & hh_ch_4_17 > 0 ~ FALSE,
+    TRUE ~ TRUE
+  )) %>% pull(test) %>% sum
 ```
