@@ -91,18 +91,19 @@ ymax <- 40.91553
 dist <- wrangled %>% count(borough) %>% mutate_at(vars(borough), ~str_to_title(str_replace(., "si", "staten island"))) %>% na.omit %>%
   ungroup() %>%
   mutate(prop = n/sum(n))
-dist_zip <- wrangled %>%
-  mutate(zip = str_replace_all(zip, "-.*| and.*", "")) %>%
-  group_by(zip) %>% summarize(n = n()) %>% arrange(desc(n)) %>% ungroup() %>% mutate(prop = n/sum(n))
 
-dist_child_zip <- wrangled %>% filter(hh_ch_0_17_bi == 1) %>%
-  mutate(zip = str_replace_all(zip, "-.*| and.*", "")) %>%
-  group_by(zip) %>% summarize(n = n()) %>% arrange(desc(n)) %>% ungroup() %>% mutate(prop = n/sum(n))
-dist_zip %>% filter(!zip %in% nyc_zip$ZIPCODE) %>% arrange(desc(prop))
+prepped <- wrangled %>% mutate_at(vars(borough), ~str_to_title(str_replace(., "si", "staten island"))) %>%
+  mutate(zip = str_replace_all(zip, "-.*| and.*", ""))
 
+dist <- prepped %>% count(borough) %>% na.omit() %>% mutate(prop = n/sum(n))
+dist_zip <- prepped %>% count(zip) %>% mutate(prop = n/sum(n))
+dist_child_zip <- prepped %>% filter(hh_ch_0_17_bi == 1) %>% count(zip) %>% mutate(prop = n/sum(n))
+dist_child <- prepped %>% filter(hh_ch_0_17_bi == 1) %>% count(borough) %>% na.omit %>% mutate(prop = n/sum(n))
 
+# make sure to check on NA values!
 mean(dist_zip$n == 1)
 "10469" %in% nyc_zip$ZIPCODE
+dist_zip %>% filter(!zip %in% nyc_zip$ZIPCODE) %>% arrange(desc(prop))
 ```
 
 # Mapping Respondents by Residence
@@ -168,15 +169,35 @@ by_bor <- nybb %>%
   labs(title = "Respondents by Borough",
        subtitle = glue::glue("Respondents: {nrow(wrangled)}\nCRS: {sf::st_crs(nybb)$input}\n\n"))
 
+by_bor_child <- nybb %>%
+  #sf::st_transform(crs = 4326) %>%
+  left_join(dist_child, by = c("boro_name" = "borough")) %>%
+  ggplot() + geom_sf(aes(fill = prop), color = project_pal[1]) +
+  scale_fill_continuous(NULL, high = "#132B43", low = "#56B1F7", labels = scales::percent) +
+  ggrepel::geom_label_repel(aes(label = glue::glue("{boro_name}: {scales::percent(prop)}"),
+                                geometry = geometry),
+                            stat = "sf_coordinates",
+                            min.segment.length = 0,
+                            force = 3, force_pull = 10,
+                            seed = 1, direction = "x",
+                            nudge_x = c(-1, 1, 1, 0, 1),
+                            nudge_y = c(0, 0, -0.1, -0.1, 0),
+                            fill = project_pal[1]) +
+  xlab(NULL) + ylab(NULL) +
+  labs(title = "Respondents with Kids by Borough",
+       subtitle = glue::glue("Respondents: {nrow(filter(wrangled, hh_ch_0_17_bi == 1))}\nCRS: {sf::st_crs(nybb)$input}\n\n"))
+
 by_bor
 by_zip
 by_zip_child
+by_bor_child
 ```
 
 ```{r include=F}
 ggsave(by_bor, filename = "respondents_by_borough.png")
 ggsave(by_zip, filename = "respondents_by_zip.png")
 ggsave(by_zip_child, filename = "respondents_child_by_zip.png")
+ggsave(by_bor_child, filename = "respondents_child_by_bor.png")
 
 ```
 
