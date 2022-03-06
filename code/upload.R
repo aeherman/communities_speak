@@ -13,6 +13,7 @@ drive_upload(media = paste0("~/communities_speak/code/validation.pdf"), path = p
 drive_upload(media = paste0("~/communities_speak/visuals/respondents_by_borough.png"), path = paste0(googledrive_path, "visuals/respondents_by_borough", today, ".png"), overwrite = TRUE)
 drive_upload(media = paste0("~/communities_speak/visuals/respondents_by_zip.png"), path = paste0(googledrive_path, "visuals/respondents_by_zip", today, ".png"), overwrite = TRUE)
 drive_upload(media = paste0("~/communities_speak/visuals/respondents_child_by_zip.png"), path = paste0(googledrive_path, "visuals/respondents_child_by_zip", today, ".png"), overwrite = TRUE)
+drive_upload(media = paste0("~/communities_speak/visuals/respondents_child_by_bor.png"), path = paste0(googledrive_path, "visuals/respondents_child_by_bor", today, ".png"), overwrite = TRUE)
 drive_upload(media = paste0("~/communities_speak/visuals/geocode.pdf"), path = paste0(googledrive_path, "visuals/geocode", today, ".pdf"), overwrite = TRUE)
 
 
