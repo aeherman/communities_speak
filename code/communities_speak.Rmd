@@ -68,6 +68,10 @@ lapply(function(file) rename_if(file, str_detect("[:digit:]") & !str_detect("q")
 q25 <- survey %>% select(contains("25")) %>% unlist
 table(q25[str_detect(q25, "[:alpha:]")])
 
+survey %>% select(contains("25")) %>% filter(if_any(everything(), ~str_detect(., "[:alpha:]")))
+test_ids <- survey %>% select(responseid, q5) %>% mutate(test = str_detect(q5, "test")) %>% filter(test) %>% pull(responseid)
+wrangled %>% filter(responseid %in% test_ids)
+wrangled
 ```
 
 # Var Dictionary
@@ -91,6 +95,33 @@ table(age[is.na(as.integer(age))]) # fix 83 1/2
 
 hh <- select(survey, contains("25")) %>% unlist
 table(hh[is.na(as.integer(hh))])
+
+hh_clean <- survey %>% select(contains("25")) %>%
+  mutate(across(everything(), ~as.integer(str_replace_all(., pattern = str_c(dict$pattern, collapse = "|"),
+                                        replacement = fixup)))) %>% unlist
+table(hh_clean[is.na(as.integer(hh))])
+table(hh[is.na(as.integer(hh))])
+
+survey %>% select(responseid, q5, contains("25")) %>% filter(q25_3 == "7ys")
+
+hh_tests <- survey %>% select(responseid, contains("25"), "q5") %>%
+  filter(if_any(c(contains("25"), "q5"), ~str_detect(., "[:alpha:]"))) %>% #filter(responseid == "r_t5xjhewkfw54k1p")
+  mutate(across(contains("5"), ~str_replace_all(., pattern = str_c(dict$pattern, collapse = "|"),
+                                                 replacement = fixup))) %>%
+  mutate(across(contains("5"), ~as.double(str_extract(., "[:digit:]{1,2}"))))
+  
+survey %>% filter(responseid == "r_3pdurguqcvfee5l") %>% select(responseid, contains("25"), q5)
+
+# validate response of respondent t6
+survey %>% filter(age == "t6") %>% select(contains("25"))
+
+test_clean <- clean_data() %>% select(responseid, contains("25"), q5) %>% filter(responseid %in% hh_tests$responseid)
+hh_tests %>% left_join(survey %>%
+                         select(responseid, q5, contains("25")) %>% filter(if_any(c(contains("25"), "q5"),
+                                                                                  ~str_detect(., "[:alpha:]"))),
+                       by = c("responseid")) %>% select(contains("25_4"))
+# age u has completed some college and employment status
+survey %>% filter(q5 == "u")
 ```
 
 
@@ -167,23 +198,24 @@ clean_data <- function(df = survey, col = NULL) {
   })
   
   by_col %>% reduce(full_join, by = c("responseid")) %>%
-    ###
+    ### replace specific patterns in age and household questions
+    mutate_at(vars(contains("25"), "q5"), ~str_replace_all(., pattern = str_c(dict$pattern, collapse = "|"), replacement = fixup)) %>%
+    ## transform age to double
     mutate(q5 = lapply(df[["q5"]], function(element){
+      # average age range if provided instead of an age
       if(str_detect(element, "[:digit:]{2}.*[:digit:]{2}") & !is.na(element)) {
         round(mean(as.integer(unlist(str_split(element, "[:punct:]")))))
       } else {
+      # remove text data and transform to integer 
         as.double(str_replace_all(element, "[:alpha:]|[:punct:]|\\+|\\>", ""))
       }
     }) %>% unlist) %>%
-    ###
-    mutate_at(vars(contains("25")),
-            ~as.integer(str_replace_all(., pattern = str_c(dict$pattern, collapse = "|"),
-                                        replacement = fixup)))
-
-                
+    ## transform household
+    mutate(across(contains("25"), ~as.double(str_extract(., "[:digit:]"))))
+  
 }
 
-
+survey
 final_clean <- survey[c('responseid', 'recordeddate')] %>% left_join(clean_data()) %>% left_join(distinct(boroughs), by = c("q3" = "zipcode"))
 
 # all NA if any NA
@@ -296,13 +328,15 @@ q41_bi <- final_clean %>% select(responseid, source, contains("41")) %>%
   mutate_at(vars(contains("41")), ~!str_detect(haven::as_factor(.), "almost|never")) #%>% rename_at(vars(contains("41")), ~glue::glue("{.x}_bi"))
 names(q41_bi)[match(key_41, names(q41_bi))] <- paste(label_41, "bi", sep = "_")
 
-remove_test <- final_clean %>% filter(if_any(everything(), ~str_detect(.x, "test\\b")))
+remove_test <- final_clean %>% filter(if_any(everything(), ~str_detect(.x, "^test$")))
 
 wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/ncol(final_clean)) %>%
   # remove invalid responses
   filter(completion >= min_completion,
          duration >= min_duration,
-         q2 == 1) %>%
+         q2 == 1,
+         q5 > 17,
+         borough != "long island") %>%
   anti_join(remove_test) %>%
   # make new variables
   mutate(
@@ -331,6 +365,8 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     inc_be_med_a = q14 < median_inc,
     
     inc_drop_med = q13 >= median_inc & q14 < median_inc,
+    
+    inc_be_med_b = q13 <
     
     ## 24.1
     hh_64_bi = q25_1 >= 1,
@@ -404,6 +440,9 @@ wrangled <-
                                        c(".*;.*" = "two or more races",
                                          "prefer not to answer|other" = NA_character_))) %>%
   left_join(select(weights, race, weight), by = c("race_weight" = "race"))
+
+
+remove_test$q44
 ```
 
 # New Columns
@@ -421,6 +460,8 @@ colnames(wrangled) %>% unique %>% length
 
 #final_clean %>% rename_all(~str_replace(., "q[:digit:]+_?[:digit:]?",
 #                                        survey_codebook$var[. == survey_codebook$q]))
+
+final_clean %>% filter(if_any(everything(), ~str_detect(.x, "fuck")))
 ```
 
 
