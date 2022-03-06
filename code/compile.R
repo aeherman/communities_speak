@@ -19,7 +19,7 @@ listed <- map2(ids$id, ids$name, ~read_sheet(.x, sheet = "Sheet1",
 survey <- listed %>% reduce(bind_rows) %>%
   rename(duration = "duration (in seconds)") %>%
   mutate(q2 = ifelse(source == "prolific", "1", q2)) %>%
-  dplyr::select(responseid, source, duration, recordeddate, progress, contains("q"), -q44, -q45) %>% na_if("null") %>%
+  dplyr::select(responseid, source, duration, recordeddate, progress, contains("q")) %>% na_if("null") %>%
   unnest(recordeddate)
 
 general_radio_id <- gs4_find() %>% filter(str_detect(name, "General Radio")) %>% select(id, name) %>%
@@ -29,7 +29,7 @@ general_radio <- read_sheet(general_radio_id$id, sheet = "Sheet1", na = c("NA", 
   filter(row_number() != 1) %>% mutate(source = general_radio_id$name) %>%
   rename_all(str_to_lower) %>% mutate_at(vars(-recordeddate), ~str_to_lower(as.character(.))) %>%
   rename(duration = "duration (in seconds)") %>%
-  dplyr::select(responseid, source, duration, recordeddate, progress, contains("q"), -q43, -q44) %>% na_if("null") %>%
+  dplyr::select(responseid, source, duration, recordeddate, progress, contains("q")) %>% na_if("null") %>%
   unnest(recordeddate)
 
 to_rename <- colnames(general_radio)[str_detect(colnames(general_radio), "[:digit:]")]
