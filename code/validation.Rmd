@@ -232,3 +232,10 @@ wrangled %>% select(responseid, age, hh_sn_65, hh_ad_18_64, hh_ch_4_17, hh_ch_0_
     TRUE ~ TRUE
   )) %>% pull(test) %>% sum
 ```
+
+# number of household members per respondent
+implications on how we calculate median income
+
+```{r}
+hist(rowSums(wrangled[c("hh_sn_65", "hh_ad_18_64", "hh_ch_4_17", "hh_ch_0_4")]), xlim = c(0, 10), breaks = 50)
+```
