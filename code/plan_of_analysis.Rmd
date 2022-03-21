@@ -3,11 +3,11 @@ title: "plan_of_analysis"
 author: "Arielle Herman"
 date: "2/11/2022"
 output:
+  pdf_document:
+    toc: true
   html_document:
     toc: true
     df_print: paged
-  pdf_document:
-    toc: true
 ---
 
 ```{r setup, warning=F, message=F, include=F}
@@ -15,7 +15,7 @@ library(tidyverse)
 library(haven)
 library(gfonts)
 library(ggVennDiagram)
-wrangled <- read_dta("../data/output/wrangled20220218.dta") %>%
+wrangled <- read_dta("../data/output/wrangled20220306.dta") %>%
   mutate_if(is.character, na_if, "")
 source("functions/communities_speak_theme.R")
 source("thresholds.R")
@@ -72,7 +72,7 @@ poa <- wrangled %>% mutate(
 
 demographics <- c("borough", "age_cat", "gen", "not_eng", "mar",
                   "sch_level_cat", "hh_64_bi", "hh_ch_0_17_bi",
-                  "inc_dist", "emp_status_b", "emp_status_a", "res_cat")
+                  "inc_dist", "emp_status_b", "emp_status_a", "res_cat", "race_weight")
 demographics <- setNames(demographics, demographics)
 #hyps <- c("emp_change")
 #dem <- "emp_status_b"
