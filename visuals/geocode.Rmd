@@ -10,7 +10,7 @@ output:
 library(ggmap)
 library(tidyverse)
 survey <- readRDS("../data/processed/survey.rds")
-wrangled <- readRDS("../data/output/wrangled20220225.rds")
+wrangled <- readRDS("../data/output/wrangled20220306.rds")
 
 source("../code/functions/communities_speak_theme.R")
 theme_set(project_theme)
@@ -125,7 +125,7 @@ by_zip <- nyc_zip %>%
   scale_fill_continuous(NULL, high = "#132B43", low = "#56B1F7", labels = scales::percent) +
   #theme(legend.position = "bottom") +
   labs(
-    title = "Respondents by Zip code",
+    title = "Respondents by Zip Code",
     #Source: https://data.cityofnewyork.us/widgets/i8iw-xf4u\n
     subtitle = glue::glue("Respondents: {nrow(wrangled)}\n{sf::st_crs(nyc_zip)$input}\n\n")) +
   ggrepel::geom_label_repel(
@@ -134,20 +134,20 @@ by_zip <- nyc_zip %>%
     min.segment.length = 0, seed = 1, nudge_x = -0.05, nudge_y = 0.1, fill = project_pal[1]) +
   xlab(NULL) + ylab(NULL)
 
-
-by_zip_child <- nyc_zip %>%
+by_zip_child <- 
+  nyc_zip %>%
   #sf::st_transform(crs = 4326) %>%
   full_join(dist_child_zip, by = c("ZIPCODE" = "zip")) %>% #filter(is.na(prop)) %>%
   ggplot() + geom_sf(aes(fill = prop)) +
   scale_fill_continuous(NULL, high = "#132B43", low = "#56B1F7", labels = scales::percent) +
-  #theme(legend.position = "bottom") +
   labs(
-    title = "Respondents with Kids by Zip code",
+    title = "Respondents with Children by Zip Code",
     #Source: https://data.cityofnewyork.us/widgets/i8iw-xf4u\n
     subtitle = glue::glue("Respondents: {nrow(filter(wrangled, hh_ch_0_17_bi == 1))}\n{sf::st_crs(nyc_zip)$input}\n\n")) +
   ggrepel::geom_label_repel(
-    data = filter(nyc_zip, ZIPCODE == dist_child_zip$zip[which.max(dist_child_zip$prop)]), aes(label = ZIPCODE, geometry = geometry),
-    stat = "sf_coordinates", force_pull = 10, force = 10,
+    data = right_join(nyc_zip, dist_child_zip[which.max(dist_child_zip$prop), ], by = c("ZIPCODE" = "zip")),
+    aes(label = glue::glue("Zip {ZIPCODE}: {scales::percent(prop)}"), geometry = geometry),
+    stat = "sf_coordinates", #force_pull = 10, force = 10,
     min.segment.length = 0, seed = 1, nudge_x = -0.05, nudge_y = 0.1, fill = project_pal[1]) +
   xlab(NULL) + ylab(NULL)
 
@@ -184,7 +184,7 @@ by_bor_child <- nybb %>%
                             nudge_y = c(0, 0, -0.1, -0.1, 0),
                             fill = project_pal[1]) +
   xlab(NULL) + ylab(NULL) +
-  labs(title = "Respondents with Kids by Borough",
+  labs(title = "Respondents with Children by Borough",
        subtitle = glue::glue("Respondents: {nrow(filter(wrangled, hh_ch_0_17_bi == 1))}\nCRS: {sf::st_crs(nybb)$input}\n\n"))
 
 by_bor
