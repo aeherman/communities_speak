@@ -28,7 +28,7 @@ theme_set(project_theme)
 ```
 
 
-```{r warning=F, message=F}
+```{r warning=F, message=F, include=F}
 #use_font("open-sans", "functions/css/open-sans.css")
 poa <- wrangled %>% mutate(
   # demographics
@@ -55,7 +55,8 @@ poa <- wrangled %>% mutate(
     str_detect(sch_level_cat, "bach|ass") ~ "undergraduate degree",
     str_detect(sch_level_cat, "doct|mast|prof") ~ "graduate degree"
   ),
-  age_cat = paste0(floor(age/10)*10, "s"),
+  unemployed = emp_a == "unemployed", # newly unemployed
+  decade = paste0(floor(age/10)*10, "s"),
   
   # hypotheses
   emp_change = emp_b != emp_a,
@@ -70,7 +71,7 @@ poa <- wrangled %>% mutate(
   inc_ab_med = inc_a > 8 & inc_b > 8
   )
 
-demographics <- c("borough", "age_cat", "gen", "not_eng", "mar",
+demographics <- c("borough", "decade", "gen", "not_eng", "mar",
                   "sch_level_cat", "hh_64_bi", "hh_ch_0_17_bi",
                   "inc_dist", "emp_status_b", "emp_status_a", "res_cat", "race_weight")
 demographics <- setNames(demographics, demographics)
@@ -80,7 +81,7 @@ demographics <- setNames(demographics, demographics)
 
 # 1.2) People who are currently unemployed who were not unemployed in before the pandemic (March 2020)  [14&15]
 
-```{r}
+```{r, include=F}
 # 1.2.1 Run distribution over population
 poa %>% count(emp_status_b) %>% mutate(time = "2020") %>% rename(emp_status_a = emp_status_b) %>%
   bind_rows(count(poa, emp_status_a) %>% mutate(time = "2021")) %>%
@@ -116,47 +117,141 @@ lapply(dems_employment, function(item) {
 
 })
 
+item <- "sch_level_cat"
 
-lapply(setNames(dems_employment, dems_employment), function(item) {
+min_exclude <- 10
+```
+
+The following plots indicate different demographics whose proportions of individuals who lost there jobs during the pandemic.  Categories with fewer than r`min_exclude` responses were excluded from the calculation.  The p-values are provided on the plots.
+
+```{r eval=F}
+item <- "borough"
+var <- "unemployed"
+var = c("test", "test2")
+# group by multiple vars?
+dems
+dem <- "decade"
+df <- poa
+var <- "emp_change, inc_neg"
+item <- "borough"
+make_plots(df = filter(poa, !str_detect(emp_b, "unemp")),
+           dems = dems_employment, var = "unemployed", min = 5)
+```
+
+```{r, echo = T}
+
+plots <- lapply(setNames(dems_employment, dems_employment), function(item) {
+  min_exclude <- 5
+#for(item in dems_employment) {
   sym_item <- sym(item)
   
-  reshaped <- poa %>% filter(!str_detect(emp_b, "unemp")) %>%
+  reshaped <-
+    poa %>% filter(!str_detect(emp_b, "unemp")) %>%
     count(!!sym_item, unemployed = emp_status_a == "unemployed") %>%
     group_by(!!sym_item) %>% mutate(prop = round(n/sum(n), digits = 4), denom = sum(n)) %>%
-    filter(unemployed, !str_detect(!!sym_item, "prefer|;")) %>% ungroup %>% mutate(width = denom/sum(denom))
-  plot <- reshaped %>% ggplot(aes(x = prop,
-                                  y = reorder(stringr::str_to_title(labelled::to_character(!!sym_item)), -n), width = width, alpha = n)) +
+    # for this particular instance, successes will always be smaller than failers
+    filter(unemployed, !str_detect(!!sym_item, "prefer|;")) %>%
+    # get rid of 10s
+    #filter_at(item, ~!str_detect(., "10s")) %>%
+    ungroup %>% mutate(width = denom/sum(denom))
+  
+  filtered <- reshaped %>% filter(n >= min_exclude) %>%
+        select(-unemployed, -width)
+  
+  p.values <- c()
+  
+  for(cat in filtered[[item]]) {
+    for(cat2 in filtered[[item]]) {
+      if(cat == cat2) {
+        next
+      } else {
+        temp <- filtered[filtered[[item]] == cat,][c("n", "denom")] %>%
+          rbind(filtered[filtered[[item]] == cat2,][c("n", "denom")])
+        p.value <- prop.test(temp$n, temp$denom)$p.value
+        names(p.value) <- glue::glue("{cat} & {cat2} p-value:")
+        if(p.value <= 0.1 & !glue::glue("{cat2} & {cat} p-value:") %in% names(p.values)) {
+          p.values <- c(p.values, p.value)
+        } else {
+          next
+        }
+      }
+    }
+  }
+  
+  if(is.null(p.values)) {
+    return(NULL)
+  } else {
+  plot <- reshaped %>%
+    filter(n >= min_exclude) %>%
+    ggplot(aes(x = prop, y = #stringr::str_to_title(labelled::to_character(!!sym_item))
+                 reorder(stringr::str_to_title(labelled::to_character(!!sym_item)), prop)#,
+                                  #width = width, alpha = n
+                                  )) +
       geom_col(fill = project_pal[4]) +
       scale_x_continuous(labels = scales::percent) +
       xlab(NULL) + ylab(NULL) + scale_color_discrete(guide = "legend", name = item) + ggtitle(item) +
     ggtitle(glue::glue("Percent Newly Unemployed by {stringr::str_to_title(item)}")) +
-    project_theme
+    project_theme + labs(subtitle = paste(names(p.values), signif(p.values, 2),
+                                          collapse = "\n")) +
+    geom_text(aes(label = glue::glue("{scales::percent(prop)}\n{n}/{denom}")),
+              color = project_pal[1], hjust = 1.2)
   
+  if(min(reshaped$n) < min_exclude) {
+    pulled <- reshaped %>% filter(n < min_exclude) %>%
+      mutate_if(labelled::is.labelled, labelled::to_character) %>%
+      pull(!!sym_item)
+    cats <- glue::glue("'{pulled}'") %>%
+      paste(collapse = ", ")
+    plot <- plot +
+      labs(caption = glue::glue("*Categories with fewer than {min_exclude} responses excluded: '{cats}'"))
+  }
   return(plot)
-
+  }
+#print(plot)  
+#}
 })
+
+plots$not_eng <- plots$not_eng +
+  ggtitle("Percent Newly Unemployed by\nwhether or not English is Spoken at Home") +
+  scale_y_discrete(labels = c("English", "Not English"))
+plots$hh_ch_0_17_bi <- plots$hh_ch_0_17_bi +
+  ggtitle("Percent Newly Unemployed by Presence of Children at Home")
+plots$inc_dist <- plots$inc_dist +
+  ggtitle("Percent Newly Unemployed by Income Category")
+#plots$res_cat <- plots$res_cat + ggtitle("Percent Newly Unemployed by Residence Category")
+#plots$race_weight <- plots$race_weight + ggtitle("Percent Newly Unemployed by Race")
+plots$borough
 ```
 
 
-# 1.3) Higher paid employees were less likely to face job status changes during the pandemic
-
-- 40% of people at or below the 2020 median income bracket experienced an employment change.  About 25% of those people experienced an adverse employment change.
-- 20% of people above the 2020 median income bracket experienced and employment change.  About 30% of those people experienced an adverse employment change.
+# 1.3) Higher income employees were less likely to face adverse job status changes during the pandemic
 
 ```{r}
 mean(poa$emp_change)
 
-poa %>%
+adverse <- poa %>%
   count(inc_be_med_b, emp_change, inc_neg) %>%
   group_by(inc_be_med_b) %>% mutate(denom = sum(n), prop = n/denom) %>%
   ungroup %>% mutate(width = denom/sum(n)) %>%
   filter(emp_change) %>% na.omit() %>%
   mutate_if(labelled::is.labelled, labelled::to_factor) %>%
   mutate(label = ifelse(str_detect(inc_neg, "neg"), "adverse", "neutral or positive")) %>%
-  ggplot(aes(x = prop, y = inc_be_med_b, fill = label, width = width)) + geom_col() +
-  ggtitle("Employment Change Type by Income Category in 2020") +
-  scale_fill_manual(values = project_pal) +
-  scale_x_continuous(label = scales::percent)
+  filter(label == "adverse")
+
+p_adverse <- adverse %>% ggplot(aes(x = prop, y = inc_be_med_b#, fill = label
+             #width = width
+             )) + geom_col(fill = project_pal[4]) +
+  ggtitle("Adverse Salary Changes by Income Category in 2020") +
+  scale_fill_manual(values = project_pal[c(4)]) +
+  scale_x_continuous(label = scales::percent) +
+  xlab(NULL) + ylab(NULL) +
+  geom_text(aes(label = glue::glue("{scales::percent(prop)}\n{n}/{denom}")),
+              color = project_pal[1], hjust = 1.2) +
+  labs(subtitle = glue::glue("p-value: {signif(prop.test(adverse$n, adverse$denom)$p.value, 2)}"))
+
+
+p_adverse 
+  
 ```
 
 # 1.5-1.6)
@@ -168,11 +263,15 @@ poa %>%
 #table(poa$ins[str_detect(poa$ins, ";")])
 new_variables <- c("inc_be_med_b", "sch_bach", "ins_has", "ins_prvt")
 new_variables <- setNames(new_variables, new_variables)
+item <- "sch_bach"
 
-#item <- new_variables[[2]]
-
+make_plots(df = poa %>% mutate(inc_neg = inc_neg == 1),
+           dems = new_variables,
+           var = c("emp_change", "inc_neg"), min = 5)
+```
+```{r}
 lapply(new_variables, function(item) {
-  mean_val <- paste0(round(mean(str_detect(poa[[item]], "BA|has")), digits = 4)*100, "%")
+  #mean_val <- paste0(round(mean(str_detect(poa[[item]], "BA|has")), digits = 4)*100, "%")
 
   sym_item <- sym(item)
   
@@ -180,12 +279,18 @@ lapply(new_variables, function(item) {
     mutate(denom = sum(n), prop = n/denom) %>% ungroup %>% mutate(width = denom/sum(n)) %>%
     filter(emp_change, inc_neg == 1) %>% na.omit() %>% mutate_if(labelled::is.labelled, labelled::to_character)
   
-  plot <- reshaped %>% ggplot(aes(x = prop, y = reorder(!!sym_item, -n), width = width)) +
-    geom_col(aes(alpha = n), fill = project_pal[4]) +
+  plot <- reshaped %>% filter(n >= min_exclude) %>%
+    ggplot(aes(x = prop, y = reorder(!!sym_item, -n)#, width = width
+               )) +
+    geom_col(#aes(alpha = n),
+             fill = project_pal[4]) +
     #labs(subtitle = glue::glue("{mean_val} {levels(poa[[item]])[1]}")) +
     #geom_vline(xintercept = mean_val) +
     scale_x_continuous(label = scales::percent) + xlab(NULL) + ylab(NULL) +
-    ggtitle(paste("Job Status Changes by", item))
+    ggtitle(paste("Job Status Changes by", item)) +
+    geom_text(aes(label = glue::glue("{scales::percent(prop)}\n{n}/{denom}")),
+              color = project_pal[1], hjust = 1.2)
+  
   
   return(plot)
 })
@@ -198,19 +303,31 @@ lapply(new_variables, function(item) {
 ```{r}
 # maybe we should make a variable that is all three categories (below, at above) or 
 inc_1.8 <- c("inc_ab_med_b", "inc_be_med_b", "inc_dist", "hh_ch_0_17_bi")
+names(inc_1.8) <- inc_1.8
 #item <- inc_1.8[[4]]
 
-lapply(setNames(inc_1.8, paste("proportion that returned to work virtually or hybrid", inc_1.8)), function(item) {
+make_plots(df = poa %>% mutate(wrk_vi = wrk %in% c(2,3)), dems = inc_1.8, var = "wrk_vi",
+           title = "proportion who returned to work virtually or hybrid")
+```
+
+```{r}
+lapply(setNames(inc_1.8, paste("proportion who returned to work virtually or hybrid", inc_1.8)), function(item) {
   sym_item <- sym(item)
   reshaped <- poa %>% count(!!sym_item, wrk_vi = wrk %in% c(2,3)) %>% group_by(!!sym_item) %>%
     mutate(denom = sum(n), prop = n/denom) %>% ungroup %>% mutate(width = denom/sum(n)) %>%
     filter(wrk_vi) %>%
     na.omit() %>% mutate_if(labelled::is.labelled, labelled::to_character)
+  
+  
     
-  plot <- reshaped %>% ggplot(aes(x = prop, y = reorder(!!sym_item, n), width = width, alpha = n)) +
+  plot <- reshaped %>% ggplot(aes(x = prop, y = reorder(!!sym_item, n)#, width = width, alpha = n
+                                  )) +
     geom_col(fill = project_pal[4]) +
     scale_x_continuous(label = scales::percent) + xlab(NULL) + ylab(NULL) +
-    ggtitle("Proportion that returned to work virtually or hybrid")
+    ggtitle("Proportion who returned to work virtually or hybrid") +
+    geom_text(aes(label = glue::glue("{scales::percent(prop)}\n{n}/{denom}")),
+              color = project_pal[1], hjust = 1.2)
+  
   
   return(plot)
 })
@@ -219,8 +336,7 @@ lapply(setNames(inc_1.8, paste("proportion that returned to work virtually or hy
 # 1.9-1.11)
 
 1.09) People who are currently receiving unemployment benefits [16]
-- only 8 people who are currently recieving unemployment benefits
-
+- only r`sum(poa$unemp_ben == 1, na.rm = TRUE)` people who are currently recieving unemployment benefits
 
 1.10) People who are unemployed and are not receiving unemployment benefits because they expired [15 &16]
 
@@ -248,12 +364,16 @@ lapply(c(2,4), function(item) {
       filter(unemp, !str_detect(!!sym_dem, "prefer|;")) %>% ungroup %>% mutate(width = denom/sum(denom))
   
     plot <- reshaped %>% ggplot(aes(x = prop,
-                                  y = reorder(stringr::str_to_title(labelled::to_character(!!sym_dem)), -n), width = width, alpha = n)) +
+                                  y = reorder(stringr::str_to_title(labelled::to_character(!!sym_dem)), -n)#, width = width, alpha = n
+                                  )) +
       geom_col(fill = project_pal[4]) +
       scale_x_continuous(labels = scales::percent) +
       xlab(NULL) + ylab(NULL) + scale_color_discrete(guide = "legend", name = dem) +
       ggtitle(glue::glue("'{item_name}' by '{dem}'")) +
-      project_theme
+      project_theme +
+      geom_text(aes(label = glue::glue("{scales::percent(prop)}\n{n}/{denom}")),
+              color = project_pal[1], hjust = 1.2)
+      
   
   return(plot)
   })
@@ -306,7 +426,7 @@ poa %>% filter(str_detect(emp_a, "un"), !str_detect(emp_b, "un"), !is.na(unemp_b
 
 # 1.1
 
-```{r}
+```{r include=F, eval=F}
 lapply(demographics, function(dem) {
   sym_dem <- sym(dem)
   reshape <- poa %>% count(emp_change, !!sym_dem) %>% na.omit()
@@ -353,14 +473,11 @@ race_list <- split(race_df$responseid, race_df$cat)
 
 ggVennDiagram(race_list)
 
-```
-
-```{r}
 mean(poa$emp_a_dis)
 mean(poa$emp_b_dis)
 ```
 
-```{r warning=F, message=F, eval=F}
+```{r warning=F, message=F, eval=F, include=F}
 lapply(demographics, function(dem) {
   sym_dem <- sym(dem)
   reshape <- poa %>% count(inc_a, !!sym_dem)
@@ -390,7 +507,61 @@ wrangled %>%
   ggplot(aes(x = n, y = category, fill = emp_change, alpha = n)) + geom_col(position = "fill")
 ```
 
+# ester's table
+```{r}
+wrangled %>% filter(hh_ch_0_17_bi == 1) %>% count(race_weight, diff_cc) %>% drop_na %>% group_by(race_weight) %>% mutate(prop = n/sum(n)) %>%
+  filter(diff_cc == 1)
+wrangled %>% filter(hh_ch_0_17_bi == 1) %>% group_by(race_weight) %>% summarize(prop = mean(need_cc, na.rm = TRUE)) %>%
+  mutate(type = "Difficulty affording childcare") %>%
+  bind_rows(wrangled %>% filter(hh_ch_0_17_bi == 1) %>%
+              group_by(race_weight) %>% summarize(prop = mean(diff_cc, na.rm = TRUE)) %>%
+              mutate(type = "Difficulty finding or relying on childcare")) %>%
+  drop_na %>% filter(!str_detect(race_weight, "two|american")) %>%
+  pivot_wider(id_cols = type, names_from = race_weight, values_from = prop) %>%
+  mutate_if(is.double, ~glue::glue("{signif(., digits = 2)*100}%"))
+
+wrangled %>% filter(hh_ch_0_17_bi == 1) %>% select(diff_cc, need_cc) %>% summarize_all(~glue::glue("{signif(mean(., na.rm = TRUE), 2)*100}%"))
+
+filter(wrangled, hh_ch_0_17_bi == 1, race_weight == "asian", diff_cc == 1) %>% nrow
+
+
+wrangled %>% filter(hh_ch_0_17_bi == 1) %>%
+  group_by(race_weight) %>%
+  summarize_at(vars(diff_worr, diff_ran_out, diff_bill, diff_rent),
+                   ~mean(., na.rm = TRUE)) %>% #filter(diff_worr > .25) %>%
+  left_join(
+    wrangled %>% group_by(hh_ch_0_17_bi) %>%
+    summarize_at(vars(diff_worr, diff_ran_out, diff_bill, diff_rent),
+                   ~mean(., na.rm = TRUE)) %>%
+      mutate_at(vars(hh_ch_0_17_bi), labelled::to_character)) %>%
+  mutate_if(is.double, ~glue::glue("{signif(., digits = 2)*100}%")) %>%
+  select(`household without children`, `household with children`, `black or african american`, `hispanic or latinx`, asian, `white (non-hispanic or latino)`)
+
+wrangled %>% filter(hh_ch_0_17_bi == 1, race == "asian") %>% pull(diff_ran_out) %>% table(useNA = c("ifany"))
+  count(diff_worr) %>% ungroup
+
+wrangled %>% filter(hh_ch_0_17_bi == 1) %>% pull(att_sch_in_prsn) %>% mean(na.rm = TRUE)
+wrangled %>% filter(hh_ch_0_17_bi == 1) %>% pull(con_covid) %>% mean(na.rm = TRUE)
+wrangled %>% filter(hh_ch_0_17_bi == 1) %>% group_by(borough) %>% summarize(prop = mean(con_covid, na.rm = TRUE))
+wrangled %>% filter(hh_ch_0_17_bi == 1) %>% group_by(race_weight) %>% summarize(prop = mean(con_covid, na.rm = TRUE))
+wrangled %>% group_by(hh_ch_0_17_bi) %>% summarize(prop = mean(boost %in% c(1,2), na.rm = TRUE))
+wrangled %>% filter(hh_ch_0_17_bi == 1) %>% group_by(borough) %>% summarize(prop = mean(find_cc == 0, na.rm = TRUE))
+wrangled %>% filter(hh_ch_0_17_bi == 1) %>% group_by(race_weight) %>% summarize(prop = mean(need_cc, na.rm = TRUE))
+
+# question: proportion of people who drop by demographics is the same as the people who stay in
+# boostrapping (sample with replacement of the same size, what is the minimum sample size)
+```
+
 ```{r eval=F}
 
-drive_upload(media = "plan_of_analysis.html", path = paste0("Communities Speak/Subteams/Data Subteam/Data Findings_IS_2/POA_PARTIAL_ARIELLE_0220.html"))
+ggsave(plots$borough, filename = "../visuals/unemployment_borough.png")
+drive_upload(media = "../visuals/unemployment_borough.png",
+             path = "Communities Speak/Subteams/Data Subteam/Data Findings + VIZ_IS_2/Viz/unemployment_borough0328.png",
+             overwrite = TRUE)
+ggsave(p_adverse, filename = "../visuals/adverse_employment_income.png")
+drive_upload(media = "../visuals/adverse_employment_income.png",
+             path = "Communities Speak/Subteams/Data Subteam/Data Findings + VIZ_IS_2/Viz/adverse_employment_income0328.png",
+             overwrite = TRUE)
+
+drive_upload(media = "plan_of_analysis.pdf", path = paste0("Communities Speak/Subteams/Data Subteam/Data Findings + VIZ_IS_2/Findings/POA_PARTIAL_ARIELLE_0326.pdf"))
 ```
