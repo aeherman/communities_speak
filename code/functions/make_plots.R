@@ -64,12 +64,21 @@ make_plots <- function(df, dems, var, min = 5, title = "Percent Newly Unemployed
         # labels
         xlab(NULL) + ylab(NULL) +
         ggtitle(glue::glue("{stringr::str_to_title(title)}\nby {stringr::str_to_title(item)}")) +
-        labs(subtitle = paste(names(p.values), signif(p.values, 4), collapse = "\n")) +
+        labs(subtitle = paste(names(p.values), signif(p.values, 2), collapse = "\n")) +
         geom_text(aes(label = glue::glue("{scales::percent(prop)}\n{n}/{denom}")),
                   color = project_pal[1], hjust = 1.2) 
+      
+        if(min(reshaped$n) < min) {
+          pulled <- reshaped %>% filter(n < min_exclude) %>%
+            mutate_if(labelled::is.labelled, labelled::to_character) %>%
+            pull(!!sym_item)
+          cats <- glue::glue("'{pulled}'") %>%
+            paste(collapse = ", ")
+          plot <- plot +
+            labs(caption = glue::glue("*Categories with fewer than {min_exclude} responses excluded: '{cats}'"))
+        }
+      return(plot)
     }
-    
-    
   })
   return(out)
 }
