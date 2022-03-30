@@ -16,3 +16,20 @@ census <- tribble(~race, ~target,
                   "hawaiin or pacific islander", .001,
                   "two or more races", .027) %>%
   mutate(col_name = glue::glue("race_{race}")) %>% arrange(race)
+
+demographics <-
+  c("borough", # a
+    "decade", # b (from poa data)
+    "gen", # c
+    "race_weight", # d
+    "not_eng", # e
+    "mar", # f
+    "sch_level_cat", # g
+    "hh_ch_0_17_bi", # h
+    "hh_64_bi", # i
+    "inc_dist", # j figure out if it is past or present
+    "emp_status_b", # k
+    "emp_status_a", # k
+    "res_cat" # l
+    )
+names(demographics) <- demographics
