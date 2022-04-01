@@ -453,10 +453,10 @@ weights <- wrangled %>% count(race = str_replace(race, ".*;.*", "two or more rac
 # extra NAs account for prefer not to answer and other
 wrangled <-
   wrangled %>%
-  mutate(race_weight = str_replace_all(race,
+  mutate(race_census = str_replace_all(race,
                                        c(".*;.*" = "two or more races",
                                          "prefer not to answer|other" = NA_character_))) %>%
-  left_join(select(weights, race, weight), by = c("race_weight" = "race"))
+  left_join(select(weights, race, weight), by = c("race_census" = "race"))
 
 
 remove_test$q44
@@ -506,4 +506,25 @@ write_excel_csv(wrangled, file = paste0("../data/output/wrangled", today, ".csv"
 #drive_upload(media = "communities_speak.pdf", path = paste0(googledrive_path, "code/cleaning_script_", today, ".pdf"))
 #drive_upload(media = "functions/fixup.R", path = paste0(googledrive_path, "code/functions/fixup.R"), overwrite = TRUE)
 dim(wrangled)
+final_clean %>%
+  filter(responseid == "r_2xdu5ggf7umy0f7") %>%
+  filter(completion >= min_completion,
+         duration >= min_duration,
+         q2 == 1,
+         q5 > 17,
+         borough != "long island")
+
+final_clean %>% filter(is.na(borough),
+                       completion >= min_completion,
+                       duration >= min_duration,
+                       q2 == 1,
+                       q5 > 17)
+
+responseids <- final_clean %>% filter(#is.na(q5),
+                       is.na(borough),
+                       completion >= min_completion,
+                       duration >= min_duration) %>% pull(responseid)
+
+survey %>% filter(responseid %in% responseids)
+final_clean %>% filter(responseid %in% responseids) %>% mutate_if(is.labelled, labelled::to_character)
 ```
