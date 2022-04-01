@@ -1,19 +1,18 @@
 library(tidyverse)
 
-make_plots <- function(df, dems, var, min = 5, conf = 0.1,
+# by_vars -> "by"
+make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
                        title = "Title", show = NULL) {
   #sym_var <- sym(var)
-  out <- lapply(setNames(dems, dems), function(item){
+  out <- lapply(setNames(by_vars, by_vars), function(item){
     sym_item <- sym(item)
+    sym_var <- sym(hyp_var)
     reshaped <- df %>%
-      group_by_at(vars(!!sym_item, var)) %>%
-      count() %>%
-      group_by(!!sym_item) %>% na.omit %>%
-      mutate(prop = round(n/sum(n), digits = 4), denom = sum(n)) %>%
-      filter_if(is.logical, ~TRUE == .) %>%
-      filter(!str_detect(!!sym_item, "prefer|;")) %>%
-      ungroup %>% mutate(width = denom/sum(denom)) %>%
-      mutate_if(labelled::is.labelled, labelled::to_character)
+      group_by_at(vars(!!sym_item)) %>%
+      summarize(n = sum(!!sym_var, na.rm = TRUE),
+                denom = sum(!is.na(!!sym_var)),
+                prop = mean(!!sym_var, na.rm = TRUE)) %>%
+      na.omit %>% mutate_if(labelled::is.labelled, labelled::to_character)
     
     filtered <- reshaped %>% filter(n >= min) #%>% select(-!!sym_var, -width)
     
@@ -54,7 +53,7 @@ make_plots <- function(df, dems, var, min = 5, conf = 0.1,
         geom_col(fill = project_pal[4]) +
         
         # colors
-        scale_x_continuous(labels = scales::percent) +
+        scale_x_continuous(labels = scales::percent, limits = c(0,1)) +
         scale_color_discrete(guide = "legend", name = item) + 
         project_theme + # question: add a variable for this?
         
@@ -63,7 +62,7 @@ make_plots <- function(df, dems, var, min = 5, conf = 0.1,
         ggtitle(glue::glue("{stringr::str_to_title(title)}\nby {stringr::str_to_title(item)}")) +
         labs(subtitle = paste(names(p.values), signif(p.values, 2), collapse = "\n")) +
         geom_text(aes(label = glue::glue("{scales::percent(signif(prop, 4))}\n{n}/{denom}")),
-                  color = project_pal[1], hjust = 1.2) 
+                  color = project_pal[4], hjust = 0, nudge_x = 0.01) 
       
         if(min(reshaped$n) < min) {
           pulled <- reshaped %>% filter(n < min) %>%
