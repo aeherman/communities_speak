@@ -183,7 +183,24 @@ item <- "sch_bach"
 make_plots(df = poa %>% mutate(inc_neg = inc_neg == 1),
            dems = new_variables,
            var = c("emp_change", "inc_neg"), min = 5,
-           title = "Proportion to Experience and Adverse job change")
+           title = "Proportion to Experience an Adverse job change")
+
+df %>% mutate(emp_neg = emp_change == 1 & inc_neg == 1) %>%
+  group_by_at(item) %>%
+  summarize(n = sum(emp_neg, na.rm = TRUE),
+            denom = sum(!is.na(emp_neg)),
+            prop = mean(emp_neg, na.rm = TRUE)) %>%
+  na.omit %>%
+  mutate_if(labelled::is.labelled, labelled::to_character)
+
+df %>% group_by(sch_bach, emp_change, inc_neg == 1) %>%
+  count() %>% group_by(sch_bach) %>% na.omit %>%
+  mutate(prop = round(n/sum(n), digits = 4), denom = sum(n)) %>%
+  filter_if(is.logical, ~TRUE == .) %>%
+  filter(!str_detect(sch_bach, "prefer|;")) %>%
+  ungroup %>% mutate(width = denom/sum(denom)) %>%
+  mutate_if(labelled::is.labelled, labelled::to_character)
+
 ```
 
 # 1.8, 1.13)
