@@ -28,10 +28,9 @@ Compare and find gaps (test unequal proportions)
 #poa %>% mutate(exp_ab_or_vi = exp_ab_or_vi == 1)
 
 plots <- make_plots(df = mutate(poa, exp_ab_or_vi = exp_ab_or_vi == 1),
-           dems = demographics, var = "exp_ab_or_vi",
+           by_vars = demographics, hyp_var = "exp_ab_or_vi",
            title = "Proportion of Respondents to Experience Abuse or Violence due to COVID-19")
 #plots$borough
-
 #poa$exp_ab_or_vi == 1
 mean(poa %>% filter(borough == "queens") %>% pull(exp_ab_or_vi) == 1, na.rm = TRUE)
 ```
@@ -60,7 +59,7 @@ summarize(across(contains("mntl_hlth"), ~mean(., na.rm = TRUE)))
 # check why mntl_hlth_conf_bi not labelled
 df <- poa %>% mutate(mntl_hlth_bi = mntl_hlth_unc_bi == 1 | mntl_hlth_conf_bi == 0 |
                  mntl_hlth_yourway_bi == 0 | mntl_hlth_pile_bi == 1)
-make_plots(df, demographics, var = "mntl_hlth_bi", title = "Proportion of Respondents Experiencing\nat Least One Mental Health Challenge")
+make_plots(df, demographics, hyp_var = "mntl_hlth_bi", title = "Proportion of Respondents Experiencing\nat Least One Mental Health Challenge")
 ```
 
 # 4.10)People who are currently unemployed are more likely to experience at least one form of mental health challenge in the last month
@@ -69,7 +68,7 @@ Find proportion of subset that experienced at least one challenge in the last mo
 Find proportion not in subset and compare (test unequal proportions)
 
 ```{r warning=F, echo = F}
-make_plots(df, dems = "unemployed", var = "mntl_hlth_bi", conf = .15)
+make_plots(df, by_vars = "unemployed", hyp_var = "mntl_hlth_bi", conf = .15)
 # filter only desired logical vectors
 to_test <- df %>% count(unemployed, mntl_hlth_bi) %>% na.omit %>%
   group_by(unemployed) %>% mutate(denom = sum(n), prop = n/denom) %>% filter(mntl_hlth_bi)
@@ -83,7 +82,7 @@ Find proportion of subset that experienced at least one challenge in the last mo
 Find proportion not in subset and compare (test unequal proportions)
 
 ```{r warning=F, echo = F}
-make_plots(df, dems = "discrim_bi", var = "mntl_hlth_bi",
+make_plots(df, by_vars = "discrim_bi", hyp_var = "mntl_hlth_bi",
            title = "Proportion of Respondents to experience at least one Mental Health Challenge")
 ```
 
@@ -95,7 +94,7 @@ Compare and find gaps (test unequal proportions)
 ```{r warning=F, echo = F}
 # fix show feature
 make_plots(poa %>% mutate(hstnt_hc = hstnt_hc == 1),
-           dems = demographics, var = "hstnt_hc",
+           by_vars = demographics, hyp_var = "hstnt_hc",
            title = "Proportion of Respondents\nhesitant to approach a healthcare facility")
 ```
 
@@ -112,7 +111,7 @@ Find proportion of subset that experienced at least one challenge in the last mo
 Find proportion not in subset and compare (test unequal proportions)
 
 ```{r warning=F, echo = F}
-make_plots(df, dems = "exp_ab_or_vi", var = "mntl_hlth_bi",
+make_plots(df, by_vars = "exp_ab_or_vi", hyp_var = "mntl_hlth_bi",
            title = "Proportion of Respondents to experience at least one Mental Health Challenge")
 ```
 
@@ -129,8 +128,11 @@ Run distribution over population
 Compare distribution by concern about Delta variant
 
 ```{r warning=F, echo = F}
-make_plots(df %>% mutate(con_vrnts = vrnts == 1), dems = demographics, var = "con_vrnts",
+make_plots(df %>% mutate(con_vrnts = vrnts == 1), by_vars = demographics, hyp_var = "con_vrnts",
            title = "Proportion Concened about covid variants", min = 10)
 ```
 
+```{r eval=F, include=F}
 
+drive_upload(media = "poa_health_8-13.pdf", path = paste0("Communities Speak/Subteams/Data Subteam/Data Findings + VIZ_IS_2/Findings/POA_HEALTH_FULL_ARIELLE_0329.pdf"))
+```
