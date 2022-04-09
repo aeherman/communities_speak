@@ -11,3 +11,5 @@ project_theme <-
                  plot.background = element_rect(fill = project_pal[1], color = project_pal[1]))
 
                  #"#bbd9eb")
+
+theme_set(project_theme)
