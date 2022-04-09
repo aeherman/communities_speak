@@ -1,5 +1,14 @@
 library(tidyverse)
 
+# df: the dataframe
+# by_vars: generally the demographic variables, or the denominator by which we examine the variable of the hypothesis
+# hyp_var: the hypothesis variable (must be in logical format)
+# min: the minimum number of successes a category must have
+# conf: the confidence interval
+# title: the title of the plo
+# show: currently nonfunctional argument that I plan to use to allow more flexibility in showng plots with nonsignificant relationships
+
+
 # by_vars -> "by"
 make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
                        title = "Title", show = NULL) {
@@ -26,10 +35,11 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
         }
         temp <- filtered[cats == cat,][c("n", "denom")] %>%
           rbind(filtered[cats == cat2,][c("n", "denom")])
-        
-        p.value <- prop.test(temp$n, temp$denom)$p.value
-        
+        #name <- paste(sort(c(cat, cat2), collapse = ' & ')
+        p.value <- signif(prop.test(temp$n, temp$denom)$p.value, 2)
+        #attributes(p.value) <- list(warning = warnings())
         names(p.value) <- glue::glue("{cat} & {cat2} p-value:")
+        
         if(any(
           glue::glue("{cat2} & {cat} p-value:") %in% names(p.values),
           p.value > conf,
@@ -60,7 +70,7 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
         # labels
         xlab(NULL) + ylab(NULL) +
         ggtitle(glue::glue("{stringr::str_to_title(title)}\nby {stringr::str_to_title(item)}")) +
-        labs(subtitle = paste(names(p.values), signif(p.values, 2), collapse = "\n")) +
+        labs(subtitle = paste(names(p.values), p.values, collapse = "\n")) +
         geom_text(aes(label = glue::glue("{scales::percent(signif(prop, 4))}\n{n}/{denom}")),
                   color = project_pal[4], hjust = 0, nudge_x = 0.01) 
       
@@ -68,8 +78,8 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
           pulled <- reshaped %>% filter(n < min) %>%
             mutate_if(labelled::is.labelled, labelled::to_character) %>%
             pull(!!sym_item)
-          cats <- glue::glue("'{pulled}'") %>%
-            paste(collapse = ", ")
+          cats <- #glue::glue("'{pulled}'") %>%
+            paste(pulled, collapse = ", ")
           plot <- plot +
             labs(caption = glue::glue("*Categories with fewer than {min} responses excluded: '{cats}'"))
         }
