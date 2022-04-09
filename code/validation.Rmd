@@ -239,3 +239,27 @@ implications on how we calculate median income
 ```{r}
 hist(rowSums(wrangled[c("hh_sn_65", "hh_ad_18_64", "hh_ch_4_17", "hh_ch_0_4")]), xlim = c(0, 10), breaks = 50)
 ```
+
+
+# mental health validation
+```{r}
+poa %>% select(contains("mntl")) %>% select(!contains("bi")) %>%
+  filter(if_all(everything(), ~floor(.) == mntl_hlth_unc)) %>%
+  count(mntl_hlth_conf) %>% 
+  ggplot(aes(x = reorder(to_character(mntl_hlth_conf), mntl_hlth_conf), y = n)) +
+  geom_col(fill = project_pal[4]) +
+  geom_text(aes(label = n), vjust = -0.2) +
+  xlab(NULL) + ylab(NULL) +
+  ggtitle("Respondents who only answered one category to all mental health questions")
+
+poa %>% select(contains("rate")) %>%
+  filter(if_all(everything(), ~.==rate_neigh_med)) %>%
+  count(rate_neigh_med) %>%
+  ggplot(aes(x = reorder(to_character(rate_neigh_med), rate_neigh_med), y = n)) +
+  geom_col(fill = project_pal[4]) +
+  geom_text(aes(label = n), vjust = -0.2) +
+  xlab(NULL) + ylab(NULL) +
+  ggtitle("Respondents who only answered one category to all rating questions")
+
+```
+
