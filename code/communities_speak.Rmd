@@ -234,9 +234,10 @@ q35_sub %>% transmute(mean = rowMeans(is.na(q35_sub))) %>% table
 
 
 completion <- lapply(final_clean$responseid, function(id) {
-#for(id in final_clean$responseid) {
+#for(id in final_clean$responseid) {ghts
   row <- final_clean[final_clean$responseid == id, ] %>% select(contains("q")) %>%
     select(!matches("_"), contains("q25"), q41_1, q35_1, q34_1, q33_1)
+  
   
   # employment logic
   if(!str_detect(row$q16, "unemp") | is.na(row$q16)) { # respondents who didn't mark unemployed
@@ -366,21 +367,21 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
       q13 < median_inc ~ 2,
       TRUE ~ 3), # label them with haven
     ## 13.4
-    inc_ab_med_b = q13 > median_inc,
+    inc_ab_med_before = q13 > median_inc,
     ## 13.5
-    inc_be_med_b = q13 < median_inc,
+    inc_be_med_before = q13 < median_inc,
     
-    inc_ab_med_a = q14 > median_inc,
+    inc_ab_med_after = q14 > median_inc,
     
-    inc_be_med_a = q14 < median_inc,
+    inc_be_med_after = q14 < median_inc,
     
     inc_drop_med = q13 >= median_inc & q14 < median_inc,
     
-    inc_be_med_b = q13 < median_inc,
+    inc_be_med_before = q13 < median_inc,
     
-    inc_be_pov_b = q13 < poverty_line, # below fifth category
+    inc_be_pov_before = q13 < poverty_line, # below fifth category
     
-    inc_be_pov_a = q13 < poverty_line,
+    inc_be_pov_after = q13 < poverty_line,
     
     inc_drop_pov = q13 >= poverty_line & q14 < poverty_line,
     
@@ -448,7 +449,12 @@ mean(is.na(final_clean$q36))
 weights <- wrangled %>% count(race = str_replace(race, ".*;.*", "two or more races")) %>%
   ungroup() %>% filter(!race %in% c("prefer not to answer", "other")) %>%
   mutate(actual = round(n/sum(n), digits = 3)) %>% left_join(census) %>%
-  mutate(weight = target/actual)
+  mutate(weight = target/actual) %>%
+  mutate(weight = labelled(weight, setNames(weight, race)),
+         `target/actual` = glue::glue("{target}/{actual}")) %>%
+  select(race, n, target, actual, `target/actual`, weight)
+
+wrangled
 
 # extra NAs account for prefer not to answer and other
 wrangled <-
@@ -458,8 +464,27 @@ wrangled <-
                                          "prefer not to answer|other" = NA_character_))) %>%
   left_join(select(weights, race, weight), by = c("race_census" = "race"))
 
+wrangled %>% mutate(race_test = ifelse(str_detect(race, ";"), str_replace(race, ";?hispanic or latinx;?", ""), race)) %>%
+  filter(race_his_lat == 1) %>% count(race_test) %>% arrange(n) %>%
+  mutate(new_group = c(rep("two or more", 3), "other", ""))
 
-remove_test$q44
+wrangled %>% filter(race_his_lat == 1) %>% count(race)
+
+```
+
+```{r eval=F}
+wrangled %>%
+  #filter(!is.na(rating) %>%
+  count(ins_emp, race_weight, weight) %>%
+  #count()) %>%
+  ungroup(ins_emp) %>%
+  mutate(
+    denom = sum(n),
+    percent = round((n / denom), 3),
+    #cumuPer = round(cumsum(freq = n / sum(n)), 3)
+    weighted = percent*weight
+    ) %>%
+  filter(ins_emp == 1)
 ```
 
 # New Columns
@@ -478,18 +503,19 @@ colnames(wrangled) %>% unique %>% length
 #final_clean %>% rename_all(~str_replace(., "q[:digit:]+_?[:digit:]?",
 #                                        survey_codebook$var[. == survey_codebook$q]))
 
-final_clean %>% filter(if_any(everything(), ~str_detect(.x, "fuck")))
+final_clean %>% filter(if_any(everything(), ~str_detect(.x, "fuck"))) %>% select(source)
 ```
 
 
 # Upload files to google drive
 
-```{r eval=F}
+```{r}
 today <- gsub("-", "", Sys.Date())
 
-write_dta(wrangled, path = paste0("../data/output/wrangled", today,".dta"))
+write_dta(wrangled %>% mutate(weight = as.numeric(weight)), path = paste0("../data/output/wrangled", today,".dta"))
 saveRDS(wrangled, file = paste0("../data/output/wrangled", today, ".rds"))
 write_excel_csv(wrangled, file = paste0("../data/output/wrangled", today, ".csv"))
+write_excel_csv(weights, file = paste0("../data/output/weights", today, ".csv"))
 
 #googledrive_path <- "Communities Speak/Subteams/Data Subteam/Individual Survey-2(POA/Codebook/Census Figures)/cleaning/"
 
