@@ -4,6 +4,7 @@ library(tidyverse)
 library(rjson)
 
 setwd("~/communities_speak/code")
+getwd()
 
 id_var_labels <- gs4_find() %>% filter(name == "var_labels") %>% pull(id)
 var_dict <- id_var_labels %>%
@@ -39,11 +40,7 @@ survey_codebook <- lapply(file$SurveyElements[9:54], function(element) {
   
   unlisted = unlist(lapply(element$Payload$Choices, function(element) trimws(element$Display)))
   
-    #
-  #unlist(element$Payload$RecodeValues)
-  #
-  
-  if(type == "Matrix"){
+ if(type == "Matrix"){
     part = unlisted
     unlisted = unlist(lapply(element$Payload$Answers, function(element) trimws(element$Display)))
   }  else {
@@ -107,23 +104,6 @@ survey_codebook <- lapply(file$SurveyElements[9:54], function(element) {
   arrange(question) #%>%
   # combine dataframes
 
-# to_label <-
-#to_label <- var_dict %>% left_join(survey_codebook, by = c("qid")) %>%
-#  filter(str_detect(notes, "subquestions")) %>%
-#  select(-q.x) %>% rename(q = q.y) %>% bind_rows(
-#    survey_codebook %>%
-#      full_join(var_dict, by = c("q", "qid")) %>%
-#      filter(str_detect(notes, "options|first word"))) %>%
-#  tidytext::unnest_tokens(output = choices_unnest,
-#                          token = "regex", input = choices, pattern = ";") %>%
-#    mutate_at(vars(choices_unnest), trimws) %>%
-#    mutate(choices_to_label = str_replace(word(choices_unnest), "[:punct:]", ""),
-#           choices_to_label = str_replace(choices_to_label, "dont", "dk")) %>%
-#    #filter(str_detect(notes, "label")) %>%
-#  arrange(no) %>%
-#  filter(!str_detect(q, "text")) %>%
-#  select(survey_q, q, label, text, choices_unnest, choices_to_label)
-  
 simple <- survey_codebook %>% filter(type == "mc", selector == "savr", !str_detect(q, "text")) %>% pull(q)
 text <- survey_codebook %>% filter(type == "te" | str_detect(q, "text")) %>% pull(q) # this should have the text questions in them
 likert <- survey_codebook %>% filter(selector == "likert", subselector != "multipleanswer") %>% pull(q)
@@ -143,7 +123,6 @@ dummies_to_label <- dummies %>% ungroup %>% select(part, to_label) %>% unlist %>
   as_tibble %>% rename(to_label = value) %>% filter(!is.na(to_label))
 
 write_sheet(dummies_to_label, id_var_labels, "dummies")
-#write_sheet(to_label, id_var_labels, "from_r")
 
 from_r <- id_var_labels %>% read_sheet(sheet = "Copy of dummies", na = c("na"))
 from_r
