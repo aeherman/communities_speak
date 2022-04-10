@@ -12,18 +12,23 @@ library(tidyverse)
 # by_vars -> "by"
 make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
                        title = "Title", show = NULL) {
+  
+  sym_var <- sym(hyp_var)
+  
+  p <- mean(df[[hyp_var]], na.rm = TRUE)
+  q <- 1 - p
   #sym_var <- sym(var)
   out <- lapply(setNames(by_vars, by_vars), function(item){
     sym_item <- sym(item)
-    sym_var <- sym(hyp_var)
     reshaped <- df %>%
       group_by_at(vars(!!sym_item)) %>%
       summarize(n = sum(!!sym_var, na.rm = TRUE),
                 denom = sum(!is.na(!!sym_var)),
                 prop = mean(!!sym_var, na.rm = TRUE)) %>%
-      na.omit %>% mutate_if(labelled::is.labelled, labelled::to_character)
+      na.omit %>% mutate_if(labelled::is.labelled, labelled::to_character) #%>%
+      #mutate(denom_q = denom*q, denom_p = denom*p)
     
-    filtered <- reshaped %>% filter(n >= min) #%>% select(-!!sym_var, -width)
+    filtered <- reshaped %>% filter(if_all(starts_with("denom"), ~.>=min)) #%>% select(-!!sym_var, -width)
     
     p.values <- c()
     cats <- filtered[[item]]
@@ -34,7 +39,16 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
           next
         }
         temp <- filtered[cats == cat,][c("n", "denom")] %>%
-          rbind(filtered[cats == cat2,][c("n", "denom")])
+          rbind(filtered[cats == cat2,][c("n", "denom")]) %>%
+          mutate(p = sum(n)/sum(denom),
+                 q = 1 - p,
+                 denom_p = denom*p,
+                 denom_q = denom*q) %>% filter(if_all(starts_with("denom"), ~.>=5))
+        
+        if(nrow(temp) <= 1) {
+          next
+        }
+        
         #name <- paste(sort(c(cat, cat2), collapse = ' & ')
         p.value <- signif(prop.test(temp$n, temp$denom)$p.value, 2)
         #attributes(p.value) <- list(warning = warnings())
@@ -56,7 +70,7 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
     if(is.null(p.values) & is.null(show)) {
       return(NULL)
     } else {
-      plot <- reshaped %>% filter(n >= min) %>%
+      plot <- filtered %>% #filter(n >= min) %>%
         # plot
         ggplot(aes(x = prop, y = #stringr::str_to_title(labelled::to_character(!!sym_item))
                      reorder(stringr::str_to_title(labelled::to_character(!!sym_item)), prop))) +
@@ -74,14 +88,14 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
         geom_text(aes(label = glue::glue("{scales::percent(signif(prop, 4))}\n{n}/{denom}")),
                   color = project_pal[4], hjust = 0, nudge_x = 0.01) 
       
-        if(min(reshaped$n) < min) {
-          pulled <- reshaped %>% filter(n < min) %>%
+        if(min(reshaped$n) < 1) {
+          pulled <- reshaped %>% filter(denom < 1) %>%
             mutate_if(labelled::is.labelled, labelled::to_character) %>%
             pull(!!sym_item)
           cats <- #glue::glue("'{pulled}'") %>%
             paste(pulled, collapse = ", ")
           plot <- plot +
-            labs(caption = glue::glue("*Categories with fewer than {min} responses excluded: '{cats}'"))
+            labs(caption = glue::glue("*Categories with too few responses excluded: '{cats}'"))
         }
       return(plot)
     }
