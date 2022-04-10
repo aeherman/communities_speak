@@ -17,7 +17,7 @@ library(rjson)
 library(googlesheets4)
 source("functions/fixup.R")
 source("dictionary.R")
-source("thresholds.R")
+source("default_setup.R")
 #source("compile.R")
 readRDS("../data/processed/survey.rds")
 
@@ -264,7 +264,7 @@ completion <- lapply(final_clean$responseid, function(id) {
     row <- row %>% select(q2)
   }
   
-  completion <- mean(!is.na(row))
+  completion <- round(mean(!is.na(row)), digits = 6)
   return(completion)
 }) %>% unlist
 
@@ -351,56 +351,167 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
   anti_join(remove_test) %>%
   # make new variables
   mutate(
-    ## 6.2
+    #### race variables ####
     race_twomore = str_detect(q7, ";"),
     race_black_his = str_detect(q7, "black") & str_detect(q7, "(?<!-)hispanic"),
     race_white_alone = str_detect(q7, "white") & str_detect(q7, ";", negate = TRUE),
-    ## 6.3
-    #race_his_lat = str_detect(q7, "hispanic or latinx"),
-    ## 6.4
-    #race_afam = str_detect(q7, "black"),
-    ## 13.2
+    
+    #### location variables ####
+    bronx_bi = borough == "bronx",
+    brooklyn_bi = borough == "brooklyn",
+    queens_bi = borough == "queens",
+    
+    #### income variables ####
+    # income change variables
     inc_neg = q14 < q13,
-    ## 13.3 
+    inc_pos = q13 < q14,
+
+    inc_drop_med = q13 >= median_inc & q14 < median_inc,
+    inc_drop_pov = q13 >= poverty_line & q14 < poverty_line,
+    
+    # income distribution before
     inc_dist = case_when(
       q13 < poverty_line ~ 1,
       q13 < median_inc ~ 2,
       TRUE ~ 3), # label them with haven
-    ## 13.4
+    
+    # above or below median income before-hand
     inc_ab_med_before = q13 > median_inc,
-    ## 13.5
     inc_be_med_before = q13 < median_inc,
     
+    # above or below median income afterward
     inc_ab_med_after = q14 > median_inc,
-    
     inc_be_med_after = q14 < median_inc,
     
-    inc_drop_med = q13 >= median_inc & q14 < median_inc,
-    
-    inc_be_med_before = q13 < median_inc,
-    
-    inc_be_pov_before = q13 < poverty_line, # below fifth category
-    
+    # below poverty line before and after
+    inc_be_pov_before = q13 < poverty_line,
     inc_be_pov_after = q13 < poverty_line,
     
-    inc_drop_pov = q13 >= poverty_line & q14 < poverty_line,
+    # above median income both
+    inc_ab_med = q14 > median_inc & q13 > median_inc,
+    
+    #### employment variables ####
+    wrk_in = str_detect(labelled::to_character(q19), "yes"),
+    
+    emp_status_before = case_when(
+      str_detect(q15, "unemp") ~ "unemployed",
+      str_detect(q15, "full|part|free|gig|small|home|student") ~ "employed",
+      str_detect(q15, ";") ~ "multiple_other",
+      TRUE ~ q15),
+    
+    emp_status_after = case_when(
+      str_detect(q16, "unemp") ~ "unemployed",
+      str_detect(q16, "full|part|free|gig|small|home|student") ~ "employed",
+      str_detect(q16, ";") ~ "multiple_other",
+      TRUE ~ q16),
+    
+    emp_change = q15 != q16,
+    
+    emp_before_part_time = case_when(
+      q15_1 == 0 & any(q15_2 == 1, q15_3 == 1, q15_4 == 1, q15_5 == 1) ~ 1,
+      q15_1 == 1 ~ 0
+    ),
+    
+    #unemployed = emp_after == "unemployed", # newly unemployed # emp_un_after
+    
+    #### mental health variables ####
+    ## q41_1 unable to control
+    ## q41_2 confident about your ability
+    ## q41_3 going your way
+    ## q41_4 difficulties piling up
+    
+    mntl_hlth_bi = if_any(c("q41_1", "q41_4"), ~.>=3) | if_any(c("q41_2", "q41_3"), ~.<3),
     
     
-    ## 24.1
-    hh_64_bi = q25_1 >= 1,
+    #### health variables ####
+    ## q22_5 no insurance 
+    ins_has = 1 - q22_5,
+    
+    #### covid variables ####
+    ## q40 have your received the covid-19 booster?
+    ## q38 tested positive?
+    ## q43 concern over variants
+    ## q39 vaccinated
+    boost_bi = str_detect(labelled::to_character(q40), "yes|i plan"),
+    boost_plan = str_detect(labelled::to_character(q40), "i plan"),
+    
+    posi_all = str_detect(labelled::to_character(q38), "yes"),
+    
+    vax_bi = ifelse(q39 == 3, NA, 2 - q39), # who preferred not to answer?
+    
+    vrnts_bi = q43 == 1,
+    
+    #### household variables ####
+    ## q5 = age
+    decade = paste0(floor(q5/10)*10, "s"),
+    
+    hh_65_bi = q25_1 >= 1, # fixed 
     hh_4_17_bi = q25_3 >= 1,
     hh_0_4_bi = q25_4 >= 1,
-    ## 24.2
     hh_ch_0_17_bi = q25_3 >=1 | q25_4 >=1,
     
-    # discrim
+    no_find_cc = str_detect(labelled::to_character(q30), "no\\b"),
+    
+    #### residence variables ####
+    res_cat = labelled::to_character(q20),
+    res_cat = case_when(
+      str_detect(res_cat, "public") ~ "public",
+      str_detect(res_cat, "owner") ~ "owner",
+      str_detect(res_cat, "renter") ~ "renter",
+      str_detect(res_cat, "not have") ~ "no permanent residence",
+      TRUE ~ res_cat),
+    
+    #### education variables ####
+    sch_level_cat = labelled::to_character(q12),
+    sch_level_cat = case_when(
+      str_detect(sch_level_cat, "high school|some college") ~ sch_level_cat,
+      str_detect(sch_level_cat, "bach|ass") ~ "undergraduate degree",
+      str_detect(sch_level_cat, "doct|mast|prof") ~ "graduate degree"
+      ),
+    
+    sch_bach = factor(ifelse(str_detect(labelled::to_character(q12),
+                                        "(?<!no )degree"), "BA plus", labelled::to_character(q12))),
+    
+    #### discrimination variables ####
     discrim_bi = q37 == 1 | q37 == 2,
     
-    ## 34.1
+    #### abuse or violence variables ####
     exp_ab_or_vi = str_detect(q36, "yes"),
     exp_ab_and_vi = str_detect(q36, "verbal abuse") & str_detect(q36, "physical violence"),
     
-    con_num = as.integer(unlist(lapply(str_split(q29, ";"), function(item) if(!is.na(item)) {unlist(length(item))} else {NA})))) %>% # make this an integer
+    #### concern variables ####
+    ## q21_2 worried about running out of food
+    ## q21_3 ran out of food
+    ## q21_5 difficulty accessing cleaning supplies
+    ## q21_6 difficulty accessing transportation
+    ## q21_7 difficulty paying bills
+    ## q21_8 difficulty paying rent
+    ## q21_9 difficulty accessing housing
+    ## q29 all concerns about child attending school
+    
+    con_num = as.integer(unlist(lapply(str_split(q29, ";"),
+                                       function(item) if(!is.na(item)) {unlist(length(item))} else {NA}))),
+    
+    # at least two concerns about insecurity
+    fin_unstable = q21_3 == 1 & q21_7 == 1 | q21_7 == 1 & q21_8 == 1 |
+      q21_8 == 1 & q21_3 == 1,
+    
+    fin_insec = if_any(c("q21_2", "q21_3", "q21_7", "q21_8"), ~.== 1),
+    
+    # accessing resources
+    diff_acc = if_any(c(q21_3, q21_9, q21_6, q21_5), ~.==1),
+    
+    # worried about running out or ran out of food
+    food_insec = q21_3 == 1 | q21_2 == 1,
+    
+    #### rating variables ####
+    ## q33_3 = rate government city
+    
+    rate_gov_cit_bad = q33_3 > 3,
+    
+    rate_gov_good = if_all(starts_with("q33"), ~.<=3)
+    
+    ) %>%
   left_join(q41_bi)
   #mutate_at(vars(q20, q27), ~haven::as_factor(.)) #%>% sjlabelled::label_to_colnames() #%>%
 
@@ -464,11 +575,11 @@ wrangled <-
                                          "prefer not to answer|other" = NA_character_))) %>%
   left_join(select(weights, race, weight), by = c("race_census" = "race"))
 
-wrangled %>% mutate(race_test = ifelse(str_detect(race, ";"), str_replace(race, ";?hispanic or latinx;?", ""), race)) %>%
-  filter(race_his_lat == 1) %>% count(race_test) %>% arrange(n) %>%
-  mutate(new_group = c(rep("two or more", 3), "other", ""))
+#wrangled %>% mutate(race_test = ifelse(str_detect(race, ";"), str_replace(race, ";?hispanic or latinx;?", ""), race)) %>%
+#  filter(race_his_lat == 1) %>% count(race_test) %>% arrange(n) %>%
+#  mutate(new_group = c(rep("two or more", 3), "other", ""))
 
-wrangled %>% filter(race_his_lat == 1) %>% count(race)
+#wrangled %>% filter(race_his_lat == 1) %>% count(race)
 
 ```
 
@@ -485,6 +596,8 @@ wrangled %>%
     weighted = percent*weight
     ) %>%
   filter(ins_emp == 1)
+
+wrangled %>% select(fin_insec, diff_worr, diff_ran_out, diff_bill, diff_rent) %>% filter(fin_insec == 0)
 ```
 
 # New Columns
