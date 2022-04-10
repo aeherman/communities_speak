@@ -4,6 +4,7 @@ library("labelled")
 source("functions/communities_speak_theme.R")
 source("functions/make_plots.R")
 poa <- readRDS("../data/output/poa.rds")
+wrangled <- readRDS("~/communities_speak/data/output/wrangled20220410.rds")
 
 # thresholds
 min_duration <- 100 # 100 seconds
@@ -33,7 +34,7 @@ demographics <-
     "mar", # f
     "sch_level_cat", # g
     "hh_ch_0_17_bi", # h
-    "hh_64_bi", # i
+    "hh_65_bi", # i
     "inc_dist", # j figure out if it is past or present
     "emp_status_before", # k
     "emp_status_after", # k
