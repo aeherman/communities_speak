@@ -75,6 +75,8 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
         ggplot(aes(x = prop, y = #stringr::str_to_title(labelled::to_character(!!sym_item))
                      reorder(stringr::str_to_title(labelled::to_character(!!sym_item)), prop))) +
         geom_col(fill = project_pal[4]) +
+        geom_vline(xintercept = p, lty = "dashed", color = project_pal[1]) +
+        #geom_col(aes(x = p, y = "All")) +
         
         # colors
         scale_x_continuous(labels = scales::percent, limits = c(0,1)) +
