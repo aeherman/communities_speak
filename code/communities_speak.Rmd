@@ -17,8 +17,6 @@ library(rjson)
 library(googlesheets4)
 source("functions/fixup.R")
 source("dictionary.R")
-source("default_setup.R")
-#source("compile.R")
 readRDS("../data/processed/survey.rds")
 
   #select(-`Question Assignment_Temp_Column`, -`Survey Instrument Question #`)
@@ -522,7 +520,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     
     rate_gov_good = if_all(starts_with("q33"), ~.<3),
     rate_gov_bad = if_all(starts_with("q33"), ~.>3),
-    rate_gov_ave = rowMeans(6 - across(starts_with("q33"))),
+    rate_gov_ave = round(rowMeans(6 - across(starts_with("q33"))), digits = 4),
     
     rate_neigh_pub_good = q34_4 < 3,
     rate_neigh_pub_bad = q34_4 > 3,
@@ -604,7 +602,14 @@ wrangled <-
   mutate(race_census = str_replace_all(race,
                                        c(".*;.*" = "two or more races",
                                          "prefer not to answer|other" = NA_character_))) %>%
-  left_join(select(weights, race, weight), by = c("race_census" = "race"))
+  left_join(select(weights, race, weight), by = c("race_census" = "race")) %>%
+  fastDummies::dummy_cols("race_census") %>%
+  rename(race_census_his_lat = `race_census_hispanic or latinx`,
+         race_census_twomore = `race_census_two or more races`,
+         race_census_black = `race_census_black or african american`,
+         race_census_indian = `race_census_american indian or alaska native`,
+         race_census_white = `race_census_white (non-hispanic or latino)`) %>% 
+  select(-race_census_NA)
 
 #wrangled %>% mutate(race_test = ifelse(str_detect(race, ";"), str_replace(race, ";?hispanic or latinx;?", ""), race)) %>%
 #  filter(race_his_lat == 1) %>% count(race_test) %>% arrange(n) %>%
