@@ -341,6 +341,9 @@ names(q41_bi)[match(key_41, names(q41_bi))] <- paste(label_41, "bi", sep = "_")
 
 remove_test <- final_clean %>% filter(if_any(everything(), ~str_detect(.x, "^test$")))
 
+final_clean %>%
+  transmute(across(contains("41"), ~!str_detect(haven::as_factor(.), "almost|never"), .names = "{col}_bi"))
+
 wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/ncol(final_clean)) %>%
   # remove invalid responses
   filter(completion >= min_completion,
@@ -381,7 +384,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     
     # above or below median income afterward
     inc_ab_med_after = q14 > median_inc,
-    inc_be_med_after = q14 < median_inc,
+    inc_be_med_after = q14 <= median_inc,
     
     # below poverty line before and after
     inc_be_pov_before = q13 < poverty_line,
@@ -389,6 +392,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     
     # above median income both
     inc_ab_med = q14 > median_inc & q13 > median_inc,
+    inc_be_med = q14 <= median_inc & q13 <= median_inc,
     
     #### employment variables ####
     wrk_in = str_detect(labelled::to_character(q19), "yes"),
@@ -421,6 +425,13 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     ## q41_4 difficulties piling up
     
     mntl_hlth_bi = if_any(c("q41_1", "q41_4"), ~.>=3) | if_any(c("q41_2", "q41_3"), ~.<3),
+    #across(contains("41"), ~!str_detect(haven::as_factor(.), "almost|never"), .names = "{col}_bi"),
+    #final_clean %>% transmute(
+    across(c(q41_2, q41_3), ~labelled(.-1,attributes(final_clean$q41_3)$labels-1), .names = "{col}_rescale"),
+    across(c(q41_1, q41_4), ~labelled(1-.,1-attributes(final_clean$q41_4)$labels), .names = "{col}_rescale"),
+    
+    mntl_hlth_state = rowMeans(across(ends_with("_rescale")), na.rm = TRUE),
+    mntl_hlth_state_bi = mntl_hlth_state < 0,
     
     
     #### health variables ####
@@ -509,7 +520,27 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     
     rate_gov_cit_bad = q33_3 > 3,
     
-    rate_gov_good = if_all(starts_with("q33"), ~.<=3)
+    rate_gov_good = if_all(starts_with("q33"), ~.<3),
+    rate_gov_bad = if_all(starts_with("q33"), ~.>3),
+    rate_gov_ave = rowMeans(6 - across(starts_with("q33"))),
+    
+    rate_neigh_pub_good = q34_4 < 3,
+    rate_neigh_pub_bad = q34_4 > 3,
+    
+    rate_neigh_pol_good = q34_8 < 3,
+    rate_neigh_pol_bad = q34_8 > 3,
+    
+    rate_neigh_pre_good = q34_9 < 3,
+    rate_neigh_pre_bad = q34_9 > 3,
+    
+    #### access variables ####
+    lr_fam = if_any(starts_with("q35_") & ends_with("_5"), ~.==1),
+    lr_gov = if_any(starts_with("q35_") & ends_with("_3"), ~.==1),
+    lr_fb = if_any(starts_with("q35_") & ends_with("_1"), ~.==1),
+    
+    internet_lim = q23 != 1, # respondent has limited or no internet access
+    internet_acc = q23 == 1
+    
     
     ) %>%
   left_join(q41_bi)
@@ -580,7 +611,6 @@ wrangled <-
 #  mutate(new_group = c(rep("two or more", 3), "other", ""))
 
 #wrangled %>% filter(race_his_lat == 1) %>% count(race)
-
 ```
 
 ```{r eval=F}
