@@ -1,0 +1,64 @@
+---
+title: "poa_outline"
+author: "Arielle Herman"
+date: "4/10/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+source("default_setup.R")
+```
+
+# 8.1)Households with income above the median are most likely to give high ratings to the response of State & Federal Government 
+
+Find proportion of people who gave a high rating to State & Federal Government [26]
+Find subset of population who have above median income [13]
+Compare the groups below and above median income groups on the basis on their participation in political advocacy.
+
+```{r}
+wrangled %>% summarize(across(contains("inc_ab_med"), mean, na.rm = TRUE))
+make_plots(wrangled, "inc_ab_med", "rate_gov_good", title = "Rated Government Well")
+```
+
+
+# 8.2)People with below median income were more likely to give low ratings to the responses of State & Federal Government 
+
+1.Find proportion of people who gave a low rating to State & Federal Government [26]
+Find subset of population who have below median median income [13]
+Compare the groups below and above median income groups on the basis on their participation in political advocacy.
+
+```{r}
+wrangled %>% summarize(across(contains("inc_be_med"), mean, na.rm = TRUE))
+
+make_plots(wrangled, "inc_be_med", "rate_gov_bad", title = "Rated Government (Very) Poorly", show = "yes")
+```
+
+8.3)Find source of aid for all these requirements[33]
+Find proportion of respondents which look towards other sources for each of these categories 
+(i) Local Transport
+(ii) Utilities
+(iii) Healthcare
+(iv)Food 
+(v) Clean Water 
+vi) Adultcare
+(vii)Childcare
+(viii)Stress or Emotional Support
+
+Run distribution over each help source from Government, Friends and Family, Community Organizations, Corporate/Business, Faith-Based
+
+Run sub demographics by each category
+
+```{r}
+wrangled %>% pivot_longer(is.labelled & starts_with("lr_")) %>%
+  select(name,value) %>%
+  mutate(name = str_replace(name, "lr_", "")) %>%
+  filter(str_detect(name, "_")) %>%
+  separate(name, into = c("area", "resource")) %>%
+  group_by(area, resource) %>%
+  summarize(n = sum(value, na.rm = TRUE)) %>%
+  group_by(area) %>% #mutate(denom = sum(n)) %>%
+  arrange(area, desc(n)) %>%
+  filter(row_number() <= 1) %>%
+  ungroup() %>%
+  ggplot(aes(x = area, y = resource)) + geom_point()
+```

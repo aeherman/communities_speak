@@ -1,0 +1,108 @@
+---
+title: "poa_outline"
+author: "Arielle Herman"
+date: "4/10/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+source("default_setup.R")
+```
+
+
+# 7.1)People who had difficulty accessing social services or benefits [20]
+
+Run distribution over population
+Run distribution by sub-demographics (a-k)
+Compare and find gaps (test unequal proportions)
+
+```{r}
+mean(wrangled$diff_ss, na.rm = TRUE)
+
+make_plots(wrangled, demographics, "diff_ss", title = "Difficulty accessing Social security benefits")
+```
+
+# 7.2)People who are hesitant to use public transport facilities[40]
+                1. Run distribution over population
+                2.  Run distribution by sub-demographics (a-k)
+                                        a. Compare and find gaps (test unequal proportions)
+                                        
+```{r}
+mean(wrangled$hstnt_trans, na.rm = TRUE)
+
+make_plots(wrangled, demographics, "hstnt_trans", title = "Hesitant to Use public transit")
+```
+
+# 7.3)Households with children in public schools are more likely to give higher ratings to neighbourhood public schools [32, 24]
+
+Run binary distribution for overall rating of neighbourhood schools 
+Not Poor=Excellent, Good
+Poor=Fair, Poor
+Find subset of population which are hhs with children in each binary category 
+Compare the strength of the subset with non-hhs with children in each subset
+
+```{r}
+mean(wrangled$rate_neigh_pub, na.rm = TRUE)
+mean(wrangled$rate_neigh_pub_good, na.rm = TRUE)
+mean(wrangled$rate_neigh_pub_bad, na.rm = TRUE)
+
+
+make_plots(wrangled, "hh_ch_0_17_bi", "rate_neigh_pub_good", title = "Good or Excellent Rating of Public Schools")
+make_plots(wrangled, "hh_ch_0_17_bi", "rate_neigh_pub_bad", title = "Poor or Very Poor Rating of Public Schools")
+```
+
+# 7.4)Attitude towards Police Responsiveness
+
+Run binary distribution over the overall rating of Police responsiveness (as described in 7.3)
+Run distribution by sub-demographics
+
+```{r}
+mean(wrangled$rate_neigh_pol, na.rm = TRUE)
+mean(wrangled$rate_neigh_pol_good, na.rm = TRUE)
+mean(wrangled$rate_neigh_pol_bad, na.rm = TRUE)
+
+make_plots(wrangled, demographics, "rate_neigh_pol_good", title = "Positively Rated Police Responsiveness")
+make_plots(wrangled, demographics, "rate_neigh_pol_bad", title = "Negatively Rated Police Responsiveness")
+```
+
+
+# 7.6)Respondents from the Bronx (high crime rate as compared to to other boroughs) are more likely to rate Police Responsiveness as poor [32, 2]
+
+Run binary distribution for overall rating of Police responsiveness (as described in 7.3)
+Find subset of population who are from Bronx in both the category responsenses
+Compare and contrast the responses between the Bronx and on-Bronx population
+
+```{r}
+make_plots(wrangled, "borough", "rate_neigh_pol_bad", "Negatively Rated Police Responsiveness")
+```
+
+# 7.7)Respondents from low income brackets (below median income) are more likely to rate neighbourhood safety poorly
+
+Run binary distribution for overall rating of Police responsiveness (as described in 7.3)
+Find subset of population who are from above median income  in both the category responsenses
+Compare and contrast the responses between high and low income population
+
+```{r}
+mean(wrangled$rate_neigh_pre_bad, na.rm = TRUE)
+make_plots(wrangled, "inc_dist", "rate_neigh_pre_bad", title = "Rated Crime Prevention Well")
+make_plots(wrangled, "inc_dist", "rate_neigh_pre_good", title = "Rated Crime Prevention Poorly")
+```
+
+
+# 7.8) People who rated city/state/federal government response to the pandemic well were more likely to indicate they would turn to the government if they needed help
+
+Find respondents who rated city/state/federal government response as good or excellent [33]
+Find proportion of subset who indicated they would use the government for at least one need [34]
+Find proportion not in subset who indicated they would use the government for at least one need and compare (test unequal proportions)
+
+```{r}
+prop_rate_above_ave <- mean(wrangled$rate_gov_good, na.rm = TRUE)
+
+mean_val <- mean(6 - wrangled %>% select(rate_gov_fed, rate_gov_sta, rate_gov_cit) %>% unlist, na.rm = TRUE)
+
+wrangled %>% ggplot(aes(x = rate_gov_ave)) + geom_bar() + geom_vline(xintercept = mean_val)
+
+make_plots(wrangled, "lr_gov", "rate_gov_bad", title = "Rated Federal, State, and City Government (Very) poorly")
+make_plots(wrangled, "lr_gov", "rate_gov_good")
+```
+
