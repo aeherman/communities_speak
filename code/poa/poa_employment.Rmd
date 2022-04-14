@@ -16,22 +16,17 @@ library(haven)
 library(gfonts)
 library(ggVennDiagram)
 source("default_setup.R")
-#use_font("open-sans", "functions/css/open-sans.css")
-
-#```css
-#body {font-family: 'Open Sans', open-sans;}
-#```
 ```
 
 # 1.2) People who are currently unemployed who were not unemployed in before the pandemic (March 2020)  [14&15]
 
 ```{r, include=F}
 # 1.2.1 Run distribution over population
-poa %>% count(emp_status_b) %>% mutate(time = "2020") %>% rename(emp_status_a = emp_status_b) %>%
-  bind_rows(count(poa, emp_status_a) %>% mutate(time = "2021")) %>%
+wrangled %>% count(emp_status_before) %>% mutate(time = "2020") %>% rename(emp_status_after = emp_status_before) %>%
+  bind_rows(count(wrangled, emp_status_after) %>% mutate(time = "2021")) %>%
   group_by(time) %>% mutate(prop = round(n/sum(n), digits = 4)*100) %>%
-  filter(emp_status_a %in% c("disabled", "employed", "unemployed", "retired")) %>%
-  ggplot(aes(x = time, y = prop, color = emp_status_a, group = emp_status_a)) +
+  filter(emp_status_after %in% c("disabled", "employed", "unemployed", "retired")) %>%
+  ggplot(aes(x = time, y = prop, color = emp_status_after, group = emp_status_after)) +
   geom_point(aes(size = prop)) + geom_line(show.legend = FALSE) +
   xlab(NULL) + ylab(NULL) + geom_vline(xintercept = 1.5, lty = "dashed") +
   scale_color_manual(values = project_pal)
@@ -44,10 +39,10 @@ dems_employment <- setNames(dems_employment, dems_employment)
 lapply(dems_employment, function(item) {
   sym_item <- sym(item)
   
-  reshaped <- poa %>% count(dem = labelled::to_character(!!sym_item),
-                            unemployed = emp_status_b == "unemployed") %>% mutate(time = "2020") %>%
-    bind_rows(poa %>% count(dem = labelled::to_character(!!sym_item),
-                            unemployed = emp_status_a == "unemployed") %>% mutate(time = "2021")) %>%
+  reshaped <- wrangled %>% count(dem = labelled::to_character(!!sym_item),
+                            unemployed = emp_status_before== "unemployed") %>% mutate(time = "2020") %>%
+    bind_rows(wrangled %>% count(dem = labelled::to_character(!!sym_item),
+                            unemployed = emp_status_after == "unemployed") %>% mutate(time = "2021")) %>%
     group_by(time, dem) %>% mutate(denom = sum(n), prop = round(n/denom, digits = 4)) %>%
     filter(unemployed, !str_detect(dem, "prefer not"))
   
@@ -71,7 +66,7 @@ The following plots indicate different demographics whose proportions of individ
 ```{r}
 plots <- make_plots(wrangled %>% mutate(emp_after_un_only = emp_after_un == 1, emp_before_un != 1),
            by_vars = dems_employment, hyp_var = "emp_after_un_only", min = 5)
-length(filter(poa, !str_detect(emp_before, "unemp"), borough == "bronx")$unemployed == 1)
+length(filter(wrangled, !str_detect(emp_before, "unemp"), borough == "bronx")$unemployed == 1)
 plots$not_eng <- plots$not_eng +
   ggtitle("Percent Newly Unemployed by\nwhether or not English is Spoken at Home") +
   scale_y_discrete(labels = c("English", "Not English"))
@@ -88,29 +83,7 @@ plots$borough
 # 1.3) Higher income employees were less likely to face adverse job status changes during the pandemic
 
 ```{r}
-adverse <- poa %>%
-  count(inc_be_med_before, emp_change, inc_neg) %>%
-  group_by(inc_be_med_before) %>% mutate(denom = sum(n), prop = n/denom) %>%
-  ungroup %>% mutate(width = denom/sum(n)) %>%
-  filter(emp_change) %>% na.omit() %>%
-  mutate_if(labelled::is.labelled, labelled::to_factor) %>%
-  mutate(label = ifelse(str_detect(inc_neg, "neg"), "adverse", "neutral or positive")) %>%
-  filter(label == "adverse")
-
-p_adverse <- adverse %>% ggplot(aes(x = prop, y = inc_be_med_b#, fill = label
-             #width = width
-             )) + geom_col(fill = project_pal[4]) +
-  ggtitle("Adverse Salary Changes by Income Category in 2020") +
-  scale_fill_manual(values = project_pal[c(4)]) +
-  scale_x_continuous(label = scales::percent) +
-  xlab(NULL) + ylab(NULL) +
-  geom_text(aes(label = glue::glue("{scales::percent(prop)}\n{n}/{denom}")),
-              color = project_pal[1], hjust = 1.2) +
-  labs(subtitle = glue::glue("p-value: {signif(prop.test(adverse$n, adverse$denom)$p.value, 2)}"))
-
-
-p_adverse 
-  
+make_plots(wrangled %>% filter(emp_change == 1), by_vars = "inc_be_med_before", hyp_var = "inc_neg")
 ```
 
 # 1.5-1.6)
@@ -119,32 +92,19 @@ p_adverse
 1.6) People who had insurance (any form) were less likely to face changes in job status [21,14,15]
 
 ```{r}
-#table(poa$ins[str_detect(poa$ins, ";")])
+#table(wrangled$ins[str_detect(wrangled$ins, ";")])
 new_variables <- c("inc_be_med_before", "sch_bach", "ins_has", "ins_prvt")
 new_variables <- setNames(new_variables, new_variables)
-item <- "sch_bach"
 
-make_plots(df = poa %>% mutate(inc_neg = inc_neg == 1),
-           dems = new_variables,
-           var = c("emp_change", "inc_neg"), min = 5,
+make_plots(df = wrangled,
+           by_vars = new_variables,
+           hyp_var = "emp_change", min = 5,
            title = "Proportion to Experience an Adverse job change")
 
-df %>% mutate(emp_neg = emp_change == 1 & inc_neg == 1) %>%
-  group_by_at(item) %>%
-  summarize(n = sum(emp_neg, na.rm = TRUE),
-            denom = sum(!is.na(emp_neg)),
-            prop = mean(emp_neg, na.rm = TRUE)) %>%
-  na.omit %>%
-  mutate_if(labelled::is.labelled, labelled::to_character)
-
-df %>% group_by(sch_bach, emp_change, inc_neg == 1) %>%
-  count() %>% group_by(sch_bach) %>% na.omit %>%
-  mutate(prop = round(n/sum(n), digits = 4), denom = sum(n)) %>%
-  filter_if(is.logical, ~TRUE == .) %>%
-  filter(!str_detect(sch_bach, "prefer|;")) %>%
-  ungroup %>% mutate(width = denom/sum(denom)) %>%
-  mutate_if(labelled::is.labelled, labelled::to_character)
-
+make_plots(df = wrangled %>% filter(emp_change == 1),
+           by_vars = new_variables,
+           hyp_var = "inc_neg", min = 5,
+           title = "Proportion to Experience an Adverse job change")
 ```
 
 # 1.8, 1.13)
@@ -155,17 +115,16 @@ df %>% group_by(sch_bach, emp_change, inc_neg == 1) %>%
 # maybe we should make a variable that is all three categories (below, at above) or 
 inc_1.8 <- c("inc_ab_med_before", "inc_be_med_before", "inc_dist", "hh_ch_0_17_bi")
 names(inc_1.8) <- inc_1.8
-#item <- inc_1.8[[4]]
 
-make_plots(df = poa %>% mutate(wrk_vi = wrk %in% c(2,3)),
-           dems = inc_1.8, var = "wrk_vi",
+make_plots(df = wrangled %>% mutate(wrk_vi = wrk %in% c(2,3)),
+           by_vars = inc_1.8, hyp_var = "wrk_vi",
            title = "proportion who returned to work virtually or hybrid")
 ```
 
 # 1.9-1.11)
 
 1.09) People who are currently receiving unemployment benefits [16]
-- only r`sum(poa$unemp_ben == 1, na.rm = TRUE)` people who are currently recieving unemployment benefits
+- only r`sum(wrangled$unemp_ben == 1, na.rm = TRUE)` people who are currently recieving unemployment benefits
 
 1.10) People who are unemployed and are not receiving unemployment benefits because they expired [15 &16]
 
@@ -173,77 +132,46 @@ make_plots(df = poa %>% mutate(wrk_vi = wrk %in% c(2,3)),
 dems_unemp <- str_subset(demographics, "un|emp", negate = TRUE)
 dems_unemp <- setNames(dems_unemp, dems_unemp)
 
-poa %>% count(unemp_ben) %>% mutate(label = labelled::to_factor(unemp_ben))
+wrangled %>% count(unemp_ben) %>% mutate(label = labelled::to_factor(unemp_ben))
 
-# chose just those categories that have over 20 respondents
-item <- 2
-lapply(c(2,4), function(item) {
-  item_name <- names(attributes(poa$unemp_ben)$labels[item])
-  mutated <- poa %>% mutate(unemp = unemp_ben == item)
-  lapply(dems_unemp, function(dem) {
-    sym_dem <- sym(dem)
-    reshaped <- mutated %>%
-      count(!!sym_dem, unemp) %>%
-      group_by(!!sym_dem) %>% mutate(prop = round(n/sum(n), digits = 4), denom = sum(n)) %>%
-      filter(unemp, !str_detect(!!sym_dem, "prefer|;")) %>% ungroup %>% mutate(width = denom/sum(denom))
-  
-    plot <- reshaped %>% ggplot(aes(x = prop,
-                                  y = reorder(stringr::str_to_title(labelled::to_character(!!sym_dem)), -n)#, width = width, alpha = n
-                                  )) +
-      geom_col(fill = project_pal[4]) +
-      scale_x_continuous(labels = scales::percent) +
-      xlab(NULL) + ylab(NULL) + scale_color_discrete(guide = "legend", name = dem) +
-      ggtitle(glue::glue("'{item_name}' by '{dem}'")) +
-      project_theme +
-      geom_text(aes(label = glue::glue("{scales::percent(prop)}\n{n}/{denom}")),
-              color = project_pal[1], hjust = 1.2)
-      
-  
-  return(plot)
-  })
+lapply(c(2, 4), function(label) {
+  title <- names(attributes(wrangled$unemp_ben)$labels[label])
+  mutated <- wrangled %>% mutate(unemp = unemp_ben == label)
+  make_plots(mutated, dems_unemp, "unemp", title = title)
 })
-
 ```
 
 # 1.12) Unemployed people who have less than a bachelors degree are more or less likely to apply for unemployment benefits even if they qualify [11, 15,16]
 
 
 ```{r}
-
-poa %>% count(emp_after_un, unemp_con = unemp_ben == 4, sch_bach = sch_bach == "BA plus") %>%
-  mutate(prop = round(n/sum(n), digits = 4)) %>%
-  na.omit %>% filter(unemp_con)  %>% mutate_if(labelled::is.labelled, labelled::to_character) %>%
-  ggplot(aes(x = prop, y = reorder(sch_bach, -n), alpha = n)) +
-      geom_col(fill = project_pal[4]) +
-      scale_x_continuous(labels = scales::percent) +
-      xlab(NULL) + ylab(NULL) + ggtitle("Percent of People who Didn't apply for Unemployment Benefits by whether or not they hold at least a BA") + project_theme
-
-#mean(str_detect(labelled::to_character(poa$sch_level), "(?<!no )degree"))
-#mean(!str_detect(poa$ins, "do"))
+wrangled$unemp_ben
+make_plots(wrangled %>% filter(emp_before_un == 1) %>% mutate(sch_bach_bi = sch_bach == "BA plus",
+                                                              unemp_ben_app = unemp_ben !=4 ), "sch_bach_bi", "unemp_ben_app")
 ```
 
 # validation
 
 ```{r}
-poa %>% filter(str_detect(emp_after, "unemployed;|;unemployed")) %>%
+wrangled %>% filter(str_detect(emp_after, "unemployed;|;unemployed")) %>%
   select(responseid, source, wrk, emp_after, emp_before) %>% mutate_if(labelled::is.labelled, labelled::to_character)
 
-poa %>% count(wrk, emp_after) %>%
+wrangled %>% count(wrk, emp_after) %>%
   filter(wrk == 4) %>%
   mutate_if(labelled::is.labelled, labelled::to_character)
 
-filter(poa, wrk == 4, str_detect(emp_after, "full|part")) %>% select(responseid, source, wrk, emp_after, emp_before) %>%
+filter(wrangled, wrk == 4, str_detect(emp_after, "full|part")) %>% select(responseid, source, wrk, emp_after, emp_before) %>%
   mutate_if(labelled::is.labelled, labelled::to_character)
 
-filter(poa, wrk == 3, str_detect(emp_after, "unemp|dis")) %>% select(responseid, source, wrk, emp_after, emp_before) %>%
+filter(wrangled, wrk == 3, str_detect(emp_after, "unemp|dis")) %>% select(responseid, source, wrk, emp_after, emp_before) %>%
   mutate_if(labelled::is.labelled, labelled::to_character)
 
 # everybody who started unemployed was still unemployed
-poa %>% filter(!str_detect(emp_after, "un"), str_detect(emp_before, "un"), !is.na(unemp_ben)) %>% select(responseid, emp_before, emp_after, unemp_ben) %>%
+wrangled %>% filter(!str_detect(emp_after, "un"), str_detect(emp_before, "un"), !is.na(unemp_ben)) %>% select(responseid, emp_before, emp_after, unemp_ben) %>%
   mutate_if(labelled::is.labelled, labelled::to_character)
 
 # people who lost their jobs and did not get new ones
-poa %>% filter(str_detect(emp_after, "un"), !str_detect(emp_before, "un"), !is.na(unemp_ben)) %>% select(responseid, emp_before, emp_after, unemp_ben) %>%
+wrangled %>% filter(str_detect(emp_after, "un"), !str_detect(emp_before, "un"), !is.na(unemp_ben)) %>% select(responseid, emp_before, emp_after, unemp_ben) %>%
   mutate_if(labelled::is.labelled, labelled::to_character)
 
 ```
@@ -253,7 +181,7 @@ poa %>% filter(str_detect(emp_after, "un"), !str_detect(emp_before, "un"), !is.n
 ```{r include=F, eval=F}
 lapply(demographics, function(dem) {
   sym_dem <- sym(dem)
-  reshape <- poa %>% count(emp_change, !!sym_dem) %>% na.omit()
+  reshape <- wrangled %>% count(emp_change, !!sym_dem) %>% na.omit()
   
   if(is.character(reshape[[dem]])) {
     reshaped <- reshape %>% arrange(n) %>% mutate_at(vars(!!sym_dem), stringr::str_to_title)
@@ -289,7 +217,7 @@ wrangled %>%
   scale_fill_manual(labels = rev(c(FALSE, TRUE)), values = c(project_pal[1], "white")) + scale_x_reverse()
 
 
-race_df <- poa %>% select(responseid, race_white, race_black, race_his_lat) %>%
+race_df <- wrangled %>% select(responseid, race_white, race_black, race_his_lat) %>%
   pivot_longer(cols = c(race_white, race_black, race_his_lat), names_to = "cat", values_to = "value") %>%
   filter(value == 1)
 
@@ -297,43 +225,13 @@ race_list <- split(race_df$responseid, race_df$cat)
 
 ggVennDiagram(race_list)
 
-mean(poa$emp_after_dis)
-mean(poa$emp_before_dis)
-```
-
-```{r warning=F, message=F, eval=F, include=F}
-lapply(demographics, function(dem) {
-  sym_dem <- sym(dem)
-  reshape <- poa %>% count(inc_after, !!sym_dem)
-  if(is.character(reshape[[dem]])) {
-    reshaped <- reshape %>% arrange(n)
-  } else if(haven::is.labelled(reshape[[dem]])){
-    reshaped <- reshape %>% arrange(!!sym_dem) %>%
-      mutate_at(vars(!!sym_dem), haven::as_factor)
-  } else if (dem == "age") {
-    reshaped <- reshape %>% mutate_at(vars(!!sym_dem), ~as.factor(floor(./10)*10)) %>%
-      group_by(inc_after, !!sym_dem) %>% summarize(n = sum(n))
-  } else {
-    reshaped <- reshape %>% mutate_at(vars(!!sym_dem), ~as.factor(.)) %>% arrange(n)
-  } 
-  p <- reshaped %>%
-    ggplot(aes(x = n, y = !!sym_dem, fill = inc_after, alpha = n)) +
-    geom_col(position = "fill")# + xlab(dem)
-  return(p)
-})
-
-# does not yet fix for double counting
-wrangled %>%
-  group_by(responseid, emp_change = emp_before != emp_after) %>%
-  select(responseid, contains("race_"), -race_text, -race_twomore) %>%
-  pivot_longer(cols = contains("race_"), names_to = "category", values_to = "value") %>%
-  filter(value != 0) %>% ungroup %>% count(category, emp_change) %>%
-  ggplot(aes(x = n, y = category, fill = emp_change, alpha = n)) + geom_col(position = "fill")
+mean(wrangled$emp_after_dis)
+mean(wrangled$emp_before_dis)
 ```
 
 # ester's table
 ```{r}
-wrangled %>% filter(hh_ch_0_17_bi == 1) %>% count(race_weight, diff_cc) %>% drop_na %>% group_by(race_weight) %>% mutate(prop = n/sum(n)) %>%
+wrangled %>% filter(hh_ch_0_17_bi == 1) %>% count(race_census, diff_cc) %>% drop_na %>% group_by(race_weight) %>% mutate(prop = n/sum(n)) %>%
   filter(diff_cc == 1)
 wrangled %>% filter(hh_ch_0_17_bi == 1) %>% group_by(race_weight) %>% summarize(prop = mean(need_cc, na.rm = TRUE)) %>%
   mutate(type = "Difficulty affording childcare") %>%
