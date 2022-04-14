@@ -9,17 +9,7 @@ library(rjson)
 setwd("~/communities_speak/sp22")
 
 # This section would be for adding in labels in advance #### 
-
-#id_var_labels <- gs4_find() %>% filter(name == "var_labels") %>% pull(id)
-#var_dict <- id_var_labels %>%
-#  read_sheet(sheet = "vars", na = c("na")) %>%
-#  #group_by(no) %>%
-#  mutate(survey_q = as.character(survey_q),
-#         qid = paste0("qid", no + 1),
-#         #q = ifelse(str_detect(helpnyc, "_"), paste(helpnyc, "text", sep = "_"), helpnyc)
-#         ) %>%
-#  select(qid, q, no, label)
-#new_vars <- id_var_labels %>% read_sheet(sheet = "new_vars") %>% na.omit
+id_labelling <- gs4_find() %>% filter(name == "labelling") %>% pull(id)
 
 file <- fromJSON(file = "~/communities_speak/sp22/data/input/individual_survey_s22.qsf")$SurveyElements
 elements <- unlist(lapply(file, function(element) element$PrimaryAttribute))
@@ -54,7 +44,7 @@ survey_codebook <- lapply(file[str_detect(elements, "QID")], function(element) {
   type = element$Payload$QuestionType
   selector = element$Payload$Selector
   subselector = element$Payload$SubSelector
-  text = element$SecondaryAttribute
+  text = stringr::str_replace_all(element$Payload$QuestionText, "<.*?>", "")
   
   unlisted = unlist(lapply(element$Payload$Choices, function(element) trimws(element$Display)))
   
@@ -129,29 +119,36 @@ likert <- survey_codebook %>% filter(selector == "likert", subselector != "multi
 mavr <- survey_codebook %>% filter(type == "mc" & selector == "mavr" | subselector == "multipleanswer", !str_detect(q, "text")) %>% pull(q)
 
 
-dummies <- survey_codebook %>% filter(q %in% mavr) %>%
-  #mutate(to_label = ifelse(!is.na(part), part, choices)) %>%
-  #filter(str_detect(q, "35"))
+to_label <-
+  # filter for variables to be dummied
+  survey_codebook %>% filter(q %in% mavr) %>%
+  # list them out in long format
   tidytext::unnest_tokens(output = to_label, token = "regex", input = choices, pattern = ";", drop = FALSE) %>%
   group_by(q) %>%
-  mutate(q = glue::glue("{q}_{row_number()}")) %>%
-  bind_rows(survey_codebook) %>% arrange(question) %>%
+  # number them according to their coding in qualtrics, but leave behind the q_stem for later merging
+  mutate(q_stem = q, q = glue::glue("{q}_{row_number()}")) %>%
   mutate(to_label = trimws(to_label))
 
-dummies_to_label <- dummies %>% ungroup %>% select(part, to_label) %>% unlist %>% unique %>%
-  as_tibble %>% rename(to_label = value) %>% filter(!is.na(to_label))
+# label question stems
+qs_to_label <- survey_codebook %>% select(qid, q, block_title, text, part)
+# label dummy variable labels
+dummies_to_label <- to_label %>% ungroup %>% select(qid, q, to_label) %>% unique %>% filter(!is.na(to_label))
 
-#write_sheet(dummies_to_label, id_var_labels, "dummies")
+write_sheet(qs_to_label, id_labelling, "qs_to_label")
+write_sheet(dummies_to_label, id_labelling, "dummies_to_label")
 
-#from_r <- id_var_labels %>% read_sheet(sheet = "Copy of dummies", na = c("na"))
-#from_r
+# hand write in variables
 
-#dummies_labelled <- dummies %>% left_join(from_r) %>% left_join(from_r, by = c("part" = "to_label")) %>%
-#  mutate(sub_label = paste(na.omit(c(sub_label.y, sub_label.x)), collapse = "_")) %>% na_if("") %>%
-#  select(-contains("label."), to_label)
+labelled_dummies <- id_labelling %>% read_sheet(sheet = "dummies_labelled", na = c("na", "NA", ""))
+labelled_qs <- id_labelling %>% read_sheet(sheet = "qs_labelled", na = c("na", "NA", ""))
 
-#survey_codebook_labelled <- survey_codebook %>% filter(!q %in% dummies_labelled$q) %>%
-#  bind_rows(dummies_labelled) %>% arrange(question) %>% group_by(q) %>% mutate(
-#    label = paste(na.omit(c(label, sub_label)), collapse = "_")) %>% na_if("")
+survey_codebook_labelled <- labelled_dummies %>% left_join(to_label) %>%
+  left_join(labelled_qs %>% rename(q_stem = q) %>% select(q_stem, label)) %>%
+  bind_rows(labelled_qs %>% filter(!q %in% labelled_dummies$q) %>% left_join(survey_codebook)) %>%
+  mutate(full_label = ifelse(is.na(sub_label), label, glue::glue("{label}_{sub_label}"))) %>%
+  select(qid, q, full_label, type, selector, subselector, text, part, to_label, options, choices, block_title, question) %>%
+  arrange(question)
 
-#column_names <- survey_codebook_labelled %>% select(q, label)
+view(survey_codebook_labelled)
+
+new_vars <- id_labelling %>% read_sheet(sheet = "new_vars") %>% na.omit

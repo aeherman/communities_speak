@@ -36,7 +36,7 @@ survey_codebook <- lapply(file$SurveyElements[9:54], function(element) {
   type = element$Payload$QuestionType
   selector = element$Payload$Selector
   subselector = element$Payload$SubSelector
-  text = element$SecondaryAttribute
+  text = stringr::str_replace_all(element$Payload$QuestionText, "<.*?>", "")
   
   unlisted = unlist(lapply(element$Payload$Choices, function(element) trimws(element$Display)))
   
