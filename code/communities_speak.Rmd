@@ -6,7 +6,7 @@ output:
   pdf_document: default
   html_document: default
 ---
-
+test
 ```{r message=F, warning=F}
 library(googledrive)
 library(readxl)
@@ -17,65 +17,23 @@ library(rjson)
 library(googlesheets4)
 source("functions/fixup.R")
 source("dictionary.R")
+source("thresholds.R")
 readRDS("../data/processed/survey.rds")
 
-  #select(-`Question Assignment_Temp_Column`, -`Survey Instrument Question #`)
-
-#codebook
-#bor_list <- c("brooklyn", "manhattan", "queens", "bronx", "si")
-boroughs <- read_xlsx("../data/input/Borough_for_Arielle.xlsx") %>%
-  rename_all(str_to_lower) %>% mutate_all(str_to_lower)# %>%
-  #mutate(borough = factor(borough, levels = bor_list, labels = c(1:5)))
-
-
-
-#survey <- read_csv("../data/input/individual_survey_eng_20220124_num.csv") %>%
-#  mutate_all(str_to_lower) %>% rename_all(str_to_lower) %>% filter(!row_number() %in% c(1:2)) %>%
-#  dplyr::select(responseid, contains("q"))
+#boroughs <- read_xlsx("../data/input/Borough_for_Arielle.xlsx") %>%
+#  rename_all(str_to_lower) %>% mutate_all(str_to_lower)
 
 var_dict
 
 
 survey <- readRDS("../data/processed/survey.rds")
 
-#data_path <- "../data/input"
-#files <- dir(path = data_path, pattern = ".csv")[c(-1, -3, -5)]
-#survey <- files %>% map(~ read_csv(file.path(data_path, .), na = c("n/a", "N/A", "N/a", "n/a", "", " ", "Not applicable", "na","NA")) %>% filter(!row_number() %in% c(1,2))) %>%
-  #reduce(bind_rows) %>% rename_all(str_to_lower) %>% mutate_all(str_to_lower) %>% 
-  #rename(duration = "duration (in seconds)") %>% dplyr::select(responseid, duration, contains("q"), -q44, -q45)
-                                 #rename_with(str_replace(.x, ".+", replacement = "_")))
-                                 #rename_with(~glue::glue("q{as.integer(.x)+1}"),
-                              #             .cols =  matches(paste(paste0("\\b", 1:9), collapse = "|"))))
-
-```
-```{r eval=F}
-test %>% rename_at(vars(contains("[:digit:]") & !contains("Q")), ~paste0("q{.x}")) %>% select(contains("q"))
-
-test %>% mutate_all(funs(glue::glue("q{.x}")))
-
-# glue::glue("q{.x}")
-
-colnames(test) %>% str_extract("[:digit:]{1,2}") %>% as.integer() + 1
-
-test %>% select(!contains("TEXT")) %>% rename_with(~glue::glue("q{as.integer(.x)+1}"), .cols = matches(paste(paste0("\\b", 1:9), collapse = "|")))
-
-test %>% select(`1`) %>% rename_with(~str_replace(.x, "[:digit:]{1}", "as.integer({.x})"), .cols = matches(paste(1:9, collapse = "|")))
-
-lapply(function(file) rename_if(file, str_detect("[:digit:]") & !str_detect("q")), paste0("q", .))
-
-q25 <- survey %>% select(contains("25")) %>% unlist
-table(q25[str_detect(q25, "[:alpha:]")])
-
-survey %>% select(contains("25")) %>% filter(if_any(everything(), ~str_detect(., "[:alpha:]")))
-test_ids <- survey %>% select(responseid, q5) %>% mutate(test = str_detect(q5, "test")) %>% filter(test) %>% pull(responseid)
-wrangled %>% filter(responseid %in% test_ids)
-wrangled
 ```
 
 # Var Dictionary
 Combine with codebook in order to easily rename columns in the cleaned dataset
 
-S# Survey Questions Codebook
+# Survey Questions Codebook
 
 Get important metadata on each of the questions that facilitates wrangling
 
@@ -208,23 +166,12 @@ clean_data <- function(df = survey, col = NULL) {
   by_col %>% reduce(full_join, by = c("responseid")) %>%
     ### replace specific patterns in age and household questions
     mutate_at(vars(contains("25"), "q5"), ~str_replace_all(., pattern = str_c(dict$pattern, collapse = "|"), replacement = fixup)) %>%
-    ## transform age to double
-    #mutate(q5 = lapply(df[["q5"]], function(element){
-      # average age range if provided instead of an age
-    #  if(str_detect(element, "[:digit:]{2}.*[:digit:]{2}") & !is.na(element)) {
-    #    round(mean(as.integer(unlist(str_split(element, "[:punct:]")))))
-    #  } else {
-      # remove text data and transform to integer 
-    #    as.double(str_extract(element, "[:digit:]{1,2}"))
-    #  }
-    #}) %>% unlist) %>%
-    ## transform household
     mutate(across(c(contains("25"), q5), ~as.double(str_extract(., "[:digit:]{1,2}"))))
   
 }
 
 survey
-final_clean <- survey[c('responseid', 'recordeddate')] %>% left_join(clean_data()) %>% left_join(distinct(boroughs), by = c("q3" = "zipcode"))
+final_clean <- survey[c('responseid', 'recordeddate')] %>% left_join(clean_data()) %>% left_join(distinct(boroughs %>% mutate(zip = as.character(zipcode))), by = c("q3" = "zip"))
 
 # all NA if any NA
 q35_sub <- final_clean %>% select(contains("35"))
@@ -272,54 +219,6 @@ hist(final_clean$completion)
 mean(!is.na(final_clean$q2))
 save(final_clean, file = "../data/processed/final_clean.rdata")
 
-```
-
-
-```{r eval=F}
-# validate calculation of completion rate
-id <- final_clean %>% filter(
-  #str_detect(q16, "unemp"),
-  #labelled::to_factor(q17) == "yes"#,
-  q25_3 + q25_4 > 0,
-  !str_detect(q26, "home"),
-  q27 == 0
-) %>% #mutate(sum = q25_3 + q25_4) %>%
-  #select(responseid, q27)
-  pull(responseid) %>% .[[1]]
-
-id <- final_clean %>% filter(q2 == 0) %>% pull(responseid) %>% .[[1]]
-#final_clean %>% filter(responseid == "r_1ffk0gc9znaxxhh") %>% select(q3, borough)
-#str(final_clean)
-#getwd()
-final_clean$q27
-final_clean %>% filter(responseid == id) %>% select(q26)
-final_clean$completion[final_clean$responseid == "r_3emaq9sygeqdfzy"]
-#clean_data()
-
-#write_csv(final_clean, "../data/processed/final_clean.csv")
-#final_clean %>% select(contains("36"))
-mavr
-col = "q7"
-df = survey
-final_clean$q27
-final_clean %>% filter(str_detect(q16, "unemp")) %>% select(responseid, q16, q17, q18)
-final_clean %>% select(responseid, contains("25"))
-final_clean %>% filter(completion >= 0.5) %>% nrow
-final_clean$q25_3
-
-mean(correct >= 0.4)
-mean(sub_completion >= 0.4)
-
-# confirm that if they didn't answer one of the likert, they didn't answer any
-# 33, 34, 35, 41
-final_clean %>% filter(if_any(contains("q35"), is.na)) %>%
-  select(contains("q35")) %>% is.na %>% colMeans
-
-test <- tribble(~test1, ~test2,
-                NA_character_, "test3",
-                "test4", "test5")
-
-test %>% filter(if_any(everything(), is.na)) %>% is.na %>% colMeans
 ```
 
 
@@ -610,29 +509,6 @@ wrangled <-
          race_census_indian = `race_census_american indian or alaska native`,
          race_census_white = `race_census_white (non-hispanic or latino)`) %>% 
   select(-race_census_NA)
-
-#wrangled %>% mutate(race_test = ifelse(str_detect(race, ";"), str_replace(race, ";?hispanic or latinx;?", ""), race)) %>%
-#  filter(race_his_lat == 1) %>% count(race_test) %>% arrange(n) %>%
-#  mutate(new_group = c(rep("two or more", 3), "other", ""))
-
-#wrangled %>% filter(race_his_lat == 1) %>% count(race)
-```
-
-```{r eval=F}
-wrangled %>%
-  #filter(!is.na(rating) %>%
-  count(ins_emp, race_weight, weight) %>%
-  #count()) %>%
-  ungroup(ins_emp) %>%
-  mutate(
-    denom = sum(n),
-    percent = round((n / denom), 3),
-    #cumuPer = round(cumsum(freq = n / sum(n)), 3)
-    weighted = percent*weight
-    ) %>%
-  filter(ins_emp == 1)
-
-wrangled %>% select(fin_insec, diff_worr, diff_ran_out, diff_bill, diff_rent) %>% filter(fin_insec == 0)
 ```
 
 # New Columns
@@ -665,20 +541,6 @@ saveRDS(wrangled, file = paste0("../data/output/wrangled", today, ".rds"))
 write_excel_csv(wrangled, file = paste0("../data/output/wrangled", today, ".csv"))
 write_excel_csv(weights, file = paste0("../data/output/weights", today, ".csv"))
 
-#googledrive_path <- "Communities Speak/Subteams/Data Subteam/Individual Survey-2(POA/Codebook/Census Figures)/cleaning/"
-
-#write_excel_csv(survey_codebook, paste0("../data/codebook/survey_question_codebook_", today, ".csv"))
-#drive_upload(media = paste0("../data/codebook/survey_question_codebook_", today, ".csv"),
-#             path = paste0(googledrive_path, "data/survey_question_codebook_",
-#                           today, ".csv"),
-#             overwrite = TRUE, # for some reason, it is not effectively overwriting
-#             type = "spreadsheet")
-
-#drive_upload(media = "communities_speak.Rmd",
-#             path = paste0(googledrive_path, "code/cleaning_script_", today, ".Rmd"),
-#             overwrite = TRUE)
-#drive_upload(media = "communities_speak.pdf", path = paste0(googledrive_path, "code/cleaning_script_", today, ".pdf"))
-#drive_upload(media = "functions/fixup.R", path = paste0(googledrive_path, "code/functions/fixup.R"), overwrite = TRUE)
 dim(wrangled)
 final_clean %>%
   filter(responseid == "r_2xdu5ggf7umy0f7") %>%
