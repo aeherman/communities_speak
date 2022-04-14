@@ -1,0 +1,474 @@
+---
+title: "Communities Speak"
+author: "Arielle Herman"
+date: "4/12/2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+test
+```{r message=F, warning=F}
+library(googledrive)
+library(readxl)
+library(tidyverse)
+library(stringr)
+library(haven)
+library(rjson)
+library(googlesheets4)
+#source("functions/fixup.R")
+source("dictionary.R")
+#source("clean_data.R")
+
+setwd("~/communities_speak/sp22/code")
+
+survey <- read_csv("../data/input/survey_20220408.csv") %>%
+  rename_all(stringr::str_to_lower) %>%
+  rename(duration = "duration (in seconds)") %>% filter(row_number() > 2) %>%
+  mutate_at(vars(-recordeddate), ~str_to_lower(as.character(.))) %>%
+  select(responseid, recordeddate, duration, userlanguage, source, distributionchannel, matches("q"))
+  
+boroughs <- read_csv("../data/input/boroughs.csv")
+```
+# Var Dictionary
+Combine with codebook in order to easily rename columns in the cleaned dataset
+
+S# Survey Questions Codebook
+
+Get important metadata on each of the questions that facilitates wrangling
+
+# Data Cleaning
+
+
+```{r}
+final_clean <- survey[c('responseid', 'recordeddate')] %>% left_join(clean_data()) %>%
+  left_join(boroughs, by = c("q3" = "zip")) %>%
+  mutate(valid = case_when(
+    completion > 0.5 & q2 == 2 & q5 > 17 & !is.na(borough) ~ 1,
+    TRUE ~ 0
+  )) %>%
+  mutate(valid = ifelse(if_any(everything(), str_detect, pattern = "^test$"),
+                        NA_integer_,
+                        valid),
+         source = ifelse(is.na(source), "communities speak", source))
+
+completion <- lapply(final_clean$responseid, function(id) {
+#for(id in final_clean$responseid) {ghts
+  row <- final_clean[final_clean$responseid == id, ] %>% select(contains("q")) %>%
+    select(!matches("_"), contains("q26"), q40_1, q35_1, q34_1, q33_1)
+  
+  
+  # employment logic
+  if(!str_detect(row$q16, "unemp") | is.na(row$q16)) { # respondents who didn't mark unemployed
+    row <- row %>% select(-q18, -q19)
+  } else if(labelled::to_factor(row$q18) != "yes") {
+    row <- row %>% select(-q19)
+  }
+  
+  # household with children logic
+  if(sum(row$q26_3, row$q26_4, na.rm = TRUE) == 0) { # respondents that don't have children
+    row <- row %>% select(-q27, -q28, -q29, -q30, -q31, -q32)
+  } else if(str_detect(row$q27, "home") & !str_detect(row$q27, ";") | is.na(row$q27)) { # respondents that only selected home school
+    row <- row %>% select(-q28, -q29. -q30)
+  } else if(row$q28 == 0 | is.na(row$q28)) { # respondents whose children aren't attending school in person
+    row <- row %>% select(-q29)
+  }
+  
+  if(row$q44 == 1 | is.na(row$q44)) { # test logic
+    row <- row %>% select(-q45, -q46)
+  } else if(row$q45 != 1 | is.na(row$q45)) {
+    row <- row %>% select(-q46)
+  }
+  
+  # residence logic
+  ## will need to disqualify respondents not just based on completion, but also...
+  if(row$q2 == 0 & !is.na(row$q2)) { # goes to the end because it removes all the columns (can't test the other conditions)
+    row <- row %>% select(q2)
+  }
+  
+  completion <- round(mean(!is.na(row)), digits = 6)
+  return(completion)
+}) %>% unlist
+
+final_clean$completion <- completion
+
+hist(final_clean$completion)
+mean(!is.na(final_clean$q2))
+save(final_clean, file = "../data/processed/final_clean.rdata")
+colMeans(is.na(survey))
+colMeans(is.na(final_clean))
+```
+
+## Brief Cleaning Process Validation?
+
+# Wrangle
+
+```{r}
+
+# 39
+index_40 <- str_which(column_names$q, "q40")
+key_40 <- column_names$q[index_40]
+label_40 <- column_names$label[index_40]
+q40_bi <- final_clean %>% select(responseid, source, contains("40")) %>%
+  mutate_at(vars(contains("40")), ~!str_detect(haven::as_factor(.), "almost|never")) #%>% rename_at(vars(contains("41")), ~glue::glue("{.x}_bi"))
+names(q40_bi)[match(key_40, names(q40_bi))] <- paste(label_40, "bi", sep = "_")
+
+#remove_test <- final_clean %>% filter(if_any(everything(), ~str_detect(.x, "^test$")))
+
+#final_clean %>%
+ # transmute(across(contains("41"), ~!str_detect(haven::as_factor(.), "almost|never"), .names = "{col}_bi"))
+
+wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/ncol(final_clean)) %>%
+  # remove invalid responses
+  filter(valid == 1) %>%
+  # make new variables
+  mutate(
+    #### race variables ####
+    race_twomore = str_detect(q7, ";"),
+    race_black_his = str_detect(q7, "black") & str_detect(q7, "(?<!-)hispanic"),
+    race_white_alone = str_detect(q7, "white") & str_detect(q7, ";", negate = TRUE),
+    
+    #### location variables ####
+    bronx_bi = labelled::to_character(borough) == "bronx",
+    brooklyn_bi = labelled::to_character(borough) == "brooklyn",
+    queens_bi = labelled::to_character(borough) == "queens",
+    
+    #### income variables ####
+    # income change variables
+    inc_neg = q14 < q13,
+    inc_pos = q13 < q14,
+
+    inc_drop_med = q13 >= median_inc & q14 < median_inc,
+    inc_drop_pov = q13 >= poverty_line & q14 < poverty_line,
+    
+    # income distribution before
+    inc_dist = case_when(
+      q13 < poverty_line ~ 1,
+      q13 < median_inc ~ 2,
+      TRUE ~ 3), # label them with haven
+    
+    # above or below median income before-hand
+    inc_ab_med_before = q13 > median_inc,
+    inc_be_med_before = q13 < median_inc,
+    
+    # above or below median income afterward
+    inc_ab_med_after = q14 > median_inc,
+    inc_be_med_after = q14 <= median_inc,
+    
+    # below poverty line before and after
+    inc_be_pov_before = q13 < poverty_line,
+    inc_be_pov_after = q13 < poverty_line,
+    
+    # above median income both
+    inc_ab_med = q14 > median_inc & q13 > median_inc,
+    inc_be_med = q14 <= median_inc & q13 <= median_inc,
+    
+    #### employment variables ####
+    wrk_in = str_detect(labelled::to_character(q20), "yes"),
+    
+    emp_status_before = case_when(
+      str_detect(q15, "unemp") ~ "unemployed",
+      str_detect(q15, "full|part|free|gig|small|home|student") ~ "employed",
+      str_detect(q15, ";") ~ "multiple_other",
+      TRUE ~ q15),
+    
+    emp_status_after = case_when(
+      str_detect(q16, "unemp") ~ "unemployed",
+      str_detect(q16, "full|part|free|gig|small|home|student") ~ "employed",
+      str_detect(q16, ";") ~ "multiple_other",
+      TRUE ~ q16),
+    
+    emp_change = q15 != q16,
+    
+    emp_before_part_time = case_when(
+      q15_1 == 0 & any(q15_2 == 1, q15_3 == 1, q15_4 == 1, q15_5 == 1) ~ 1,
+      q15_1 == 1 ~ 0
+    ),
+    
+    #unemployed = emp_after == "unemployed", # newly unemployed # emp_un_after
+    
+    #### mental health variables ####
+    ## q41_1 unable to control
+    ## q41_2 confident about your ability
+    ## q41_3 going your way
+    ## q41_4 difficulties piling up
+    
+    mntl_hlth_bi = if_any(c("q40_1", "q40_4"), ~.>=3) | if_any(c("q40_2", "q40_3"), ~.<3),
+    #across(contains("41"), ~!str_detect(haven::as_factor(.), "almost|never"), .names = "{col}_bi"),
+    #final_clean %>% transmute(
+    across(c(q40_2, q40_3), ~labelled(.-1,attributes(final_clean$q40_3)$labels-1), .names = "{col}_rescale"),
+    across(c(q40_1, q40_4), ~labelled(1-.,1-attributes(final_clean$q40_4)$labels), .names = "{col}_rescale"),
+    
+    mntl_hlth_state = rowMeans(across(ends_with("_rescale")), na.rm = TRUE),
+    mntl_hlth_state_bi = mntl_hlth_state < 0,
+    
+    
+    #### health variables ####
+    ## q22_5 no insurance 
+    ins_has = 1 - q23_5,
+    
+    #### covid variables ####
+    ## q40 have your received the covid-19 booster?
+    ## q38 tested positive?
+    ## q43 concern over variants
+    ## q39 vaccinated
+    boost_bi = str_detect(labelled::to_character(q39), "yes|i plan"),
+    boost_plan = str_detect(labelled::to_character(q39), "i plan"),
+    
+    posi_all = str_detect(labelled::to_character(q38), "yes"),
+    
+    #vax_bi = ifelse(q39 == 3, NA, 2 - q39), # who preferred not to answer?
+    
+    vrnts_bi = q43 == 1,
+    
+    #### household variables ####
+    ## q5 = age
+    decade = paste0(floor(q5/10)*10, "s"),
+    
+    hh_65_bi = q26_1 >= 1, # fixed 
+    hh_4_17_bi = q26_3 >= 1,
+    hh_0_4_bi = q26_4 >= 1,
+    hh_ch_0_17_bi = q26_3 >=1 | q26_4 >=1,
+    
+    no_find_cc = str_detect(labelled::to_character(q31), "no\\b"),
+    
+    #### residence variables ####
+    res_cat = labelled::to_character(q21),
+    res_cat = case_when(
+      str_detect(res_cat, "public") ~ "public",
+      str_detect(res_cat, "owner") ~ "owner",
+      str_detect(res_cat, "renter") ~ "renter",
+      str_detect(res_cat, "not have") ~ "no permanent residence",
+      TRUE ~ res_cat),
+    
+    #### education variables ####
+    sch_level_cat = labelled::to_character(q12),
+    sch_level_cat = case_when(
+      str_detect(sch_level_cat, "high school|some college") ~ sch_level_cat,
+      str_detect(sch_level_cat, "bach|ass") ~ "undergraduate degree",
+      str_detect(sch_level_cat, "doct|mast|prof") ~ "graduate degree"
+      ),
+    
+    sch_bach = factor(ifelse(str_detect(labelled::to_character(q12),
+                                        "(?<!no )degree"), "BA plus", labelled::to_character(q12))),
+    
+    #### discrimination variables ####
+    discrim_bi = q37 == 1 | q37 == 2,
+    
+    #### abuse or violence variables ####
+    exp_ab_or_vi = str_detect(q36, "yes"),
+    exp_ab_and_vi = str_detect(q36, "verbal abuse") & str_detect(q36, "physical violence"),
+    
+    #### concern variables ####
+    ## q21_2 worried about running out of food
+    ## q21_3 ran out of food
+    ## q21_5 difficulty accessing cleaning supplies
+    ## q21_6 difficulty accessing transportation
+    ## q21_7 difficulty paying bills
+    ## q21_8 difficulty paying rent
+    ## q21_9 difficulty accessing housing
+    ## q29 all concerns about child attending school
+    
+    con_num = as.integer(unlist(lapply(str_split(q30, ";"),
+                                       function(item) if(!is.na(item)) {unlist(length(item))} else {NA}))),
+    
+    # at least two concerns about insecurity
+    #fin_unstable = q21_3 == 1 & q21_7 == 1 | q21_7 == 1 & q21_8 == 1 |
+    #  q21_8 == 1 & q21_3 == 1,
+    
+    fin_insec = if_any(c("q22_2", "q22_3", "q22_7", "q22_8"), ~.== 1),
+    
+    # accessing resources
+    diff_acc = if_any(c(q22_3, q22_9, q22_6, q22_5), ~.==1),
+    
+    # worried about running out or ran out of food
+    food_insec = q22_3 == 1 | q22_2 == 1,
+    
+    #### rating variables ####
+    ## q33_3 = rate government city
+    
+    rate_gov_cit_bad = q33_3 > 3,
+    
+    rate_gov_good = if_all(starts_with("q33"), ~.<3),
+    rate_gov_bad = if_all(starts_with("q33"), ~.>3),
+    rate_gov_ave = round(rowMeans(6 - across(starts_with("q33"))), digits = 4),
+    
+    rate_neigh_pub_good = q34_4 < 3,
+    rate_neigh_pub_bad = q34_4 > 3,
+    
+    rate_neigh_pol_good = q34_8 < 3,
+    rate_neigh_pol_bad = q34_8 > 3,
+    
+    rate_neigh_pre_good = q34_9 < 3,
+    rate_neigh_pre_bad = q34_9 > 3,
+    
+    #### access variables ####
+    lr_fam = if_any(starts_with("q35_") & ends_with("_5"), ~.==1),
+    lr_gov = if_any(starts_with("q35_") & ends_with("_3"), ~.==1),
+    lr_fb = if_any(starts_with("q35_") & ends_with("_1"), ~.==1),
+    
+    internet_lim = q24 != 1, # respondent has limited or no internet access
+    internet_acc = q24 == 1
+    
+    
+    ) %>%
+  left_join(q41_bi)
+  #mutate_at(vars(q20, q27), ~haven::as_factor(.)) #%>% sjlabelled::label_to_colnames() #%>%
+
+to_label <- new_vars$var_name[new_vars$var_name %in% colnames(wrangled)]
+new_vars_to_label <- lapply(to_label, function(col) {
+  if(col %in% colnames(wrangled)) {
+    index <- which(new_vars$var_name == col)
+    values <- as.integer(unlist(stringr::str_split(new_vars$var_value[index], pattern = "[:punct:]")))
+    tags <- unlist(str_split(new_vars$var_label[index], "; "))
+    named <- setNames(values, tags)
+    out <- wrangled[col] %>% mutate_at(vars(col), funs(labelled(as.integer(.), named)))
+    return(out)
+  }
+  
+  #labelled(as.integer(wrangled[[col]]), named)
+}) %>% reduce(bind_cols)
+
+dim_before <- dim(wrangled)
+
+wrangled[to_label] <- new_vars_to_label
+
+dim_after <- dim(wrangled)
+all.equal(dim_before, dim_after)
+
+indeces <- which(survey_codebook_labelled$q %in% colnames(wrangled))
+key <- survey_codebook_labelled$q[indeces]
+value <- survey_codebook_labelled$full_label[indeces]
+
+names(wrangled)[match(key, names(wrangled))] <- value
+#wrangled <- wrangled %>%
+#  fastDummies::dummy_columns("ny_resi_type", ignore_na = TRUE) %>%
+#  fastDummies::dummy_columns("in_prsn_sch", ignore_na = TRUE) %>%
+#  fastDummies::dummy_columns("concerns", ignore_na = TRUE)
+wrangled$exp
+#wrangled$q27 %>% table
+wrangled %>% select(contains("36"))
+wrangled %>% select(contains("41"))
+?match
+wrangled
+# hispanic latino and black
+
+sum(is.na(wrangled$exp_ab_and_vi))
+mean(is.na(final_clean$q36))
+
+
+weights <- wrangled %>% count(race = str_replace(race, ".*;.*", "two or more races")) %>%
+  ungroup() %>% filter(!race %in% c("prefer not to answer", "other")) %>%
+  mutate(actual = round(n/sum(n), digits = 3)) %>% left_join(census) %>%
+  mutate(weight = target/actual) %>%
+  mutate(weight = labelled(weight, setNames(weight, race)),
+         `target/actual` = glue::glue("{target}/{actual}")) %>%
+  select(race, n, target, actual, `target/actual`, weight)
+
+wrangled
+
+# extra NAs account for prefer not to answer and other
+wrangled <-
+  wrangled %>%
+  mutate(race_census = str_replace_all(race,
+                                       c(".*;.*" = "two or more races",
+                                         "prefer not to answer|other" = NA_character_))) %>%
+  left_join(select(weights, race, weight), by = c("race_census" = "race")) %>%
+  fastDummies::dummy_cols("race_census") #%>%
+  #rename(race_census_his_lat = `race_census_hispanic or latinx`,
+  #       race_census_twomore = `race_census_two or more races`,
+  #       race_census_black = `race_census_black or african american`,
+  #       race_census_indian = `race_census_american indian or alaska native`,
+  #       race_census_white = `race_census_white (non-hispanic or latino)`) %>% 
+  #select(-race_census_NA)
+
+#wrangled %>% mutate(race_test = ifelse(str_detect(race, ";"), str_replace(race, ";?hispanic or latinx;?", ""), race)) %>%
+#  filter(race_his_lat == 1) %>% count(race_test) %>% arrange(n) %>%
+#  mutate(new_group = c(rep("two or more", 3), "other", ""))
+
+#wrangled %>% filter(race_his_lat == 1) %>% count(race)
+```
+
+```{r eval=F}
+wrangled %>%
+  #filter(!is.na(rating) %>%
+  count(ins_emp, race_weight, weight) %>%
+  #count()) %>%
+  ungroup(ins_emp) %>%
+  mutate(
+    denom = sum(n),
+    percent = round((n / denom), 3),
+    #cumuPer = round(cumsum(freq = n / sum(n)), 3)
+    weighted = percent*weight
+    ) %>%
+  filter(ins_emp == 1)
+
+wrangled %>% select(fin_insec, diff_worr, diff_ran_out, diff_bill, diff_rent) %>% filter(fin_insec == 0)
+```
+
+# New Columns
+
+```{r eval=F}
+
+final_clean %>%
+  #select(inc_b) %>%
+  #select_if(haven::is.labelled) %>%
+  labelled::generate_dictionary() %>% filter(pos == 4) %>%
+  mutate(values = str_c(values, collapse = ",")) %>% .[["value_labels"]]
+colnames(wrangled) %>% unique %>% length
+#sapply(colnames(survey), function(col) table(survey[col]))
+
+
+#final_clean %>% rename_all(~str_replace(., "q[:digit:]+_?[:digit:]?",
+#                                        survey_codebook$var[. == survey_codebook$q]))
+
+final_clean %>% filter(if_any(everything(), ~str_detect(.x, "fuck"))) %>% select(source)
+```
+
+
+# Upload files to google drive
+
+```{r}
+today <- gsub("-", "", Sys.Date())
+
+write_dta(wrangled %>% mutate(weight = as.numeric(weight)), path = paste0("../data/output/wrangled", today,".dta"))
+saveRDS(wrangled, file = paste0("../data/output/wrangled", today, ".rds"))
+write_excel_csv(wrangled, file = paste0("../data/output/wrangled", today, ".csv"))
+write_excel_csv(weights, file = paste0("../data/output/weights", today, ".csv"))
+
+#googledrive_path <- "Communities Speak/Subteams/Data Subteam/Individual Survey-2(POA/Codebook/Census Figures)/cleaning/"
+
+#write_excel_csv(survey_codebook, paste0("../data/codebook/survey_question_codebook_", today, ".csv"))
+#drive_upload(media = paste0("../data/codebook/survey_question_codebook_", today, ".csv"),
+#             path = paste0(googledrive_path, "data/survey_question_codebook_",
+#                           today, ".csv"),
+#             overwrite = TRUE, # for some reason, it is not effectively overwriting
+#             type = "spreadsheet")
+
+#drive_upload(media = "communities_speak.Rmd",
+#             path = paste0(googledrive_path, "code/cleaning_script_", today, ".Rmd"),
+#             overwrite = TRUE)
+#drive_upload(media = "communities_speak.pdf", path = paste0(googledrive_path, "code/cleaning_script_", today, ".pdf"))
+#drive_upload(media = "functions/fixup.R", path = paste0(googledrive_path, "code/functions/fixup.R"), overwrite = TRUE)
+dim(wrangled)
+final_clean %>%
+  filter(responseid == "r_2xdu5ggf7umy0f7") %>%
+  filter(completion >= min_completion,
+         duration >= min_duration,
+         q2 == 1,
+         q5 > 17,
+         borough != "long island")
+
+final_clean %>% filter(is.na(borough),
+                       completion >= min_completion,
+                       duration >= min_duration,
+                       q2 == 1,
+                       q5 > 17)
+
+responseids <- final_clean %>% filter(#is.na(q5),
+                       is.na(borough),
+                       completion >= min_completion,
+                       duration >= min_duration) %>% pull(responseid)
+
+survey %>% filter(responseid %in% responseids)
+final_clean %>% filter(responseid %in% responseids) %>% mutate_if(is.labelled, labelled::to_character)
+```

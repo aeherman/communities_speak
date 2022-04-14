@@ -1,0 +1,265 @@
+---
+title: "Validating Nonresponse"
+author: "Arielle Herman"
+date: "2/21/2022"
+output: pdf_document
+---
+
+```{r setup, include=F}
+library(tidyverse)
+library(labelled)
+
+#load("../data/processed/final_clean.rdata")
+#source("thresholds.R")
+source("default_setup.R")
+```
+
+
+# When do we lose respondents?
+
+Analyzing when we lose respondents will help us shape the structure and questions of the next survey to better retain respondents throughout the survey.  The below graphs and analysis are based on the newly compiled data (as of Feb 22).
+
+
+```{r include=F}
+final_clean
+selected <- final_clean %>% #filter(completion < min_completion) %>%
+  select(contains("q")) %>% select(!matches("text"))
+
+no_response <- selected %>% filter(if_all(everything(), is.na)) %>% nrow
+one_response <- selected %>% filter(if_all(-q2, is.na)) %>% nrow
+non_ny <- selected %>% filter(q2 == 0) %>% nrow
+n <- final_clean %>% nrow
+```
+
+# validate disqualification criteria
+
+```{r}
+by_reqs <- final_clean %>% group_by(
+  q2 == 1,
+  completion >= 0.5,
+  duration >= 100
+) %>% count
+
+kableExtra::kable(by_reqs)
+```
+
+```{r include=F}
+
+max(final_clean$duration)
+
+final_clean %>%
+  filter(duration <= 200) %>%
+  ggplot(aes(x = duration)) + geom_histogram(aes(fill = q2 == 1)) +
+  scale_x_continuous(labels = scales::comma)
+
+final_clean %>% ggplot(aes(x = recordeddate, y = q2)) + geom_line()
+final_clean$recordeddate
+
+final_clean %>% count(q2)
+
+final_clean %>%
+  #filter(q2 == 1) %>%
+  group_by(week = base::cut(recordeddate, breaks = "1 week")) %>% summarize(mean = mean(q2, na.rm = TRUE), sum = sum(q2, na.rm = TRUE)) %>%
+  ungroup %>% mutate(group = 1) %>%
+  ggplot(aes(x = week, y = mean, group = 1)) + geom_line(lty = "dashed") + geom_point(aes(color = mean, size = sum)) +
+  scale_y_continuous(labels = scales::percent) +
+  xlab(NULL) + ylab(NULL) + ggtitle("Proportion Respondents Living in NYC over Time") +
+  labs(subtitle =
+         glue::glue("{round(mean(final_clean$q2, na.rm = TRUE)*100, digits = 2)}% of {nrow(final_clean)} total respondents live in NYC")) +
+  #annotate(geom = "text", x = 13, y = .87, label = "test") +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1))
+
+final_clean %>% count(q2 = labelled::to_character(q2), week = base::cut(recordeddate, breaks = "1 week")) %>%
+  ggplot(aes(x = week, y = n, color = q2, group = q2)) + geom_point() + geom_line() +
+  theme(legend.position = "bottom")
+#final_clean %>% filter(q2 == 0) %>% pull(completion)
+```
+Out of **`r n`** total responses, **`r no_response`** respondents didn't fill any responses at all and **`r one_response`** respondents only completed the first question.  We can see the major drop offs in respondents in the below graph:
+  
+  
+  
+Of people who make it through half of the survey, 25% don't answer that question.
+  
+```{r echo=F}
+to_plot <- final_clean %>%
+  filter(q2 == 1) %>%
+  #filter(completion < .50) %>%
+  filter(completion >= .5, q2 == 1, duration >= 100) %>%
+  select(contains("q")) %>%
+  filter(!if_all(everything(), is.na)) %>% # about 100 where they didn't fill out anything
+  select(!matches("text")) %>%  is.na
+
+to_plot_tibble <- distinct(tibble(no = as.integer(str_extract(colnames(to_plot), "[:digit:]{1,2}")),
+                                  #question = colnames(to_plot),
+                                  mean = round(colMeans(to_plot), digits = 2))) %>% na.omit()
+                                  #sum = colSums(to_plot))
+
+to_plot_tibble %>% ggplot(aes(x = no, y = mean)) + geom_line(lty = "dashed") +
+  geom_point(aes(color = no %in% c(3, 13, 21, 25, 32))) +
+  scale_y_continuous(label = scales::percent) +
+  labs(title = "Proportion Incomplete Responses per Question") +#,
+       #subtitle = "among respondents who completed less than 50% of the survey") +
+  ylab(NULL) + xlab(NULL) +
+  ggrepel::geom_text_repel(aes(x = no, y = mean, label = ifelse(no %in% c(3, 13, 21, 25, 32), paste0("q", no), ""))) +
+  theme(legend.position = "none") +
+  annotate("text", x = 29, y = .96, label = "Conditional\nChildren Qs: q26-q31", hjust = 0) +
+  annotate("text", x = 16, y = .96, label = "Conditional\nUnemployment Qs: q17-q18", hjust = 1) +
+  annotate("text", x = 40, y = .51, label = "Conditional\nBooster\nQuestion q40", hjust = 0.5) +
+  annotate("text", x = 40, y = .10, label = glue::glue("{nrow(to_plot)} Total\nRespondents")) +
+  scale_color_manual(values = project_pal[c(4, 3)])
+
+to_plot_tibble
+```
+The major drop-offs come at:
+
+1. second question (q3), asks about zipcode.
+2. twelth question (q13), the first income question
+3. twentieth question (q21), that asks about experienced difficulties
+4. thirtieth question (q32), that asks about government information
+
+## Second Question (q3)
+
+This drop-off charts respondents who marked that they were NYC residents but did not complete the next question.  Possible reasons for quitting the survey include:
+
+- unwillingness to complete the survey
+- said they were a NYC resident but their permanent zipcode is not in NYC
+- lack of a permnanet address / zipcode
+
+Regarding the last expanation, we may want to include a `don't know` category to encourage any respondents that didn't continue due to lack of a permanent address.
+
+## Twelth Question (q13)
+
+Respondents also drop off right before the first income bracket question.  Possible explanations include:
+
+- difficulty getting this information
+
+This may be especially difficult for low-income or hourly wage workers, who may not know their income bracket without significant thought.  If this is the case, this question may cause selection bias toward higher income brackets.
+
+## Twentieth Question (q21)
+
+Respondents avoid this question, but appear to continue with the question following.  It is so far unclear why this is the case, and the NA responses seem pretty evenly distributed across partners.  I have yet to test it on other demographics.  Some possible explanations that require more thought include:
+
+- question wasn't required in qualtrics survey
+- respondents were discouraged from completing this question
+
+## Thirtieth Question (q32)
+
+Respondents with and without children are not responding to q32:
+
+
+```{r echo=F}
+# of people who answered childhood questions, how many completed 32
+out <- final_clean %>%
+  count(has_child = ifelse(q25_3 >= 1 | q25_4 >= 1, "household with children", "household without children"),
+        answered_q32 = ifelse(!is.na(q32), "answered question q32", "did not answer q32")) %>%
+  group_by(has_child) %>% filter(!is.na(has_child)) %>%
+  mutate(prop = scales::percent(n/sum(n), digits = 4))
+
+kableExtra::kable(out)
+```
+
+We lose the largest number of respondents from the demographic of no household children, but the larger proportion of respondents from households with children.  If respondents from households without children are quitting the survey because of the skip logic, we may want to encourage them to complete it by moving the children questions later in the survey.  However, it is unclear why there is a drop off between these two questions, and more thought is required.
+
+
+```{r eval=F, include=F}
+survey %>% select(contains("25")) %>% is.na %>% mean
+final_clean %>%
+  filter(q25_3 < 1 | q25_4 < 1) %>%
+  select(contains("q25"), "q32") %>% is.na %>% colMeans
+
+```
+
+
+```{r include=F}
+# did the people who left 26-31 (childhood questions) blank have children q25_3, q25_4?
+
+lapply(paste0("q", 26:31), function(q) {
+  sym_q <- q
+  final_clean %>% count(!is.na(q25_3), !is.na(q25_4), !is.na(!!q)) %>% filter(n > 10)
+})
+
+final_clean %>% count(!is.na(q25_3), !is.na(q25_4), !is.na(q26)) %>% filter(n > 10)
+
+
+final_clean %>% count(!is.na(q25_3), !is.na(q25_4), q30) %>% mutate_if(is.labelled, labelled::to_factor)
+
+# 844 people marked marked that they had children, but didn't respond to q31 on whether or not they needed healthcare but couldn't find it
+final_clean %>% count(!is.na(q25_3), !is.na(q25_4), q31) %>% mutate_if(is.labelled, labelled::to_factor)
+
+
+
+final_clean %>% count(source, is.na(q21)) %>%
+  group_by(source) %>%
+  mutate(prop = scales::percent(n/sum(n))) %>%
+  filter(n > 10)
+
+
+# what was the percent completion of the people who had weird combinations of
+```
+
+
+```{r include=F, eval=F}
+#We lose about 20% of resp
+# look at which groups of variables are mostly complete
+final_clean %>% filter(completion < min_completion, completion > .1) %>%
+  select(!matches("q[1-9]{1,2}_")) %>%
+  select_if(~mean(!is.na(.))>0.5)
+
+final_clean %>% filter(responseid == "r_unbyhfbce2gl4lt") %>% select(!matches("q[1-9]{1,2}_"))
+
+hist(log(final_clean$duration))
+hist(final_clean$completion)
+final_clean %>% ggplot(aes(x = completion, y = log(duration))) + geom_point() + geom_smooth()
+
+
+final_clean %>% select(responseid, source, duration, contains("25"), !matches("text")) %>%
+  mutate_at(vars(contains("q")), is.na) %>% filter(responseid == "r_unbyhfbce2gl4lt") %>%
+  pivot_longer(cols = contains("q"), names_to = "question", values_to = "values") %>%
+  mutate(question_no = as.integer(str_extract(question, "[:digit:]{1,2}"))) %>% arrange(question_no)
+  ggplot(aes(x = question, y = values)) + geom_point()
+  
+  final_clean %>% filter(responseid == "r_unbyhfbce2gl4lt") %>% select(matches("q1[:digit:]?"))
+
+str_which(c("abb", "garda", "arielle"), "a_(?!bb)")
+```
+
+
+```{r}
+wrangled %>% select(responseid, age, hh_sn_65, hh_ad_18_64, hh_ch_4_17, hh_ch_0_4) %>%
+  filter(!if_all(contains("hh"), is.na)) %>%
+  mutate(test = case_when(
+    age > 65 & hh_sn_65 > 0 | age > 17 & age < 65 & hh_ad_18_64 > 0 | age < 17 & age > 4 & hh_ch_4_17 > 0 ~ FALSE,
+    TRUE ~ TRUE
+  )) %>% pull(test) %>% sum
+```
+
+# number of household members per respondent
+implications on how we calculate median income
+
+```{r}
+hist(rowSums(wrangled[c("hh_sn_65", "hh_ad_18_64", "hh_ch_4_17", "hh_ch_0_4")]), xlim = c(0, 10), breaks = 50)
+```
+
+
+# mental health validation
+```{r}
+poa %>% select(contains("mntl")) %>% select(!contains("bi")) %>%
+  filter(if_all(everything(), ~floor(.) == mntl_hlth_unc)) %>%
+  count(mntl_hlth_conf) %>% 
+  ggplot(aes(x = reorder(to_character(mntl_hlth_conf), mntl_hlth_conf), y = n)) +
+  geom_col(fill = project_pal[4]) +
+  geom_text(aes(label = n), vjust = -0.2) +
+  xlab(NULL) + ylab(NULL) +
+  ggtitle("Respondents who only answered one category to all mental health questions")
+
+poa %>% select(contains("rate")) %>%
+  filter(if_all(everything(), ~.==rate_neigh_med)) %>%
+  count(rate_neigh_med) %>%
+  ggplot(aes(x = reorder(to_character(rate_neigh_med), rate_neigh_med), y = n)) +
+  geom_col(fill = project_pal[4]) +
+  geom_text(aes(label = n), vjust = -0.2) +
+  xlab(NULL) + ylab(NULL) +
+  ggtitle("Respondents who only answered one category to all rating questions")
+
+```
+
