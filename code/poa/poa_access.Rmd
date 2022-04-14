@@ -73,8 +73,6 @@ lapply(resource_qs, function(q) {
 wrangled %>% pivot_longer(cols = starts_with("lr_stress_")) %>%
   group_by(name) %>% summarize(mean = mean(value, na.rm = TRUE))
 
-make_plots(stress, by_vars = c("borough", "name"), hyp_var = "value")
-
 ```
 
 # 6.3)Which mode of transportation most frequently used [23]
@@ -125,7 +123,7 @@ table(wrangled$res_cat)
 
 mean(wrangled$res_cat == "public")
 
-make_plots(wrangled, "res_cat", "diff_hous")
+make_plots(wrangled, "res_cat", "diff_hous", title = "Difficulty finding housing")
 ```
 
 # 6.7) Households below median income were more likely to have difficulty with transportation during the pandemic
