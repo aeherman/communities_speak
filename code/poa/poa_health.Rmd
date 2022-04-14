@@ -7,6 +7,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+getwd()
 source("default_setup.R")
 #wrangled <- readRDS("../data/output/wrangled20220306.rds")
 # maybe load in the poa version of the data
@@ -19,9 +20,8 @@ Run distribution by sub-demographics (a-k)
 Compare and find gaps (test unequal proportions)
 
 ```{r}
-mean(str_detect(poa$posi, "yes"), na.rm = TRUE)
-plots <- make_plots(df = poa %>% mutate(posi_yes = str_detect(posi, "yes")),
-           by_vars = demographics, hyp_var = "posi_yes", title = "Households with a case of COVID")
+plots <- make_plots(wrangled,
+           by_vars = demographics, hyp_var = "posi_all", title = "Households with a case of COVID")
 plots$decade <- plots$decade + labs(subtitle = NULL)
 plots$race_census <- plots$race_census + labs(subtitle = NULL)
 plots$sch_level_cat <- plots$sch_level_cat + labs(subtitle = NULL)
@@ -31,7 +31,7 @@ plots[c(-5, -13)]
 ## how many unemployed only after and didn't get vaccinated?
 
 ```{r}
-make_plots(wrangled %>% filter(emp_change == 1), "vax", "emp_after_un", show = "yes")$vax
+make_plots(wrangled %>% filter(emp_change == 1), "vax", "emp_after_un", show = "yes", title = "Proportion Unemployed by Vaccination Status")
 ```
 
 
@@ -47,10 +47,7 @@ Run distribution by sub-demographics (a-k)
 Compare and find gaps (test unequal proportions)
 
 ```{r}
-mean(2-poa$vax[poa$vax != 3], na.rm = TRUE)
-make_plots(poa %>% #filter(vax != 3, emp_change == 1) %>%
-             mutate(vax = 2-vax),
-           by_vars = demographics, hyp_var = "vax")[c("sch_level_cat", "hh_ch_0_17_bi", "inc_dist")]
+make_plots(wrangled, by_vars = demographics, hyp_var = "vax_bi")
 ```
 
 4.3)People who have received a booster vaccine dose [38]
@@ -59,8 +56,8 @@ Run distribution by sub-demographics (a-k)
 Compare and find gaps (test unequal proportions)
 
 ```{r}
-mean(poa$boost == 1, na.rm = TRUE)
-make_plots(poa %>% mutate(boost_bi = boost == 1), demographics, "boost_bi")[
+mean(wrangled$boost_bi, na.rm = TRUE)
+make_plots(wrangled, demographics, "boost_bi")[
   c("borough", "race_census", "not_eng", "sch_level_cat", "inc_dist", "emp_status_after", "res_cat")]
 ```
 
@@ -70,10 +67,7 @@ Find proportion of subset who reported being at least partially vaccinated again
 Find proportion not in subset who reported being at least partially vaccinated against COVID-19 and compare (test unequal proportions)
 
 ```{r}
-mean(str_detect(poa$wrk, "yes"), na.rm = TRUE)
-poa %>% mutate(vax_int = 2-vax) %>% filter(vax_int > 0)
-poa$wrk
-make_plots(poa %>% mutate(wrk_in = str_detect(to_character(wrk), "yes")), by_vars = "vax", hyp_var = "wrk_in")$vax + ggtitle("Proprotion of Respondents who returned to work hybrid or in-person\nby vaccination status")
+make_plots(wrangled, by_vars = "vax_bi", hyp_var = "wrk_in")$vax + ggtitle("Proprotion of Respondents who returned to work hybrid or in-person\nby vaccination status")
 ```
 
 4.5)People who ranked the government response as average or above average were more likely to be vaccinated against COVID-19
@@ -84,9 +78,7 @@ Find proportion not in subset who reported being at least partially vaccinated a
 ## Findings: nope
 
 ```{r}
-make_plots(poa %>% mutate(rate_gov_pro = if_all(starts_with("rate_gov"), ~.>=3),
-                          vax_int = vax == 1),
-           "rate_gov_pro", "vax_int")
+make_plots(wrangled, "rate_gov_good", "vax_bi")
 ```
 
 4.7)People who have been discriminated against or are worried about discrimination due to COVID-19 [37]
@@ -95,9 +87,10 @@ Run distribution by sub-demographics (a-k)
 Compare and find gaps (test unequal proportions)
 
 ```{r}
-mean(poa$discrim_bi, na.rm = TRUE)
-plots <- make_plots(poa, demographics, "discrim_bi", min = 10)
+mean(wrangled$discrim_bi, na.rm = TRUE)
+plots <- make_plots(wrangled, demographics, "discrim_bi", min = 10)
 plots$race_census <- plots$race_census + labs(subtitle = NULL)
+plots
 ```
 
 
@@ -109,13 +102,12 @@ Compare and find gaps (test unequal proportions)
 
 
 ```{r warning=F, echo = F}
+mean(wrangled$exp_ab_or_vi, na.rm = TRUE)
 #poa %>% mutate(exp_ab_or_vi = exp_ab_or_vi == 1)
-plots <- make_plots(df = mutate(poa, exp_ab_or_vi = exp_ab_or_vi == 1),
+plots <- make_plots(wrangled,
            by_vars = demographics, hyp_var = "exp_ab_or_vi",
            title = "Proportion of Respondents to Experience Abuse or Violence due to COVID-19")
-#plots$borough
-#poa$exp_ab_or_vi == 1
-mean(poa %>% filter(borough == "queens") %>% pull(exp_ab_or_vi) == 1, na.rm = TRUE)
+plots
 ```
 
 # 4.9)People who experienced at least one mental health challenge in the last month [41]
@@ -132,20 +124,13 @@ Run distribution by sub-demographics (a-k)
 
 ```{r warning=F, echo = F}
 #poa %>% select(contains("mntl_hlth")) %>% mutate_if(labelled::is.labelled, labelled::to_factor)
-poa %>% mutate(mntl_hlth_bi = mntl_hlth_unc_bi == 1 | mntl_hlth_conf_bi == 0 |
-                 mntl_hlth_yourway_bi == 0 | mntl_hlth_pile_bi == 1) %>% select(contains("mntl_hlth")) %>%
-  #mutate_if(is.labelled, labelled::to_factor) %>% #filter(mntl_hlth_bi)
-# did people mostly choose the middle category?
-summarize(across(contains("mntl_hlth"), ~mean(., na.rm = TRUE)))
-# validate by changing the "sometimes" coding
-# check why mntl_hlth_conf_bi not labelled
-df <- poa %>% 
-  mutate(mntl_hlth_bi = mntl_hlth_unc_bi == 1 | mntl_hlth_conf_bi == 0 |
-                 mntl_hlth_yourway_bi == 0 | mntl_hlth_pile_bi == 1)
-plots <- make_plots(df, demographics, hyp_var = "mntl_hlth_bi", title = "Proportion of Respondents Experiencing\nat Least One Mental Health Challenge")
+plots <- make_plots(wrangled, demographics, hyp_var = "mntl_hlth_bi", title = "Proportion of Respondents Experiencing\nat Least One Mental Health Challenge")
 plots$decade <- plots$decade + labs(subtitle = "*some statistically significant differences")
 plots$sch_level_cat <- plots$sch_level_cat + labs(subtitle = "*some statistically significant differences")
 plots
+
+make_plots(wrangled, demographics, "mntl_hlth_state_bi", title = "Respondents Experiencing Mental Health Challenges")
+wrangled$mntl_hlth_st
 ```
 
 # 4.10)People who are currently unemployed are more likely to experience at least one form of mental health challenge in the last month
@@ -153,13 +138,20 @@ Find respondents who are currently unemployed [17]
 Find proportion of subset that experienced at least one challenge in the last month [41]
 Find proportion not in subset and compare (test unequal proportions)
 
+```{r}
+wrangled %>% select(contains("rescale")) %>% pivot_longer(contains("rescale")) %>%
+  mutate(label = labelled::to_character(value),
+         color = case_when(
+           value == 0 ~ "neutral",
+           value > 0 ~ "positive",
+           value < 0 ~ "negative"
+         )) %>% group_by(name, label, value) %>% summarize(n = n()) %>%
+  drop_na %>%
+  ggplot(aes(x = value, y = name, color = as.integer(value))) + geom_line() + geom_point(aes(size = n))
+```
+
 ```{r warning=F, echo = F, eval=F}
-make_plots(df, by_vars = "emp_un_after", hyp_var = "mntl_hlth_bi", conf = .15, title = "Proportion of respondents who have a mental health challenge")
-# filter only desired logical vectors
-to_test <- df %>% count(unemployed, mntl_hlth_bi) %>% na.omit %>%
-  group_by(unemployed) %>% mutate(denom = sum(n), prop = n/denom) %>% filter(mntl_hlth_bi)
-#prop.test(to_test$n, to_test$denom)
-#to_test %>% ggplot() + geom_col(aes(x = prop, y = unemployed))
+make_plots(wrangled, by_vars = "emp_after_un", hyp_var = "mntl_hlth_bi", conf = .15, title = "Proportion of respondents who have a mental health challenge")
 ```
 
 # 4.12)People who have been discriminated against are more likely to experience at least one mental health challenge
@@ -168,7 +160,10 @@ Find proportion of subset that experienced at least one challenge in the last mo
 Find proportion not in subset and compare (test unequal proportions)
 
 ```{r warning=F, echo = F}
-make_plots(df, by_vars = "discrim_bi", hyp_var = "mntl_hlth_bi",
+make_plots(wrangled, by_vars = "discrim_bi", hyp_var = "mntl_hlth_bi",
+           title = "Proportion of Respondents to experience\nat least one Mental Health Challenge")$discrim_bi + labs(subtitle = NULL)
+
+make_plots(wrangled, by_vars = "discrim_bi", hyp_var = "mntl_hlth_state_bi",
            title = "Proportion of Respondents to experience\nat least one Mental Health Challenge")$discrim_bi + labs(subtitle = NULL)
 ```
 
@@ -179,7 +174,7 @@ Compare and find gaps (test unequal proportions)
 
 ```{r warning=F, echo = F}
 # fix show feature
-make_plots(poa %>% mutate(hstnt_hc = hstnt_hc == 1),
+make_plots(wrangled,
            by_vars = demographics, hyp_var = "hstnt_hc",
            title = "Proportion of Respondents\nhesitant to approach a healthcare facility")
 ```
@@ -193,7 +188,7 @@ Find proportion of subset that experienced at least one challenge in the last mo
 Find proportion not in subset and compare (test unequal proportions)
 
 ```{r warning=F, echo = F}
-make_plots(df, by_vars = "exp_ab_or_vi", hyp_var = "mntl_hlth_bi",
+make_plots(wrangled, by_vars = "exp_ab_or_vi", hyp_var = "mntl_hlth_bi",
            title = "Proportion of Respondents to experience at least one Mental Health Challenge")
 ```
 
@@ -203,6 +198,8 @@ Look at health concerns as related to going back to work divided by age category
 
 ```{r}
 #not sure I understand
+
+median_age <- median(wrangled$age)
 ```
 
 # 4.15) People who were concerned/ not concerned about the Delta variant
@@ -210,7 +207,7 @@ Run distribution over population
 Compare distribution by concern about Delta variant
 
 ```{r warning=F, echo = F}
-plots <- make_plots(df %>% mutate(con_vrnts = vrnts == 1), by_vars = demographics, hyp_var = "con_vrnts",
+plots <- make_plots(wrangled, by_vars = demographics, hyp_var = "vrnts_bi",
            title = "Proportion Concened about covid variants", min = 10)
 plots$decade <- plots$decade + labs(subtitle = "*some statistically significant differences")
 plots
