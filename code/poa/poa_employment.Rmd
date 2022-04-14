@@ -15,69 +15,12 @@ library(tidyverse)
 library(haven)
 library(gfonts)
 library(ggVennDiagram)
-wrangled <- read_dta("../data/output/wrangled20220403.dta") %>%
-  mutate_if(is.character, na_if, "")
-source("functions/communities_speak_theme.R")
 source("default_setup.R")
 #use_font("open-sans", "functions/css/open-sans.css")
 
 #```css
 #body {font-family: 'Open Sans', open-sans;}
 #```
-```
-
-
-```{r warning=F, message=F, include=F}
-#use_font("open-sans", "functions/css/open-sans.css")
-poa <- wrangled %>% mutate(
-  # demographics
-  emp_status_before = case_when(
-    str_detect(emp_before, "unemp") ~ "unemployed",
-    str_detect(emp_before, "full|part|free|gig|small|home|student") ~ "employed",
-    str_detect(emp_before, ";") ~ "multiple_other",
-    TRUE ~ emp_before),
-  emp_status_after = case_when(
-    str_detect(emp_before, "unemp") ~ "unemployed",
-    str_detect(emp_after, "full|part|free|gig|small|home|student") ~ "employed",
-    str_detect(emp_after, ";") ~ "multiple_other",
-    TRUE ~ emp_after),
-  res_cat = labelled::to_character(res_type),
-  res_cat = case_when(
-    str_detect(res_cat, "public") ~ "public",
-    str_detect(res_cat, "owner") ~ "owner",
-    str_detect(res_cat, "renter") ~ "renter",
-    str_detect(res_cat, "not have") ~ "no permanent residence",
-    TRUE ~ res_cat),
-  sch_level_cat = labelled::to_character(sch_level),
-  sch_level_cat = case_when(
-    str_detect(sch_level_cat, "high school|some college") ~ sch_level_cat,
-    str_detect(sch_level_cat, "bach|ass") ~ "undergraduate degree",
-    str_detect(sch_level_cat, "doct|mast|prof") ~ "graduate degree"
-  ),
-  #unemployed = emp_after == "unemployed", # newly unemployed I already made this variable
-  decade = paste0(floor(age/10)*10, "s"),
-  
-  # hypotheses
-  emp_change = emp_before != emp_after,
-  # 1.4 inc_be_med_b
-  # 1.5
-  sch_bach = factor(ifelse(str_detect(labelled::to_character(sch_level), "(?<!no )degree"), "BA plus", labelled::to_character(sch_level))),
-  # 1.6
-  ins_has = factor(ifelse(!str_detect(ins, "do"), "has insurance", "doesn't have insurance")),
-  # 1.7) People who were on private insurance were least likely to face changes in job status [14,15,21]
-  # ins_prvt
-  # 1.8)Higher paid employees (above median income) were less likely to return to working in-person [12,13,18]
-  inc_ab_med = inc_after > 8 & inc_before > 8,
-  part_time = case_when(
-    emp_before_wrk_ft == 0 & emp_before_wrk_pt == 1 | emp_before_fl == 1 | emp_before_gig == 1 | emp_before_sb == 1 ~ 1,
-    emp_before_wrk_ft == 1 ~ 0
-  ),
-  fin_unstable = diff_ran_out == 1 & diff_bill == 1 | diff_bill == 1 & diff_rent == 1 | diff_rent == 1 & diff_ran_out == 1,
-  food_insec = diff_ran_out == 1 | diff_worr == 1
-  )
-saveRDS(poa, file = "../data/output/poa.rds")
-#hyps <- c("emp_change")
-#dem <- "emp_status_b"
 ```
 
 # 1.2) People who are currently unemployed who were not unemployed in before the pandemic (March 2020)  [14&15]
