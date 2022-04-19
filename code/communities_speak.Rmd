@@ -20,8 +20,8 @@ source("dictionary.R")
 source("thresholds.R")
 readRDS("../data/processed/survey.rds")
 
-#boroughs <- read_xlsx("../data/input/Borough_for_Arielle.xlsx") %>%
-#  rename_all(str_to_lower) %>% mutate_all(str_to_lower)
+boroughs <- read_xlsx("../data/input/Borough_for_Arielle.xlsx") %>%
+  rename_all(str_to_lower) %>% mutate_all(str_to_lower)
 
 var_dict
 
@@ -434,6 +434,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     lr_fam = if_any(starts_with("q35_") & ends_with("_5"), ~.==1),
     lr_gov = if_any(starts_with("q35_") & ends_with("_3"), ~.==1),
     lr_fb = if_any(starts_with("q35_") & ends_with("_1"), ~.==1),
+    lr_np = if_any(starts_with("q35_") & ends_with("_2"), ~.==1),
     
     internet_lim = q23 != 1, # respondent has limited or no internet access
     internet_acc = q23 == 1
@@ -512,7 +513,7 @@ wrangled <-
 ```
 
 
-# Upload files to google drive
+# save files
 
 ```{r}
 today <- gsub("-", "", Sys.Date())
