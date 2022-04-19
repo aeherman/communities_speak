@@ -10,8 +10,8 @@ source("../code/functions/make_plots.R")
 # thresholds
 min_duration <- 100 # 100 seconds
 min_completion <- .5 # responded to 50% of the questions
-poverty_line <- 5
-median_inc <- 8 # median income level is $67
+poverty_line <- 2 # 2 and 1 are below poverty line
+median_inc <- 3 # 4 and 5 are median income and greater
 
 # census numbers
 ## only necessary to make city-wide estimates
