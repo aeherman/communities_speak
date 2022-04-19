@@ -1,5 +1,5 @@
 ---
-title: "poa_outline"
+title: "poa_access_gov"
 author: "Arielle Herman"
 date: "4/10/2022"
 output: pdf_document
@@ -86,6 +86,9 @@ Compare and contrast the responses between high and low income population
 mean(wrangled$rate_neigh_pre_bad, na.rm = TRUE)
 make_plots(wrangled, "inc_dist", "rate_neigh_pre_bad", title = "Rated Crime Prevention Well")
 make_plots(wrangled, "inc_dist", "rate_neigh_pre_good", title = "Rated Crime Prevention Poorly")
+
+make_plots(wrangled, "borough", "lr_gov")
+make_plots(wrangled, "borough", "lr_fam")
 ```
 
 
@@ -105,4 +108,50 @@ wrangled %>% ggplot(aes(x = rate_gov_ave)) + geom_bar() + geom_vline(xintercept 
 make_plots(wrangled, "lr_gov", "rate_gov_bad", title = "Rated Federal, State, and City Government (Very) poorly")
 make_plots(wrangled, "lr_gov", "rate_gov_good")
 ```
+# cell 13
 
+Which populations are most and least likely to turn to the government for resources? By borough, race, booster status, socioeconomic status (below pov, below median, above median), mental health status (those who experienced one or more vs those who experienced none, families with children vs without
+
+Also run these same demographics by who is most likely to turn to faith-based institutions, community-based organizations, and friends and family
+
+```{r}
+demo_plus <- c(demographics, "boost_bi", "mntl_hlth_bi", "mntl_hlth_state_bi")
+names(demo_plus) <- demo_plus
+
+make_plots(wrangled, demo_plus, "lr_gov", title = "Percent Respondents Who\nwould reach out to the Government")[c("borough", "race_census", "sch_level_cat", "inc_dist")]
+
+make_plots(wrangled, demo_plus, "lr_gov", title = "Percent Respondents Who\nwould reach out to the Government")[c("borough", "race_census", "sch_level_cat", "inc_dist")]
+
+make_plots(wrangled, demo_plus, "lr_fam", title = "Percent Respondents Who\nwould reach out to Friends and Family")[c("borough", "race_census", "sch_level_cat", "hh_ch_0_17_bi", "inc_dist", "emp_status_after", "res_cat", "mntl_hlth_bi")]
+
+
+make_plots(wrangled, demo_plus, "lr_fb", title = "Percent Respondents Who\nwould reach out to faith-based organizations")
+
+make_plots(wrangled, demo_plus, "lr_np", title = "Percent Respondents Who\nwould reach out to local nonprofits")
+```
+
+# cell 14
+
+Run government ranking over other health indicators (i.e. what percent of those who experienced at least one mental health challenge rated the gov below average vs the percent that rated the gov below average that did not experience mental health challenge at all levels of gov)
+
+Other health indicators: access to health insurance, personally experienced covid, experienced covid in the household, and ran out or worried about running out of food (combined)
+
+```{r}
+health_indicators <- c("mntl_hlth_state_bi", "mntl_hlth_bi", "ins_has", "posi_yes", "posi_hh", "posi", "food_insec")
+names(health_indicators) <- health_indicators
+attributes(wrangled$food_insec)$labels
+make_plots(wrangled, health_indicators, "rate_gov_bad",
+           title = "Percent Respondents Who\nRated the government below average")
+```
+
+# cell 15
+
+"Look at the government ratings (all levels of gov) for those who rated a neighborhood service as ""fair"" or poor"" vs the gov ratings of those who rated that same service as ""Excellent"" or ""good""
+
+Run for all neighborhood services "
+
+```{r}
+neighbor_services <- wrangled %>% select(contains("rate_neigh") & !contains("good") & !contains("bad")) %>% colnames()
+attributes(wrangled$rate_gov_good)$labels
+make_plots(wrangled, neighbor_services, "rate_gov_good", title = "rated government positively")
+```
