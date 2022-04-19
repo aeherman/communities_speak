@@ -66,5 +66,4 @@ codebook <- make_codebook(wrangled)
 
 today <- gsub("-", "", Sys.Date())
 View(codebook)
-getwd()
-write_excel_csv(codebook, glue::glue("data/ouput/codebook{today}.csv"))
+write_excel_csv(codebook, glue::glue("~/communities_speak/sp22/data/output/codebook.csv"))
