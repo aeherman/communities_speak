@@ -511,25 +511,6 @@ wrangled <-
   select(-race_census_NA)
 ```
 
-# New Columns
-
-```{r eval=F}
-
-final_clean %>%
-  #select(inc_b) %>%
-  #select_if(haven::is.labelled) %>%
-  labelled::generate_dictionary() %>% filter(pos == 4) %>%
-  mutate(values = str_c(values, collapse = ",")) %>% .[["value_labels"]]
-colnames(wrangled) %>% unique %>% length
-#sapply(colnames(survey), function(col) table(survey[col]))
-
-
-#final_clean %>% rename_all(~str_replace(., "q[:digit:]+_?[:digit:]?",
-#                                        survey_codebook$var[. == survey_codebook$q]))
-
-final_clean %>% filter(if_any(everything(), ~str_detect(.x, "fuck"))) %>% select(source)
-```
-
 
 # Upload files to google drive
 
@@ -540,27 +521,4 @@ write_dta(wrangled %>% mutate(weight = as.numeric(weight)), path = paste0("../da
 saveRDS(wrangled, file = paste0("../data/output/wrangled", today, ".rds"))
 write_excel_csv(wrangled, file = paste0("../data/output/wrangled", today, ".csv"))
 write_excel_csv(weights, file = paste0("../data/output/weights", today, ".csv"))
-
-dim(wrangled)
-final_clean %>%
-  filter(responseid == "r_2xdu5ggf7umy0f7") %>%
-  filter(completion >= min_completion,
-         duration >= min_duration,
-         q2 == 1,
-         q5 > 17,
-         borough != "long island")
-
-final_clean %>% filter(is.na(borough),
-                       completion >= min_completion,
-                       duration >= min_duration,
-                       q2 == 1,
-                       q5 > 17)
-
-responseids <- final_clean %>% filter(#is.na(q5),
-                       is.na(borough),
-                       completion >= min_completion,
-                       duration >= min_duration) %>% pull(responseid)
-
-survey %>% filter(responseid %in% responseids)
-final_clean %>% filter(responseid %in% responseids) %>% mutate_if(is.labelled, labelled::to_character)
 ```
