@@ -17,11 +17,13 @@ library(rjson)
 library(googlesheets4)
 #source("functions/fixup.R")
 source("dictionary.R")
+source("default_setup.R")
 #source("clean_data.R")
 
 setwd("~/communities_speak/sp22/code")
+source("clean_data.R")
 
-survey <- read_csv("../data/input/survey_20220408.csv") %>%
+survey <- read_csv("../data/input/survey_20220417.csv") %>%
   rename_all(stringr::str_to_lower) %>%
   rename(duration = "duration (in seconds)") %>% filter(row_number() > 2) %>%
   mutate_at(vars(-recordeddate), ~str_to_lower(as.character(.))) %>%
@@ -41,15 +43,8 @@ Get important metadata on each of the questions that facilitates wrangling
 
 ```{r}
 final_clean <- survey[c('responseid', 'recordeddate')] %>% left_join(clean_data()) %>%
-  left_join(boroughs, by = c("q3" = "zip")) %>%
-  mutate(valid = case_when(
-    completion > 0.5 & q2 == 2 & q5 > 17 & !is.na(borough) ~ 1,
-    TRUE ~ 0
-  )) %>%
-  mutate(valid = ifelse(if_any(everything(), str_detect, pattern = "^test$"),
-                        NA_integer_,
-                        valid),
-         source = ifelse(is.na(source), "communities speak", source))
+  left_join(boroughs, by = c("q3" = "zip"))
+
 
 completion <- lapply(final_clean$responseid, function(id) {
 #for(id in final_clean$responseid) {ghts
@@ -91,11 +86,35 @@ completion <- lapply(final_clean$responseid, function(id) {
 
 final_clean$completion <- completion
 
+final_clean <- final_clean %>%
+  mutate(test = if_any(everything(), str_detect, pattern = "^test$|beta_test")) %>%
+  mutate(valid = case_when(
+    completion > 0.5 & q2 == 1 & q5 > 17 & !is.na(borough) ~ 1,
+    TRUE ~ 0
+  )) %>%
+  mutate(
+    #yes_ny = q2 == 1,
+    #complete = completion > 0.5,
+    #plus_18 = q5 > 17,
+    #borough_good = !is.na(borough),
+    #test = if_any(everything(), ~str_detect(., pattern = "^test$")),
+         source = ifelse(is.na(source), "communities speak", source),
+    valid = ifelse(is.na(test), valid, NA_integer_))
+
+#final_clean %>%
+  #filter(responseid == "r_1dmcjaf6vuzlz2a") %>%
+#  count(yes_ny, complete, plus_18, borough_good, valid, test, valid2)
+
 hist(final_clean$completion)
 mean(!is.na(final_clean$q2))
 save(final_clean, file = "../data/processed/final_clean.rdata")
+write_csv(final_clean, file = "../data/processed/final_clean.csv")
 colMeans(is.na(survey))
 colMeans(is.na(final_clean))
+
+final_clean %>%
+  select(responseid, userlanguage, q4) %>% na.omit() %>%
+  filter(if_any(everything(), ~str_detect(., pattern = "^test$")))
 ```
 
 ## Brief Cleaning Process Validation?
@@ -105,12 +124,13 @@ colMeans(is.na(final_clean))
 ```{r}
 
 # 39
-index_40 <- str_which(column_names$q, "q40")
-key_40 <- column_names$q[index_40]
-label_40 <- column_names$label[index_40]
-q40_bi <- final_clean %>% select(responseid, source, contains("40")) %>%
-  mutate_at(vars(contains("40")), ~!str_detect(haven::as_factor(.), "almost|never")) #%>% rename_at(vars(contains("41")), ~glue::glue("{.x}_bi"))
-names(q40_bi)[match(key_40, names(q40_bi))] <- paste(label_40, "bi", sep = "_")
+index_40 <- str_which(survey_codebook_labelled$q, "q40")
+key_40 <- survey_codebook_labelled$q[index_40]
+label_40 <- survey_codebook_labelled$full_label[index_40]
+q40_bi <- final_clean %>%
+  mutate(across(contains("40"), ~!str_detect(haven::as_factor(.), "almost|never"),
+                .names = "{col}_bi")) %>%
+  select(responseid, source, contains("bi"))
 
 #remove_test <- final_clean %>% filter(if_any(everything(), ~str_detect(.x, "^test$")))
 
@@ -119,7 +139,7 @@ names(q40_bi)[match(key_40, names(q40_bi))] <- paste(label_40, "bi", sep = "_")
 
 wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/ncol(final_clean)) %>%
   # remove invalid responses
-  filter(valid == 1) %>%
+  filter(valid == 1) %>% select(-test) %>%
   # make new variables
   mutate(
     #### race variables ####
@@ -311,7 +331,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     
     
     ) %>%
-  left_join(q41_bi)
+  left_join(q40_bi)
   #mutate_at(vars(q20, q27), ~haven::as_factor(.)) #%>% sjlabelled::label_to_colnames() #%>%
 
 to_label <- new_vars$var_name[new_vars$var_name %in% colnames(wrangled)]
@@ -364,7 +384,6 @@ weights <- wrangled %>% count(race = str_replace(race, ".*;.*", "two or more rac
          `target/actual` = glue::glue("{target}/{actual}")) %>%
   select(race, n, target, actual, `target/actual`, weight)
 
-wrangled
 
 # extra NAs account for prefer not to answer and other
 wrangled <-
@@ -373,13 +392,14 @@ wrangled <-
                                        c(".*;.*" = "two or more races",
                                          "prefer not to answer|other" = NA_character_))) %>%
   left_join(select(weights, race, weight), by = c("race_census" = "race")) %>%
-  fastDummies::dummy_cols("race_census") #%>%
-  #rename(race_census_his_lat = `race_census_hispanic or latinx`,
-  #       race_census_twomore = `race_census_two or more races`,
-  #       race_census_black = `race_census_black or african american`,
-  #       race_census_indian = `race_census_american indian or alaska native`,
-  #       race_census_white = `race_census_white (non-hispanic or latino)`) %>% 
-  #select(-race_census_NA)
+  fastDummies::dummy_cols("race_census") %>%
+  rename(#race_census_his_lat = "race_census_hispanic or latinx",
+         race_census_twomore = "race_census_two or more races"
+         #race_census_black = "race_census_black or african american",
+         #race_census_indian = "race_census_indigenous american / first nations (including american indian or alaska native)",
+         #race_census_white = "race_census_white (non-hispanic or latino)"
+         ) %>% 
+  select(-race_census_NA)
 
 #wrangled %>% mutate(race_test = ifelse(str_detect(race, ";"), str_replace(race, ";?hispanic or latinx;?", ""), race)) %>%
 #  filter(race_his_lat == 1) %>% count(race_test) %>% arrange(n) %>%
@@ -430,10 +450,10 @@ final_clean %>% filter(if_any(everything(), ~str_detect(.x, "fuck"))) %>% select
 ```{r}
 today <- gsub("-", "", Sys.Date())
 
-write_dta(wrangled %>% mutate(weight = as.numeric(weight)), path = paste0("../data/output/wrangled", today,".dta"))
-saveRDS(wrangled, file = paste0("../data/output/wrangled", today, ".rds"))
-write_excel_csv(wrangled, file = paste0("../data/output/wrangled", today, ".csv"))
-write_excel_csv(weights, file = paste0("../data/output/weights", today, ".csv"))
+write_dta(wrangled %>% mutate(weight = as.numeric(weight)), path = paste0("../data/output/wrangled.dta"))
+saveRDS(wrangled, file = "../data/output/wrangled.rds")
+write_excel_csv(wrangled, file = "../data/output/wrangled.csv")
+write_excel_csv(weights, file = "../data/output/weights.csv")
 
 #googledrive_path <- "Communities Speak/Subteams/Data Subteam/Individual Survey-2(POA/Codebook/Census Figures)/cleaning/"
 
