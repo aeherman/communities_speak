@@ -1,5 +1,6 @@
 # 
-project_pal <- c("#bbd9eb", "#9585AB", "#864C67", "#073552")
+project_pal <- rev(c("#9585AB", "#864C67", "#394C73", "#073552"))
+background <- "#bbd9eb"
 
 library(ggplot2)
 project_theme <- 
@@ -8,7 +9,7 @@ project_theme <-
   ggplot2::theme(text = element_text(family = "sans"),
                  plot.title = element_text(hjust = 0.5),
                  plot.subtitle = element_text(hjust = 0.5),
-                 plot.background = element_rect(fill = project_pal[1], color = project_pal[1]))
+                 plot.background = element_rect(fill = background, color = background))
 
                  #"#bbd9eb")
 
