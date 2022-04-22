@@ -81,7 +81,7 @@ hh_tests %>% left_join(test_clean %>%
               filter(if_any(c(contains("25"), "q5"),
                             ~str_detect(., "[:alpha:]|[:punct:]"))),
             by = c("responseid")) %>%
-  select(responseid, contains("q25_1"))
+  select(responseid, contains("q25_2"))
 # age u has completed some college and employment status
 survey %>% filter(q5 == "u")
 # 5 anos
@@ -266,18 +266,18 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     inc_neg = q14 < q13,
     inc_pos = q13 < q14,
 
-    inc_drop_med = q13 >= median_inc & q14 < median_inc,
-    inc_drop_pov = q13 >= poverty_line & q14 < poverty_line,
+    inc_drop_med = q13 > median_inc & q14 <= median_inc, # change from greater than or equal to
+    inc_drop_pov = q13 > poverty_line & q14 <= poverty_line, # change from greater than or equal to
     
     # income distribution before
     inc_dist = case_when(
-      q13 < poverty_line ~ 1,
-      q13 < median_inc ~ 2,
+      q13 <= poverty_line ~ 1, # change from less than
+      q13 <= median_inc ~ 2, # change from less than
       TRUE ~ 3), # label them with haven
     
     # above or below median income before-hand
     inc_ab_med_before = q13 > median_inc,
-    inc_be_med_before = q13 < median_inc,
+    inc_be_med_before = q13 <= median_inc, # change from less than to less than or equal to
     
     # above or below median income afterward
     inc_ab_med_after = q14 > median_inc,
@@ -357,6 +357,8 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     hh_4_17_bi = q25_3 >= 1,
     hh_0_4_bi = q25_4 >= 1,
     hh_ch_0_17_bi = q25_3 >=1 | q25_4 >=1,
+    hh_size = rowSums(across(starts_with("q25"))),
+    hh_ad_one = q25_1 + q25_2 == 1,
     
     no_find_cc = str_detect(labelled::to_character(q30), "no\\b"),
     
