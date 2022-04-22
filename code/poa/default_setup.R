@@ -6,7 +6,7 @@ source("functions/communities_speak_theme.R")
 source("functions/make_plots.R")
 source("thresholds.R")
 poa <- readRDS("../data/output/poa.rds")
-wrangled <- readRDS("../data/output/wrangled20220410.rds")
+wrangled <- readRDS("../data/output/wrangled20220422.rds")
 
 # census numbers
 ## only necessary to make city-wide estimates
