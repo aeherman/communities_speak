@@ -249,6 +249,9 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     hh_0_4_bi = q26_4 >= 1,
     hh_ch_0_17_bi = q26_3 >=1 | q26_4 >=1,
     
+    hh_size = sumRows(across(starts_with("26"))),
+    hh_ad_18_one = q26_1 + q26_2 == 1,
+    
     no_find_cc = str_detect(labelled::to_character(q31), "no\\b"),
     
     #### residence variables ####
@@ -327,7 +330,12 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     lr_fb = if_any(starts_with("q35_") & ends_with("_1"), ~.==1),
     
     internet_lim = q24 != 1, # respondent has limited or no internet access
-    internet_acc = q24 == 1
+    internet_acc = q24 == 1,
+    
+    race_census = str_replace_all(race,
+                                  c(".*hispanic or latinx.*" = "hispanic or latinx",
+                                    ".*;.*" = "two or more races",
+                                    "prefer not to answer|(?<!;)other" = NA_character_))
     
     
     ) %>%
@@ -372,26 +380,30 @@ wrangled %>% select(contains("41"))
 wrangled
 # hispanic latino and black
 
-sum(is.na(wrangled$exp_ab_and_vi))
-mean(is.na(final_clean$q36))
+to_subtract <- wrangled %>%
+  filter(race_his_lat == 1) %>%
+  count(race) %>% mutate(race_census = str_replace_all(race, c("hispanic or latinx;" = "",
+                                                               ".*;.*" = "two or more races"))) %>%
+  group_by(race_census) %>% summarize(minus = sum(n)/nrow(wrangled)) %>%
+  mutate(minus = ifelse(str_detect(race_census, "latinx"), 0, minus))
 
+census_ <- to_subtract %>%
+  full_join(census, by = c("race_census" = "race")) %>% 
+  mutate(new_target = round(target - minus, digits = 3))
 
-weights <- wrangled %>% count(race = str_replace(race, ".*;.*", "two or more races")) %>%
-  ungroup() %>% filter(!race %in% c("prefer not to answer", "other")) %>%
-  mutate(actual = round(n/sum(n), digits = 3)) %>% left_join(census) %>%
-  mutate(weight = target/actual) %>%
-  mutate(weight = labelled(weight, setNames(weight, race)),
-         `target/actual` = glue::glue("{target}/{actual}")) %>%
-  select(race, n, target, actual, `target/actual`, weight)
+weights <- wrangled %>% count(race_census) %>%
+  filter(!race_census %in% c("prefer not to answer", "other", NA_character_)) %>%
+  mutate(actual = round(n/sum(n), digits = 3)) %>% left_join(census_) %>%
+  mutate(weight = new_target/actual) %>%
+  mutate(weight = labelled(weight, setNames(weight, race_census)),
+         `new_target/actual` = glue::glue("{new_target}/{actual}")) %>%
+  select(race_census, n, target, new_target, actual, `new_target/actual`, weight)
 
 
 # extra NAs account for prefer not to answer and other
-wrangled <-
-  wrangled %>%
-  mutate(race_census = str_replace_all(race,
-                                       c(".*;.*" = "two or more races",
-                                         "prefer not to answer|other" = NA_character_))) %>%
-  left_join(select(weights, race, weight), by = c("race_census" = "race")) %>%
+
+wrangled <- wrangled %>%
+  left_join(select(weights, race, weight), by = c("race_census")) %>%
   fastDummies::dummy_cols("race_census") %>%
   rename(#race_census_his_lat = "race_census_hispanic or latinx",
          race_census_twomore = "race_census_two or more races"
@@ -400,12 +412,6 @@ wrangled <-
          #race_census_white = "race_census_white (non-hispanic or latino)"
          ) %>% 
   select(-race_census_NA)
-
-#wrangled %>% mutate(race_test = ifelse(str_detect(race, ";"), str_replace(race, ";?hispanic or latinx;?", ""), race)) %>%
-#  filter(race_his_lat == 1) %>% count(race_test) %>% arrange(n) %>%
-#  mutate(new_group = c(rep("two or more", 3), "other", ""))
-
-#wrangled %>% filter(race_his_lat == 1) %>% count(race)
 ```
 
 ```{r eval=F}
