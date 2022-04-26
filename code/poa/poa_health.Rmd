@@ -20,6 +20,7 @@ Run distribution by sub-demographics (a-k)
 Compare and find gaps (test unequal proportions)
 
 ```{r}
+mean(wrangled$posi_all, na.rm = TRUE)
 plots <- make_plots(wrangled,
            by_vars = demographics, hyp_var = "posi_all", title = "Households with a case of COVID")
 plots$decade <- plots$decade + labs(subtitle = NULL)
