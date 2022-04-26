@@ -21,5 +21,7 @@ drive_upload(media = paste0("~/communities_speak/visuals/respondents_child_by_bo
 drive_upload(media = paste0("~/communities_speak/visuals/p_find_cc.png"), path = paste0(googledrive_path, "visuals/find_cc_borough", today, ".png"), overwrite = TRUE)
 drive_upload(media = paste0("~/communities_speak/visuals/geocode.pdf"), path = paste0(googledrive_path, "visuals/geocode", today, ".pdf"), overwrite = TRUE)
 
+drive_upload(media = paste0("~/communities_speak/code/data_requests_20220419.pdf"), path = paste0(googledrive_path, "visuals/data_requests_20220419.pdf"), overwrite = TRUE)
+
 
 #drive_upload(media = "~/communities_speak/code/geocode.pdf", path = paste0(googledrive_path, "visuals/geocode", today, ".pdf"))
