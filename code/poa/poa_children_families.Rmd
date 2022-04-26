@@ -17,6 +17,8 @@ wrangled %>% transmute(responseid, hh_ch_0_17_bi,
   ggplot(aes(x = household, fill = hh_ch_0_17_bi)) + geom_histogram()
 
 df_ch <- wrangled %>% filter(hh_ch_0_17_bi == 1)
+
+make_plots(wrangled, by_vars = demographics, c("mntl_hlth_bi", "mntl_hlth_state_bi"), title = "Mental Health Status")
 ```
 
 # 3.1)People who had difficulties accessing childcare in the past year [20]
