@@ -120,14 +120,28 @@ names(demo_plus) <- demo_plus
 
 make_plots(wrangled, demo_plus, "lr_gov", title = "Percent Respondents Who\nwould reach out to the Government")[c("borough", "race_census", "sch_level_cat", "inc_dist")]
 
-make_plots(wrangled, demo_plus, "lr_gov", title = "Percent Respondents Who\nwould reach out to the Government")[c("borough", "race_census", "sch_level_cat", "inc_dist")]
-
 make_plots(wrangled, demo_plus, "lr_fam", title = "Percent Respondents Who\nwould reach out to Friends and Family")[c("borough", "race_census", "sch_level_cat", "hh_ch_0_17_bi", "inc_dist", "emp_status_after", "res_cat", "mntl_hlth_bi")]
 
 
 make_plots(wrangled, demo_plus, "lr_fb", title = "Percent Respondents Who\nwould reach out to faith-based organizations")
 
 make_plots(wrangled, demo_plus, "lr_np", title = "Percent Respondents Who\nwould reach out to local nonprofits")
+
+
+issues <- c("stress", "food", "wtr", "hc")
+resources <- c("fam", "gov", "fb", "np")
+variables <- lapply(issues, function(issue) paste("lr", issue, resources, sep = "_")) %>% unlist
+names(variables) <- variables
+lapply(variables[1:2], function(variable) {
+  splitted <- stringr::str_split(variable, "_") %>% unlist
+  issue <- splitted[2]
+  resource <- splitted[3]
+  make_plots(
+    wrangled, demo_plus, variable,
+    title = glue::glue("Percent Respondents who would reach out to\n{resource} regarding {issue}"))
+})
+
+
 ```
 
 # cell 14
