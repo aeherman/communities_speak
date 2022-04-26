@@ -324,11 +324,18 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     mntl_hlth_bi = if_any(c("q41_1", "q41_4"), ~.>=3) | if_any(c("q41_2", "q41_3"), ~.<3),
     #across(contains("41"), ~!str_detect(haven::as_factor(.), "almost|never"), .names = "{col}_bi"),
     #final_clean %>% transmute(
-    across(c(q41_2, q41_3), ~labelled(.-1,attributes(final_clean$q41_3)$labels-1), .names = "{col}_rescale"),
-    across(c(q41_1, q41_4), ~labelled(1-.,1-attributes(final_clean$q41_4)$labels), .names = "{col}_rescale"),
+    #across(c(q41_2, q41_3), ~labelled(.-1,attributes(final_clean$q41_3)$labels-1), .names = "{col}_rescale"),
+    #across(c(q41_1, q41_4), ~labelled(1-.,1-attributes(final_clean$q41_4)$labels), .names = "{col}_rescale"),
     
-    mntl_hlth_state = rowMeans(across(ends_with("_rescale")), na.rm = TRUE),
-    mntl_hlth_state_bi = mntl_hlth_state < 0,
+    #mntl_hlth_state = rowMeans(across(ends_with("_rescale")), na.rm = TRUE),
+    #mntl_hlth_state_bi = mntl_hlth_state < 0,
+    
+    across(c(q41_2, q41_3),
+           ~labelled(5-.,5-attributes(final_clean$q41_3)$labels), .names = "stress_{col}"),
+    across(c(q41_1, q41_4),
+           ~labelled(.-1,attributes(final_clean$q41_4)$labels-1), .names = "stress_{col}"),
+    stress_score = rowSums(across(starts_with("stress_"))),
+    stress_bi = mean(stress_score, na.rm = TRUE) > stress_score,
     
     
     #### health variables ####
@@ -472,6 +479,13 @@ key <- column_names$q[indeces]
 value <- column_names$label[indeces]
 
 names(wrangled)[match(key, names(wrangled))] <- value
+
+# rename q41
+indeces_41 <- which(str_detect(survey_codebook_labelled$q, "q41"))
+key_41 <- paste0("stress_", survey_codebook_labelled$q[indeces_41])
+value_41 <- paste0("stress_", survey_codebook_labelled$sub_label[indeces_41])
+names(wrangled)[match(key_41, names(wrangled))] <- value_41
+
 #wrangled <- wrangled %>%
 #  fastDummies::dummy_columns("ny_resi_type", ignore_na = TRUE) %>%
 #  fastDummies::dummy_columns("in_prsn_sch", ignore_na = TRUE) %>%
