@@ -10,10 +10,14 @@ source("../code/functions/make_plots.R")
 # thresholds
 min_duration <- 100 # 100 seconds
 min_completion <- .5 # responded to 50% of the questions
-poverty_line <- 2 # 2 and 1 are below poverty line
-median_inc <- 3 # 4 and 5 are median income and greater
+poverty_line <- 2 # poverty line is 36.5K (top of category 2)
+poverty_line_val <- 36500
+median_inc <- 3 # median income level is 69.5K (top of category 3)
+median_inc_val <- 69500
+
 
 # census numbers
+# https://www.census.gov/quickfacts/fact/table/newyorkcitynewyork,US/PST045221
 ## only necessary to make city-wide estimates
 ## unideal for weight to be greater than 2 or 3
 census <- tribble(~race, ~target,
