@@ -1,5 +1,7 @@
 # Default Setup for POA
-setwd("~/communities_speak/code/")
+#setwd("code/")
+wd <- getwd()
+setwd("../")
 library("tidyverse")
 library("labelled")
 source("functions/communities_speak_theme.R")
