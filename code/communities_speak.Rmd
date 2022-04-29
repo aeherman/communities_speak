@@ -188,8 +188,8 @@ names(q41_bi)[match(key_41, names(q41_bi))] <- paste(label_41, "bi", sep = "_")
 
 remove_test <- final_clean %>% filter(if_any(everything(), ~str_detect(.x, "^test$")))
 
-final_clean %>%
-  transmute(across(contains("41"), ~!str_detect(haven::as_factor(.), "almost|never"), .names = "{col}_bi"))
+#final_clean %>%
+#  transmute(across(contains("41"), ~!str_detect(haven::as_factor(.), "almost|never"), .names = "{col}_bi"))
 
 wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/ncol(final_clean)) %>%
   # remove invalid responses
@@ -440,12 +440,11 @@ names(wrangled)[match(key_41, names(wrangled))] <- value_41
 #  fastDummies::dummy_columns("ny_resi_type", ignore_na = TRUE) %>%
 #  fastDummies::dummy_columns("in_prsn_sch", ignore_na = TRUE) %>%
 #  fastDummies::dummy_columns("concerns", ignore_na = TRUE)
-wrangled$exp
+#wrangled$exp
 #wrangled$q27 %>% table
-wrangled %>% select(contains("36"))
-wrangled %>% select(contains("41"))
-?match
-wrangled
+#wrangled %>% select(contains("36"))
+#wrangled %>% select(contains("41"))
+#wrangled
 # hispanic latino and black
 
 sum(is.na(wrangled$exp_ab_and_vi))
@@ -459,8 +458,6 @@ weights <- wrangled %>% count(race = str_replace(race, ".*;.*", "two or more rac
   mutate(weight = labelled(weight, setNames(weight, race)),
          `target/actual` = glue::glue("{target}/{actual}")) %>%
   select(race, n, target, actual, `target/actual`, weight)
-
-wrangled
 
 # extra NAs account for prefer not to answer and other
 wrangled <-
