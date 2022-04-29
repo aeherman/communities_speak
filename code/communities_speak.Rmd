@@ -6,7 +6,9 @@ output:
   pdf_document: default
   html_document: default
 ---
-test why does this always happen?
+
+I guess this happens when the script hangs after trying to print a ggplot to the viewing panel, I hope that it actually finished updating.
+
 ```{r message=F, warning=F}
 library(googledrive)
 library(readxl)
@@ -18,7 +20,6 @@ library(googlesheets4)
 source("functions/fixup.R")
 source("dictionary.R")
 source("thresholds.R")
-readRDS("../data/processed/survey.rds")
 
 boroughs <- read_xlsx("../data/input/Borough_for_Arielle.xlsx") %>%
   rename_all(str_to_lower) %>% mutate_all(str_to_lower)
@@ -38,58 +39,6 @@ Combine with codebook in order to easily rename columns in the cleaned dataset
 Get important metadata on each of the questions that facilitates wrangling
 
 # Data Cleaning
-
-```{r visual_check, eval=F}
-select(survey, contains("25")) %>% unlist %>% table
-survey[likert] %>% unlist %>% table
-survey[mavr] %>% unlist %>% table
-
-survey["q5"] %>% table
-
-age <- survey$q5
-table(age[is.na(as.integer(age))]) # fix 83 1/2
-
-hh <- select(survey, contains("25")) %>% unlist
-table(hh[is.na(as.integer(hh))])
-
-hh_clean <- survey %>% select(contains("25")) %>%
-  mutate(across(everything(), ~as.integer(str_replace_all(., pattern = str_c(dict$pattern, collapse = "|"),
-                                        replacement = fixup)))) %>% unlist
-table(hh_clean[is.na(as.integer(hh))])
-table(hh[is.na(as.integer(hh))])
-
-survey %>% select(responseid, q5, contains("25")) %>% filter(q25_3 == "7ys")
-
-hh_tests <- survey %>% select(responseid, contains("25"), "q5") %>%
-  filter(if_any(c(contains("25"), "q5"), ~str_detect(., "[:alpha:]|[:punct:]"))) %>% #filter(responseid == "r_t5xjhewkfw54k1p")
-  # manipulation
-  mutate(across(contains("5"), ~str_replace_all(., pattern = str_c(dict$pattern, collapse = "|"),
-                                                 replacement = fixup))) %>%
-  mutate(across(contains("5"), ~as.double(str_extract(., "[:digit:]{1,2}"))))
-  
-survey %>% filter(responseid == "r_3pdurguqcvfee5l") %>% select(responseid, contains("25"), q5)
-
-# validate response of respondent t6
-survey %>% filter(age == "t6") %>% select(contains("25"))
-
-test_clean <- clean_data() %>% select(responseid, contains("25"), q5) %>% filter(responseid %in% hh_tests$responseid)
-hh_tests %>% left_join(test_clean %>%
-                         select(responseid, q5, contains("25")), #%>%
-                         #filter(if_any(c(contains("25"), "q5"), ~str_detect(., "[:alpha:]|-"))),
-                       by = c("responseid")) %>%
-  left_join(survey %>% select(responseid, q5, contains("25")) %>%
-              filter(if_any(c(contains("25"), "q5"),
-                            ~str_detect(., "[:alpha:]|[:punct:]"))),
-            by = c("responseid")) %>%
-  select(responseid, contains("q25_2"))
-# age u has completed some college and employment status
-survey %>% filter(q5 == "u")
-# 5 anos
-survey %>% filter(responseid == "r_3emldngdgc1pizf")
-
-test_clean %>% filter(responseid == "r_11jptyrwogunrra")
-```
-
 
 ```{r}
 clean_data <- function(df = survey, col = NULL) {
@@ -165,12 +114,13 @@ clean_data <- function(df = survey, col = NULL) {
   
   by_col %>% reduce(full_join, by = c("responseid")) %>%
     ### replace specific patterns in age and household questions
-    mutate_at(vars(contains("25"), "q5"), ~str_replace_all(., pattern = str_c(dict$pattern, collapse = "|"), replacement = fixup)) %>%
+    mutate(q25_2 = str_replace(q25_2, "^62$", "1")) %>%
+    mutate_at(vars(contains("25"), "q5"),
+              ~str_replace_all(., pattern = str_c(dict$pattern, collapse = "|"), replacement = fixup)) %>%
     mutate(across(c(contains("25"), q5), ~as.double(str_extract(., "[:digit:]{1,2}"))))
   
 }
 
-survey
 final_clean <- survey[c('responseid', 'recordeddate')] %>% left_join(clean_data()) %>% left_join(distinct(boroughs %>% mutate(zip = as.character(zipcode))), by = c("q3" = "zip"))
 
 # all NA if any NA
@@ -215,8 +165,8 @@ completion <- lapply(final_clean$responseid, function(id) {
 
 final_clean$completion <- completion
 
-hist(final_clean$completion)
-mean(!is.na(final_clean$q2))
+#hist(final_clean$completion)
+#mean(!is.na(final_clean$q2))
 save(final_clean, file = "../data/processed/final_clean.rdata")
 
 ```
@@ -243,7 +193,7 @@ final_clean %>%
 
 wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/ncol(final_clean)) %>%
   # remove invalid responses
-  filter(completion >= min_completion,
+filter(completion >= min_completion,
          duration >= min_duration,
          q2 == 1,
          q5 > 17,

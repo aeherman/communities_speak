@@ -19,7 +19,7 @@ dict <- tribble(~pattern, ~replacement,
                 # replace with values
                 "i2", "82", # validated by looking at insurance (medicare) and household question
                 "t6", "56", # validated by cross checking with household question
-                "62", "1",
+                #"62", "1",
                 "fifty seven", "57",
                 # "u" validated by checking highest level of school
                 ) %>%
