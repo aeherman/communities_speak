@@ -9,18 +9,22 @@ make_codebook <- function(df) {
     if(col %in% survey_codebook_labelled$full_label){
       row <- survey_codebook_labelled[survey_codebook_labelled$full_label == col, ]
       q <- row$q
-      question <- row$text
+      description <- row$text
       
+    } else if (col %in% new_vars$var_name) {
+      row <- new_vars[new_vars$var_name == col, ]
+      q <- NA_character_
+      description <- row$description
+      #survey_q <- NA_integer_
     } else {
       q <- NA_character_
-      question <- NA_character_
-      #survey_q <- NA_integer_
+      description <- NA_character_
     }
 
 #for(col in colnames(df)) {
     variable <- as.character(col)  
     if(haven::is.labelled(df[[col]])) {
-      pull_labels <- attributes(df[[col]])$labels
+      pull_labels <- sort(attributes(df[[col]])$labels)
       
       value <- paste(pull_labels, collapse = "\n")
       label <- paste(names(pull_labels), collapse = "\n")
@@ -54,11 +58,11 @@ make_codebook <- function(df) {
 #    print(col)
 #}
     
-    return(tibble(q, variable, value, label, question))
+    return(tibble(q, variable, value, label, description))
   }) %>% reduce(bind_rows)
   
   codebook <- var_values %>% left_join(var_types, by = c("variable")) %>%
-    select(q, variable, type, value, label, question)
+    select(q, variable, type, value, label, description)
   return(codebook)
 }
 
