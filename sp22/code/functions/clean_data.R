@@ -5,9 +5,9 @@ clean_data <- function(df = survey, col = NULL) {
     values <- as.integer(unlist(stringr::str_split(survey_codebook$options[index], pattern = "[:punct:]")))
     tags <- unlist(str_split(survey_codebook$choices[index], "; "))
     
-    recode_na <- str_detect(tags, "not applicable")
+    #recode_na <- str_detect(tags, "not applicable")
     
-    if(all(all.equal(values, c(1,2)) == TRUE, !is.na(recode_na) & recode_na)) {
+    if(all.equal(values, c(1,2)) == TRUE) {
       df[[col]] <- 2 - as.integer(df[[col]] %>%
                                     # hard code 3 - not applicable
                                     na_if("3"))
@@ -49,7 +49,8 @@ clean_data <- function(df = survey, col = NULL) {
       relabelled <- lapply(cols_to_label, function(dummy){
         i <- as.integer(str_replace(dummy, paste0(col, "_"), ""))
         values <- c(0, 1)
-        names(values) <- c(paste("not", tags[i]), tags[i])
+        names(values) <- c(paste("no", tags[i]), tags[i])
+        #names(values) <- c(paste("not", tags[i]), tags[i])
         out %>% ungroup %>% transmute_at(dummy, ~labelled(as.integer(.), values))
       }) %>% reduce(bind_cols)
       
