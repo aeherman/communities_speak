@@ -414,7 +414,7 @@ write_dta(wrangled, #%>% mutate(weight = as.numeric(weight)),
           path = paste0("../data/output/wrangled.dta"))
 saveRDS(wrangled, file = "../data/output/wrangled.rds")
 write_excel_csv(wrangled, file = "../data/output/wrangled.csv")
-write_excel_csv(weights, file = "../data/output/weights.csv")
+#write_excel_csv(weights, file = "../data/output/weights.csv")
 ```
 
 # Other validation
