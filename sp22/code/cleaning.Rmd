@@ -176,15 +176,18 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     #### employment variables ####
     wrk_in = str_detect(labelled::to_character(q20), "yes"),
     
+    # work full-time; work part-time; freelance or consultant; gig worker (uber, lyft, instacart, etc.); small business owner; homemaker; student; retired; disabled; unemployed; other
     emp_status_before = case_when(
       str_detect(q15, "unemp") ~ "unemployed",
-      str_detect(q15, "full|part|free|gig|small|home|student") ~ "employed",
+      str_detect(q15, "full|part|free|gig|small|home") ~ "employed",
+      str_detect(q15, "student") ~ "student",
       str_detect(q15, ";") ~ "multiple_other",
-      TRUE ~ q15),
+      TRUE ~ q15), # students will be categorized
     
     emp_status_after = case_when(
       str_detect(q16, "unemp") ~ "unemployed",
-      str_detect(q16, "full|part|free|gig|small|home|student") ~ "employed",
+      str_detect(q16, "full|part|free|gig|small|home") ~ "employed",
+      str_detect(q15, "student") ~ "student",
       str_detect(q16, ";") ~ "multiple_other",
       TRUE ~ q16),
     
@@ -204,10 +207,10 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     ## q40_4 difficulties piling up
     
     across(c(q40_2, q40_3),
-           ~labelled(5-.,5-attributes(final_clean$q40_3)$labels), .names = "stress_{col}"),
+           ~labelled(5-.,5-attributes(final_clean$q40_3)$labels)),
     across(c(q40_1, q40_4),
-           ~labelled(.-1,attributes(final_clean$q40_4)$labels-1), .names = "stress_{col}"),
-    stress_score = rowSums(across(starts_with("stress_"))),
+           ~labelled(.-1,attributes(final_clean$q40_4)$labels-1)),
+    stress_score = rowSums(across(starts_with("q40_"))),
     stress_bi = mean(stress_score, na.rm = TRUE) > stress_score,
     
     
@@ -237,7 +240,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     hh_ch_0_17_bi = if_any(c(q26_3, q26_4), ~. >= 1),
     #hh_ch_0_17_bi = q26_3 >=1 | q26_4 >=1,
     
-    hh_size = rowSums(across(starts_with("26"))),
+    hh_size = rowSums(across(starts_with("q26"))),
     hh_ad_one = q26_1 + q26_2 == 1,
     
     no_find_cc = str_detect(labelled::to_character(q31), "no\\b"),
@@ -254,9 +257,9 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     #### education variables ####
     sch_level_cat = labelled::to_character(q12),
     sch_level_cat = case_when(
-      str_detect(sch_level_cat, "high school|some college") ~ sch_level_cat,
-      str_detect(sch_level_cat, "bach|ass") ~ "undergraduate degree",
-      str_detect(sch_level_cat, "doct|mast|prof") ~ "graduate degree"
+      str_detect(sch_level_cat, "high school|some college") ~ as.numeric(q12),
+      str_detect(sch_level_cat, "bach|ass") ~ 4,
+      str_detect(sch_level_cat, "doct|mast|prof") ~ 5
       ),
     
     sch_bach = factor(ifelse(str_detect(labelled::to_character(q12),
@@ -329,12 +332,13 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     )
 
 # labelling
-to_label <- new_vars$var_name[new_vars$var_name %in% colnames(wrangled)]
+na_omit <- new_vars %>% na.omit()
+to_label <- na_omit$var_name[na_omit$var_name %in% colnames(wrangled)]
 new_vars_to_label <- lapply(to_label, function(col) {
   if(col %in% colnames(wrangled)) {
-    index <- which(new_vars$var_name == col)
-    values <- as.integer(unlist(stringr::str_split(new_vars$var_value[index], pattern = "[:punct:]")))
-    tags <- unlist(str_split(new_vars$var_label[index], "; "))
+    index <- which(na_omit$var_name == col)
+    values <- as.integer(unlist(stringr::str_split(na_omit$var_value[index], pattern = "[:punct:]")))
+    tags <- unlist(str_split(na_omit$var_label[index], "; ?"))
     named <- setNames(values, tags)
     out <- wrangled[col] %>% mutate_at(vars(col), funs(labelled(as.integer(.), named)))
     return(out)
@@ -359,11 +363,6 @@ value <- survey_codebook_labelled$full_label[indeces]
 names(wrangled)[match(key, names(wrangled))] <- value
 
 # naming q40
-
-indeces_40 <- which(str_detect(survey_codebook_labelled$q, "q40"))
-key_40 <- paste0("stress_", survey_codebook_labelled$q[indeces_40])
-value_40 <- paste0("stress_", survey_codebook_labelled$full_label[indeces_40])
-names(wrangled)[match(key_40, names(wrangled))] <- value_40
 ```
 
 # Weights
