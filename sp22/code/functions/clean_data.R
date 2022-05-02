@@ -5,17 +5,28 @@ clean_data <- function(df = survey, col = NULL) {
     values <- as.integer(unlist(stringr::str_split(survey_codebook$options[index], pattern = "[:punct:]")))
     tags <- unlist(str_split(survey_codebook$choices[index], "; "))
     
-    #recode_na <- str_detect(tags, "not applicable")
+    recode_na <- any(str_detect(tags, "not applicable"))
+    
+    if(any(is.null(tags), is.na(recode_na))) {
+      recode_na <- FALSE
+    }
     
     if(all.equal(values, c(1,2)) == TRUE) {
-      df[[col]] <- 2 - as.integer(df[[col]] %>%
-                                    # hard code 3 - not applicable
-                                    na_if("3"))
-      values <- (2 - values) %>% na_if(-1)
+      df[[col]] <- 2 - as.integer(df[[col]])
+      values <- (2 - values)
       
+      if(recode_na & all.equal(values, c(1,2)) == TRUE) {
+        df[[col]][df[[col]] == -1] <- 2
+        values[values == -1] <- 2
+      }
     }
     
     named <- setNames(values, tags) %>% na.omit
+    
+    if(is.null(tags)) {
+      named <- FALSE
+    }
+    
     
     if(col %in% c(likert, simple)) {
       out <- df[c("responseid", col)] %>%
@@ -49,7 +60,7 @@ clean_data <- function(df = survey, col = NULL) {
       relabelled <- lapply(cols_to_label, function(dummy){
         i <- as.integer(str_replace(dummy, paste0(col, "_"), ""))
         values <- c(0, 1)
-        names(values) <- c(paste("no", tags[i]), tags[i])
+        names(values) <- c(paste("not", tags[i]), tags[i])
         #names(values) <- c(paste("not", tags[i]), tags[i])
         out %>% ungroup %>% transmute_at(dummy, ~labelled(as.integer(.), values))
       }) %>% reduce(bind_cols)
@@ -57,17 +68,17 @@ clean_data <- function(df = survey, col = NULL) {
       out[cols_to_label] <- relabelled
       
       #r_zaiyctblk6t1z33
-    } else if(all(!str_detect(df[[col]], "[:alpha:]"), na.rm = TRUE) & any(!is.na(df[[col]]))) {
+    } else if(all(!str_detect(df[[col]], "[:alpha:]|^[:digit:]{3}(\\-|\\.)[:digit:]{3}(\\-|\\.)[:digit:]{4}$"), na.rm = TRUE) & any(!is.na(df[[col]]))) {
       out <- df[c("responseid", col)] %>% mutate_at(vars(col), as.integer)
     } else {
       out <- df[c("responseid", col)]  
     }
     
-    # print(col)   
+     #print(paste(col, recode_na, sep = ": "))
     #}    
     return(out)
   })
   
   by_col %>% reduce(full_join, by = c("responseid"))
   
-}
+  }
