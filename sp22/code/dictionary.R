@@ -147,6 +147,7 @@ survey_codebook_labelled <- labelled_dummies %>% left_join(to_label) %>%
   bind_rows(labelled_qs %>% filter(!q %in% labelled_dummies$q) %>% left_join(survey_codebook)) %>%
   mutate(full_label = ifelse(is.na(sub_label), label, glue::glue("{label}_{sub_label}"))) %>%
   select(qid, q, full_label, type, selector, subselector, text, part, to_label, options, choices, block_title, question) %>%
+  mutate(question = as.integer(str_extract(q, "[:digit:]{1,2}"))) %>%
   arrange(question)
 
 view(survey_codebook_labelled)
