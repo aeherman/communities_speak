@@ -1,9 +1,8 @@
 # Default Setup for POA
-setwd("~/communities_speak/code/")
 library("tidyverse")
 library("labelled")
-source("../code/functions/communities_speak_theme.R")
-source("../code/functions/make_plots.R")
+source("../../code/functions/communities_speak_theme.R")
+source("../../code/functions/make_plots.R")
 #poa <- readRDS("../data/output/poa.rds")
 #wrangled <- readRDS("../data/output/wrangled20220410.rds")
 
