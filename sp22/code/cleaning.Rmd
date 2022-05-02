@@ -20,9 +20,8 @@ source("default_setup.R")
 source("dictionary.R")
 getwd()
 #source("clean_data.R")
-
-setwd("~/communities_speak/sp22/code")
-source("clean_data.R")
+#setwd("~/communities_speak/sp22/code")
+source("code/functions/clean_data.R")
 
 survey_id <- gs4_find() %>% filter(str_detect(name, "Individual Survey") & str_detect(name, "April")) %>% select(id, name)
 
@@ -34,7 +33,7 @@ survey <- read_sheet(survey_id$id, sheet = "Sheet1") %>%
   mutate_at(vars(-recordeddate), ~str_to_lower(as.character(.))) %>% na_if("null") %>%
   unnest(recordeddate) %>% distinct
 
-boroughs <- read_csv("../data/input/boroughs.csv") %>% distinct # question: why are there repeats for the same zipcode
+boroughs <- read_csv("data/input/boroughs.csv") %>% distinct # question: why are there repeats for the same zipcode
 ```
 # Var Dictionary
 Combine with codebook in order to easily rename columns in the cleaned dataset
