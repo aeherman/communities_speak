@@ -31,20 +31,20 @@ blocks <- lapply(file[[1]]$Payload, function(block) {
 }) %>% bind_rows() %>% mutate(across(everything(), stringr::str_to_lower))
 
 
-index <- which(lapply(file, function(element) element$PrimaryAttribute) == "QID33")
+index <- which(lapply(file, function(element) element$PrimaryAttribute) == "QID35")
 element <- file[[index]]
 
 # pull out question information ####
 survey_codebook <- lapply(file[str_detect(elements, "QID")], function(element) {
-#for (i in 13:61) {
+#for (i in 23:71) {
   
-  #element <- file[[index]]
+  #element <- file[[i]]
   qid = element$PrimaryAttribute
   q = element$Payload$DataExportTag
   type = element$Payload$QuestionType
   selector = element$Payload$Selector
   subselector = element$Payload$SubSelector
-  text = stringr::str_replace_all(element$Payload$QuestionText, "<.*?>", "")
+  text = stringr::str_replace_all(element$Payload$QuestionText, c("<.*?>" = "", "&nbsp;" = " "))
   
   unlisted = unlist(lapply(element$Payload$Choices, function(element) trimws(element$Display)))
   
@@ -102,7 +102,10 @@ survey_codebook <- lapply(file[str_detect(elements, "QID")], function(element) {
                 options, choices)
   
   if(nrow(out) > 1 & any(text_entry != "true", is.null(text_entry))){
-    out <- mutate(out, q = paste0(q, "_", row_number()))
+    out <- out %>%
+      mutate(temp = ifelse(type == "Matrix", names(part), names(unlisted)),
+             q = glue::glue("{q}_{temp}")) %>% select(-temp)
+    #out <- mutate(out, q = paste0(q, "_", row_number()))
   }
   
   return(out)
@@ -152,4 +155,4 @@ survey_codebook_labelled <- labelled_dummies %>% left_join(to_label) %>%
 
 view(survey_codebook_labelled)
 
-new_vars <- id_labelling %>% read_sheet(sheet = "new_vars") %>% na.omit
+new_vars <- id_labelling %>% read_sheet(sheet = "new_vars")# %>% na.omit
