@@ -60,7 +60,7 @@ clean_data <- function(df = survey, col = NULL) {
       relabelled <- lapply(cols_to_label, function(dummy){
         i <- as.integer(str_replace(dummy, paste0(col, "_"), ""))
         values <- c(0, 1)
-        names(values) <- c(paste("not", tags[i]), tags[i])
+        names(values) <- c(glue::glue("not '{tags[i]}'"), tags[i])
         #names(values) <- c(paste("not", tags[i]), tags[i])
         out %>% ungroup %>% transmute_at(dummy, ~labelled(as.integer(.), values))
       }) %>% reduce(bind_cols)
