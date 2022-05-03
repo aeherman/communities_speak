@@ -105,7 +105,9 @@ final_clean <- final_clean %>%
     #borough_good = !is.na(borough),
     #test = if_any(everything(), ~str_detect(., pattern = "^test$")),
          source = ifelse(is.na(source), "communities speak", source),
-    valid = ifelse(is.na(test_response), valid, NA_integer_))
+    valid = ifelse(is.na(test_response), valid, NA_integer_)) %>%
+  select(responseid, recordeddate, duration, userlanguage, source, order,
+         completion, valid, test_response, borough, starts_with("q"))
 
 #final_clean %>%
   #filter(responseid == "r_1dmcjaf6vuzlz2a") %>%
@@ -167,7 +169,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     
     # below poverty line before and after
     inc_be_pov_before = q13 <= poverty_line,
-    inc_be_pov_after = q13 <= poverty_line,
+    inc_be_pov_after = q14 <= poverty_line,
     
     # above median income both
     inc_ab_med = q14 > median_inc & q13 > median_inc,
@@ -211,7 +213,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     across(c(q40_1, q40_4),
            ~labelled(.-1,attributes(final_clean$q40_4)$labels-1)),
     stress_score = rowSums(across(starts_with("q40_"))),
-    stress_bi = mean(stress_score, na.rm = TRUE) > stress_score,
+    stress_bi = mean(stress_score, na.rm = TRUE) < stress_score,
     
     
     #### health variables ####
@@ -234,9 +236,9 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     ## q5 = age
     decade = paste0(floor(q5/10)*10, "s"),
     
-    hh_65_bi = q26_1 >= 1, # fixed 
-    hh_4_17_bi = q26_3 >= 1,
-    hh_0_4_bi = q26_4 >= 1,
+    hh_sn_65_bi = q26_1 >= 1, # fixed 
+    hh_ch_4_17_bi = q26_3 >= 1,
+    hh_ch_0_4_bi = q26_4 >= 1,
     hh_ch_0_17_bi = if_any(c(q26_3, q26_4), ~. >= 1),
     #hh_ch_0_17_bi = q26_3 >=1 | q26_4 >=1,
     
