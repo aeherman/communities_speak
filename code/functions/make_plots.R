@@ -36,14 +36,17 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
     
     p.values <- c()
     cats <- filtered[[item]]
+    p.values_table <- matrix(ncol = length(cats), nrow = length(cats))
+    colnames(p.values_table) <- cats
+    rownames(p.values_table) <- cats
     i <- 1
     if(length(hyp_var) == 1){
-      for(cat in cats) {
+      for(cat1 in cats) {
         for(cat2 in cats) {
-          if(cat == cat2) {
+          if(cat1 == cat2) {
             next
           }
-          temp <- filtered[cats == cat,][c("n", "denom")] %>%
+          temp <- filtered[cats == cat1,][c("n", "denom")] %>%
             rbind(filtered[cats == cat2,][c("n", "denom")]) %>%
             mutate(p = sum(n)/sum(denom),
                    q = 1 - p,
@@ -57,15 +60,16 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
           #name <- paste(sort(c(cat, cat2), collapse = ' & ')
           p.value <- signif(prop.test(temp$n, temp$denom)$p.value, 2)
           #attributes(p.value) <- list(warning = warnings())
-          names(p.value) <- glue::glue("{cat} & {cat2} p-value:")
+          #names(p.value) <- glue::glue("{cat} & {cat2} p-value:")
           
           if(any(
-            glue::glue("{cat2} & {cat} p-value:") %in% names(p.values),
+            #glue::glue("{cat2} & {cat} p-value:") %in% names(p.values),
             p.value > conf,
             is.na(p.value))) {
             next
           }
-          p.values <- c(p.values, p.value)
+          p.values_table[cat1, cat2] <- p.value
+          #p.values <- c(p.values, p.value)
           #print(glue::glue("{i}: {cat}, {cat2}"))
           #i <- i+1
         }
@@ -75,7 +79,7 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
     }
     
     # return plots that have at least on statistically significant value
-    if(is.null(p.values) & is.null(show) & length(hyp_var == 1)) {
+    if(all(is.na(p.values_table)) | is.null(p.values_table) & is.null(show) & length(hyp_var == 1)) {
       return(NULL)
     } else {
       plot <- filtered %>% #filter(n >= min) %>%
@@ -138,7 +142,7 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
       }
         
     }
-    return(list(plot = plot, p.values = p.values))
+    return(list(plot = plot, p.values = p.values_table))
   })
   return(out)
 }
