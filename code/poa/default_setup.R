@@ -1,14 +1,19 @@
 # Default Setup for POA
 #setwd("code/")
 wd <- getwd()
-setwd("../")
+print(wd)
+#setwd("../")
 library("tidyverse")
 library("labelled")
 source("functions/communities_speak_theme.R")
 source("functions/make_plots.R")
 source("thresholds.R")
 poa <- readRDS("../data/output/poa.rds")
-wrangled <- readRDS("../data/output/wrangled20220422.rds")
+getwd()
+
+listed <- list.files("../data/output/")
+date <- max(str_extract(listed[str_detect(listed, "wrangled")], "[:digit:]+"))
+wrangled <- readRDS(glue::glue("../data/output/wrangled{date}.rds"))
 
 # census numbers
 ## only necessary to make city-wide estimates
