@@ -24,8 +24,6 @@ source("thresholds.R")
 boroughs <- read_xlsx("../data/input/Borough_for_Arielle.xlsx") %>%
   rename_all(str_to_lower) %>% mutate_all(str_to_lower)
 
-var_dict
-
 
 survey <- readRDS("../data/processed/survey.rds")
 
@@ -234,8 +232,8 @@ filter(completion >= min_completion,
     inc_be_med_after = q14 <= median_inc,
     
     # below poverty line before and after
-    inc_be_pov_before = q13 < poverty_line,
-    inc_be_pov_after = q13 < poverty_line,
+    inc_be_pov_before = q13 <= poverty_line,
+    inc_be_pov_after = q14 <= poverty_line,
     
     # above median income both
     inc_ab_med = q14 > median_inc & q13 > median_inc,
@@ -285,7 +283,7 @@ filter(completion >= min_completion,
     across(c(q41_1, q41_4),
            ~labelled(.-1,attributes(final_clean$q41_4)$labels-1), .names = "stress_{col}"),
     stress_score = rowSums(across(starts_with("stress_"))),
-    stress_bi = mean(stress_score, na.rm = TRUE) > stress_score,
+    stress_bi = mean(stress_score, na.rm = TRUE) < stress_score,
     
     
     #### health variables ####
@@ -314,6 +312,7 @@ filter(completion >= min_completion,
     hh_4_17_bi = q25_3 >= 1,
     hh_0_4_bi = q25_4 >= 1,
     hh_ch_0_17_bi = q25_3 >=1 | q25_4 >=1,
+    
     hh_size = rowSums(across(starts_with("q25"))),
     hh_ad_one = q25_1 + q25_2 == 1,
     
