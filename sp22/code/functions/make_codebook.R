@@ -11,11 +11,19 @@ make_codebook <- function(df) {
       q <- row$q
       description <- row$text
       
+      part <- row$part
+      if(!is.na(part)) {
+        description <- glue::glue("{part}: {description}")
+      }
+      
     } else if (col %in% new_vars$var_name) {
       row <- new_vars[new_vars$var_name == col, ]
       q <- NA_character_
       description <- row$description
       #survey_q <- NA_integer_
+    } else if (col %in% c("responseid", "recordeddate", "duration", "userlanguage", "source", "order")) {
+      q <- "id"
+      description <- "survey response metadata"
     } else {
       q <- NA_character_
       description <- NA_character_
@@ -45,13 +53,17 @@ make_codebook <- function(df) {
       }
       
     } else {
+      # edit spacing here
       sub <- sort(unique(df[[col]][!is.na(df[[col]])]))
-      value <- paste(sort(unique(sub)), collapse = "\n")
-      if(length(sub) > 5) {
+      value <- paste(sort(unique(sub)), collapse = "; ")
+      if(length(sub) > 5 & !is.numeric(sub)) {
         value <- str_trunc(value, side = c("right"), width = 30)
+      } else if (is.numeric(sub)) {
+        value <- paste(range(sub), collapse = " to ")
       }
+      
       if(anyNA(df[[col]])) {
-        value <- paste(c(value, "NA"), collapse = "\n")
+        value <- paste(c(value, "NA"), collapse = "; ")
       }
       label <- NA_character_
     }
