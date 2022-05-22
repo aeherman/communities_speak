@@ -116,10 +116,14 @@ survey_codebook <- lapply(file[str_detect(elements, "QID")], function(element) {
          options = ifelse(str_detect(q, "text"), NA, options)) %>%
   arrange(question) %>% left_join(blocks) %>% filter(!str_detect(block_title, "trash"))
 
+
+# save survey_codebook stuff
 simple <- survey_codebook %>% filter(type == "mc", selector == "savr", !str_detect(q, "text")) %>% pull(q)
 text <- survey_codebook %>% filter(type == "te" | str_detect(q, "text")) %>% pull(q) # this should have the text questions in them
 likert <- survey_codebook %>% filter(selector == "likert", subselector != "multipleanswer") %>% pull(q)
 mavr <- survey_codebook %>% filter(type == "mc" & selector == "mavr" | subselector == "multipleanswer", !str_detect(q, "text")) %>% pull(q)
+
+save(survey_codebook, simple, text, likert, mavr, file = "data/processed/survey_codebook_items.rdata")
 
 
 to_label <-
@@ -140,19 +144,6 @@ dummies_to_label <- to_label %>% ungroup %>% select(qid, q, to_label) %>% unique
 write_sheet(qs_to_label, id_labelling, "qs_to_label")
 write_sheet(dummies_to_label, id_labelling, "dummies_to_label")
 
+save(to_label, qs_to_label, dummies_to_label, id_labelling, file = "data/processed/survey_codebook_to_labels.rdata")
+
 # hand write in variables
-
-labelled_dummies <- id_labelling %>% read_sheet(sheet = "dummies_labelled", na = c("na", "NA", ""))
-labelled_qs <- id_labelling %>% read_sheet(sheet = "qs_labelled", na = c("na", "NA", ""))
-
-survey_codebook_labelled <- labelled_dummies %>% left_join(to_label) %>%
-  left_join(labelled_qs %>% rename(q_stem = q) %>% select(q_stem, label)) %>%
-  bind_rows(labelled_qs %>% filter(!q %in% labelled_dummies$q) %>% left_join(survey_codebook)) %>%
-  mutate(full_label = ifelse(is.na(sub_label), label, glue::glue("{label}_{sub_label}"))) %>%
-  select(qid, q, full_label, type, selector, subselector, text, part, to_label, options, choices, block_title, question) %>%
-  mutate(question = as.integer(str_extract(q, "[:digit:]{1,2}"))) %>%
-  arrange(question)
-
-view(survey_codebook_labelled)
-
-new_vars <- id_labelling %>% read_sheet(sheet = "new_vars")# %>% na.omit
