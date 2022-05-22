@@ -21,14 +21,13 @@ Analyzing when we lose respondents will help us shape the structure and question
 
 
 ```{r include=F}
-final_clean
-selected <- final_clean %>% #filter(completion < min_completion) %>%
-  select(contains("q")) %>% select(!matches("text"))
+selected <- final_clean %>% filter(is.na(test_response)) %>%
+  select(contains("q"), order) %>% select(!matches("text")) %>% filter(q2 == 1)
 
 no_response <- selected %>% filter(if_all(everything(), is.na)) %>% nrow
 one_response <- selected %>% filter(if_all(-q2, is.na)) %>% nrow
-non_ny <- selected %>% filter(q2 == 0) %>% nrow
-n <- final_clean %>% nrow
+non_ny <- selected %>% filter(q2 == 2) %>% nrow # why didn't it get fixed in the cleaning script?
+n <- selected %>% nrow
 ```
 
 # validate disqualification criteria
@@ -79,15 +78,88 @@ Out of **`r n`** total responses, **`r no_response`** respondents didn't fill an
   
   
 Of people who make it through half of the survey, 25% don't answer that question.
+```{r}
+test <- final_clean %>% distinct %>% filter(is.na(test_response)) %>%
+  group_by(order) %>% group_split()
+sub <- survey_codebook %>% select(q, question, block_title) %>%
+  mutate(
+    block_title = trimws(stringi::stri_trans_general(block_title, "latin-ascii")),
+    block = str_replace_all(block_title, " ", ""))
+
+order <- test[[1]] %>% select(order) %>% distinct %>%
+  tidytext::unnest_regex(output = block, input = order, pattern = "\\|") %>%
+  mutate(order = row_number()) %>% bind_rows(tibble(block = c("newyorkresident?", "closing"),
+       order = c(0, 7)))
+
+test[[1]] %>% #rownames_to_column() %>%
+  mutate_all(as.character) %>%
+  pivot_longer(cols = -responseid, names_to = "q") %>% 
+  pivot_wider(names_from = responseid) %>%
+  left_join(sub %>% full_join(order)) %>% filter(!is.na(block_title)) %>% arrange(order) %>%
+  filter(!str_detect(q,"text|[:digit:]{1,2}_[2-8]")) %>%
+  mutate(q_order = row_number())
+
+trimws(stringi::stri_trans_general(sub %>% pull(block_title) %>% .[2], "latin-ascii")
+utf8::utf8_print(trimws(sub %>% pull(block_title) %>% .[2]), utf8 = FALSE)
+
+sub %>% filter(!str_detect(q,"text|[:digit:]{1,2}_[2-8]"))
+
+length(test)
+
+
+length(test)
+count(final_clean %>% filter(is.na(test_response)), order)
+
+out <- lapply(test, function(element) {
+  #for(element in test) {
+  #i <- i + 1
+  order <- element %>% select(order) %>% distinct %>%
+    tidytext::unnest_regex(output = block, input = order, pattern = "\\|") %>%
+    mutate(order = row_number()) %>%
+    # add unrandomized blocks
+    bind_rows(tibble(block = c("newyorkresident?", "closing"), order = c(0,7))) %>%
+    full_join(sub, by = c("block")) %>% filter(!is.na(block_title)) %>% arrange(order, question) %>%
+    filter(!str_detect(q, "text|[:digit:]{1,2}_[2-9]|_[[:digit:]]{2}"),
+           !is.na(order))
+  
+  out <- element %>% mutate_all(as.character) %>%
+    
+    pivot_longer(cols = -responseid, names_to = "q") %>%
+    pivot_wider(names_from = responseid) %>%
+    right_join(order, by = c("q")) %>% arrange(order) %>%
+    #filter(#!str_detect(q, "text|[:digit:]{1,2}_[2-9]|_[[:digit:]]{2}"),
+    #       str_detect(q, "q")) %>%
+    mutate(q_order = row_number()) %>%
+    select(q_order, #q,
+           starts_with("r"))
+  return(out)
+  #print(i)
+    
+}) %>% reduce(full_join, by = c("q_order")) %>% arrange(q_order)
+
+attrition <- out %>% mutate(q_order, rate = rowMeans(across(starts_with("r"), is.na)))
+
+attrition %>% select(rate, starts_with("q"), q_order)
+# 407
+# 328
+# 94
+
+attrition %>% ggplot(aes(x = q_order, y = rate)) + geom_line() + geom_point()
+
+test[[1]]
+order
+```
+
   
 ```{r echo=F}
-to_plot <- final_clean %>%
-  filter(q2 == 1) %>%
+to_plot <- #final_clean %>%
+  selected %>%
   #filter(completion < .50) %>%
-  filter(completion >= .5, q2 == 1, duration >= 100) %>%
-  select(contains("q")) %>%
-  filter(!if_all(everything(), is.na)) %>% # about 100 where they didn't fill out anything
-  select(!matches("text")) %>%  is.na
+  #filter(completion >= .5, q2 == 1, duration >= 100) %>%
+  #select(contains("q")) %>%
+ # filter(!if_all(everything(), is.na)) %>% # about 100 where they didn't fill out anything
+  #select(!matches("text")) %>%
+  is.na
 
 to_plot_tibble <- distinct(tibble(no = as.integer(str_extract(colnames(to_plot), "[:digit:]{1,2}")),
                                   #question = colnames(to_plot),
@@ -109,6 +181,21 @@ to_plot_tibble %>% ggplot(aes(x = no, y = mean)) + geom_line(lty = "dashed") +
   scale_color_manual(values = project_pal[c(4, 3)])
 
 to_plot_tibble
+```
+
+```{r}
+wrangled$order2 <- str_split(wrangled$order, pattern = "\\|")
+wrangled[c("order", "order2")]
+survey_codebook_labelled %>% select(q, question, block_title) %>%
+  group_by(block_title) %>% summarize(min = min(question), max = max(question)) %>%
+  mutate(range = glue::glue("q{min}, q{max}"))
+
+selected
+
+colnames(wrangled)
+wrangled %>% select(order)
+
+final_clean %>% filter(is.na(test), !is.na(order)) %>% select(responseid, order, starts_with("q"))
 ```
 The major drop-offs come at:
 
