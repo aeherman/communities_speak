@@ -6,7 +6,7 @@ output:
   pdf_document: default
   html_document: default
 ---
-test
+
 ```{r message=F, warning=F}
 library(googledrive)
 library(readxl)
@@ -17,13 +17,16 @@ library(rjson)
 library(googlesheets4)
 #source("functions/fixup.R")
 source("default_setup.R")
-source("dictionary.R")
-getwd()
+
+files <- list.files("../data/processed", full.names = TRUE)
+lapply(files[str_detect(files, "survey_codebook")], function(file) load(file, envir = .GlobalEnv))
+
 #source("clean_data.R")
 #setwd("~/communities_speak/sp22/code")
-source("code/functions/clean_data.R")
+getwd()
+source("functions/clean_data.R")
 
-survey_id <- gs4_find() %>% filter(str_detect(name, "Individual Survey") & str_detect(name, "April")) %>% select(id, name)
+survey_id <- gs4_find() %>% filter(str_detect(name, "Individual Survey") & str_detect(name, "May")) %>% select(id, name)
 
 survey <- read_sheet(survey_id$id, sheet = "Sheet1") %>%
   rename_all(stringr::str_to_lower) %>%
@@ -33,7 +36,7 @@ survey <- read_sheet(survey_id$id, sheet = "Sheet1") %>%
   mutate_at(vars(-recordeddate), ~str_to_lower(as.character(.))) %>% na_if("null") %>%
   unnest(recordeddate) %>% distinct
 
-boroughs <- read_csv("data/input/boroughs.csv") %>% distinct # question: why are there repeats for the same zipcode
+boroughs <- read_csv("../data/input/boroughs.csv") %>% distinct # question: why are there repeats for the same zipcode
 ```
 # Var Dictionary
 Combine with codebook in order to easily rename columns in the cleaned dataset
@@ -135,12 +138,8 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
   filter(valid == 1) %>% select(-test_response) %>%
   # make new variables
   mutate(
-    #### race variables ####
-    #race_twomore = str_detect(q7, ";"),
-    #race_black_his = str_detect(q7, "black") & str_detect(q7, "(?<!-)hispanic"),
-    #race_white_alone = str_detect(q7, "white") & str_detect(q7, ";", negate = TRUE),
-    
     #### location variables ####
+    # create binary for all of the boroughs
     bronx_bi = labelled::to_character(borough) == "bronx",
     brooklyn_bi = labelled::to_character(borough) == "brooklyn",
     queens_bi = labelled::to_character(borough) == "queens",
@@ -189,7 +188,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     emp_status_after = case_when(
       str_detect(q16, "unemp") ~ "unemployed",
       str_detect(q16, "full|part|free|gig|small|home") ~ "employed",
-      str_detect(q15, "student") ~ "student",
+      str_detect(q16, "student") ~ "student",
       str_detect(q16, ";") ~ "multiple_other",
       TRUE ~ q16),
     
@@ -200,6 +199,10 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
       q15_1 == 1 ~ 0
     ),
     
+    emp_after_part_time = case_when(
+      q16_1 == 0 & any(q16_2 == 1, q16_3 == 1, q16_4 == 1, q16_5 == 1) ~ 1,
+      q16_1 == 1 ~ 0
+    ),
     #unemployed = emp_after == "unemployed", # newly unemployed # emp_un_after
     
     #### mental health variables ####
@@ -225,12 +228,13 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     ## q38 tested positive?
     ## q43 concern over variants
     ## q39 vaccinated
-    boost_bi = str_detect(labelled::to_character(q39), "yes|i plan"),
-    boost_plan = str_detect(labelled::to_character(q39), "i plan"),
+    boost_bi = str_detect(labelled::to_character(q39), "yes"),
+    #boost_plan = str_detect(labelled::to_character(q39), "i plan"),
     
     posi_all = str_detect(labelled::to_character(q38), "yes"),
     
-    vrnts_bi = q43 == 1,
+    vrnts_ve = q43 == 1,
+    vrnts_con = q43 %in% c(1, 2),
     
     #### household variables ####
     ## q5 = age
@@ -240,6 +244,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     hh_ch_4_17_bi = q26_3 >= 1,
     hh_ch_0_4_bi = q26_4 >= 1,
     hh_ch_0_17_bi = if_any(c(q26_3, q26_4), ~. >= 1),
+    hh_ch_sn = if_all(c(hh_sn_65_bi, hh_ch_0_17_bi), ~. >= 1),
     #hh_ch_0_17_bi = q26_3 >=1 | q26_4 >=1,
     
     hh_size = rowSums(across(starts_with("q26"))),
@@ -248,13 +253,14 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     no_find_cc = str_detect(labelled::to_character(q31), "no\\b"),
     
     #### residence variables ####
+    # fix this
     res_cat = labelled::to_character(q21),
     res_cat = case_when(
-      str_detect(res_cat, "public") ~ "public",
-      str_detect(res_cat, "owner") ~ "owner",
-      str_detect(res_cat, "renter") ~ "renter",
-      str_detect(res_cat, "not have") ~ "no permanent residence",
-      TRUE ~ res_cat),
+      str_detect(res_cat, "public") ~ 1,
+      str_detect(res_cat, "owner") ~ 2,
+      str_detect(res_cat, "renter") ~ 3,
+      str_detect(res_cat, "not have") ~ 4
+      ),
     
     #### education variables ####
     sch_level_cat = labelled::to_character(q12),
@@ -264,11 +270,10 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
       str_detect(sch_level_cat, "doct|mast|prof") ~ 5
       ),
     
-    sch_bach = factor(ifelse(str_detect(labelled::to_character(q12),
-                                        "(?<!no )degree"), "BA plus", labelled::to_character(q12))),
+    sch_bach = ifelse(sch_level_cat <= 3, 0, 1),
     
     #### discrimination variables ####
-    discrim_bi = q37 == 1 | q37 == 2,
+    discrim_bi = q37 %in% c(1, 2),
     
     #### abuse or violence variables ####
     exp_ab_or_vi = str_detect(q36, "yes"),
@@ -284,37 +289,38 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     ## q21_9 difficulty accessing housing
     ## q29 all concerns about child attending school
 
-    con_num = as.integer(unlist(lapply(str_split(q30, ";"),
+    att_con_num = as.integer(unlist(lapply(str_split(q30, ";"),
                                        function(item) if(any(!is.na(item))) {unlist(length(item))} else {NA}))),
 
     # at least two concerns about insecurity
     #fin_unstable = q21_3 == 1 & q21_7 == 1 | q21_7 == 1 & q21_8 == 1 |
     #  q21_8 == 1 & q21_3 == 1,
+    # q22_2 diff_worr - worried about running out of food
+    # q22_3 diff_ran_out
+    # q22_7 diff_bill
+    # q22_8 diff_rent
+    # worried about running out or ran out of food
+    food_insec = if_any(c(q22_3, q22_2), ~.==1),
+    house_insec = if_any(c(q22_8, q22_9), ~.== 1),
     fin_insec = if_any(c(q22_2, q22_3, q22_7, q22_8), ~.== 1),
     
     # accessing resources
-    diff_acc = if_any(c(q22_3, q22_9, q22_6, q22_5), ~.==1),
+    res_insec = if_any(c(q22_3, q22_4, q22_5, q22_6, q22_9), ~.==1),
     
-    # worried about running out or ran out of food
-    food_insec = if_any(c(q22_3, q22_2), ~.==1),
     
     #### rating variables ####
     ## q33_3 = rate government city
     
+    rate_gov_fed_bad = q33_1 > 3,
+    rate_gov_sta_bad = q33_2 > 3,
     rate_gov_cit_bad = q33_3 > 3,
     
-    rate_gov_good = if_all(starts_with("q33"), ~.<3),
-    rate_gov_bad = if_all(starts_with("q33"), ~.>3),
-    rate_gov_ave = round(rowMeans(6 - across(starts_with("q33"))), digits = 4),
+    rate_gov_all_good = if_all(starts_with("q33"), ~.<3),
+    rate_gov_all_bad = if_all(starts_with("q33"), ~.>3),
+    rate_gov_all_ave = round(rowMeans(6 - across(starts_with("q33"))), digits = 4),
     
-    rate_neigh_pub_good = q34_4 < 3,
-    rate_neigh_pub_bad = q34_4 > 3,
-    
-    rate_neigh_pol_good = q34_8 < 3,
-    rate_neigh_pol_bad = q34_8 > 3,
-    
-    rate_neigh_pre_good = q34_9 < 3,
-    rate_neigh_pre_bad = q34_9 > 3,
+    across(c(q34_4, q34_5, q34_8, q34_9), ~ . < 3, .names = "{col}_good"),
+    across(c(q34_4, q34_5, q34_8, q34_9), ~ . > 3, .names = "{col}_bad"),
     
     #### access variables ####
     lr_fam = if_any(starts_with("q35_") & ends_with("_5"), ~.==1),
@@ -323,7 +329,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     lr_np = if_any(starts_with("q35_") & ends_with("_2"), ~.==1),
     
     internet_lim = q24 != 1, # respondent has limited or no internet access
-    internet_acc = q24 == 1,
+    internet_acc = q24 %in% c(1, 2),
     
     race_census = str_replace_all(q7,
                                   c(".*hispanic or latinx.*" = "hispanic or latinx",
@@ -332,6 +338,15 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     
     
     )
+# naming q34
+#indeces34 <- which(str_detect(survey_codebook_labelled$q, "34"))
+#key34 <- survey_codebook_labelled$q[indeces34]
+key34_ <- colnames(wrangled)[str_detect(colnames(wrangled), "34") & str_detect(colnames(wrangled), "good|bad")]
+key34 <- str_replace(key34_, "_(good|bad)", "")
+indeces34 <- which(survey_codebook_labelled$q %in% key34)
+values34 <- survey_codebook_labelled$full_label[indeces34]
+values34_ <- unlist(lapply(values34, function(value34) paste(value34, c("good", "bad"), sep = "_")))
+names(wrangled)[match(key34_, names(wrangled))] <- values34_
 
 # labelling
 na_omit <- new_vars %>% na.omit()
@@ -363,8 +378,6 @@ key <- survey_codebook_labelled$q[indeces]
 value <- survey_codebook_labelled$full_label[indeces]
 
 names(wrangled)[match(key, names(wrangled))] <- value
-
-# naming q40
 ```
 
 # Weights
