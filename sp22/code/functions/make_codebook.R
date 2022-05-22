@@ -9,6 +9,7 @@ make_codebook <- function(df) {
     if(col %in% survey_codebook_labelled$full_label){
       row <- survey_codebook_labelled[survey_codebook_labelled$full_label == col, ]
       q <- row$q
+      origin <- row$origin
       description <- row$text
       
       part <- row$part
@@ -18,14 +19,17 @@ make_codebook <- function(df) {
       
     } else if (col %in% new_vars$var_name) {
       row <- new_vars[new_vars$var_name == col, ]
-      q <- NA_character_
+      q <- row$var_q
+      origin <- "created variable"
       description <- row$description
       #survey_q <- NA_integer_
     } else if (col %in% c("responseid", "recordeddate", "duration", "userlanguage", "source", "order")) {
-      q <- "id"
+      q <- "q0"
+      origin <- "metadata"
       description <- "survey response metadata"
     } else {
       q <- NA_character_
+      origin <- NA_character_
       description <- NA_character_
     }
 
@@ -70,15 +74,15 @@ make_codebook <- function(df) {
 #    print(col)
 #}
     
-    return(tibble(q, variable, value, label, description))
+    return(tibble(q, origin, variable, value, label, description))
   }) %>% reduce(bind_rows)
   
   codebook <- var_values %>% left_join(var_types, by = c("variable")) %>%
-    select(q, variable, type, value, label, description)
+    select(q, origin, variable, type, value, label, description)
   return(codebook)
 }
 
-codebook <- make_codebook(wrangled)
+codebook <- make_codebook(wrangled) %>% arrange(as.integer(str_extract(q, "(?<=q)[[:digit:]]{1,2}")))
 
 today <- gsub("-", "", Sys.Date())
 View(codebook)
