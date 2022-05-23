@@ -3,8 +3,9 @@ title: "Status Update"
 author: "Communities Speak Spring 2022 Survey"
 date: "4/13/2022"
 output:
+  html_document:
+    df_print: paged
   pdf_document: default
-  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -19,14 +20,17 @@ load("data/processed/final_clean.rdata")
 
 ```{r echo=F}
 final_clean %>%
-  #filter(valid == 1) %>%
+  filter(valid == 1) %>%
   mutate(week = lubridate::week(recordeddate)-14) %>%
-  group_by(source, week) %>% count %>% arrange(week) %>%
-  ggplot(aes(x = factor(week), y = n, group = source, color = source)) +
+  group_by(source, week) %>% count %>% arrange(source, week) %>%
+  group_by(source) %>%
+  mutate(cum = cumsum(n), label = ifelse(cum == max(cum), as.character(cum), "")) %>%
+  filter(max(cum) >= 10) %>%
+  ggplot(aes(x = factor(week), y = cum, group = source, color = source)) +
   geom_point() + geom_line(show.legend = FALSE) +
-  ggrepel::geom_text_repel(aes(label = n), show.legend = FALSE, seed = 1) +
-  xlab("\nActive Weeks of Survey") + ylab("New Responses\n") +
-  ggtitle("New Responses Over Time\n") +
+  ggrepel::geom_text_repel(aes(label = label), show.legend = FALSE, seed = 1) +
+  xlab("\nActive Weeks of Survey") + ylab("Cummulative Responses\n") +
+  ggtitle("Cummulative Responses Over Time\n") +
   scale_color_discrete(glue::glue("N = {sum(final_clean$valid == 1, na.rm = TRUE)}")) +
   guides(color = guide_legend(title.position = "bottom", title.hjust = 0.3))
 ```
@@ -35,7 +39,7 @@ final_clean %>%
 
 perhaps a week by week total or mean?
 
-```{r echo=F, warning=F, message=F}
+```{r echo=F, warning=F, message=F, results = "asis"}
 lang <- tribble(~userlanguage, ~language,
                 "en", "English",
                 "fr", "French",
@@ -48,11 +52,11 @@ total <- final_clean %>%
             language = NA_character_,
             total = sum(!is.na(valid), na.rm = TRUE),
             `valid responses` = sum(valid, na.rm = TRUE),
-            percent = scales::percent(mean(valid, na.rm = TRUE)))
+            percent = round(mean(valid, na.rm = TRUE), 2))
 
 update <- final_clean %>% #filter(valid == 1) %>% 
   group_by(source, userlanguage) %>%
-  summarize(percent = scales::percent(mean(valid, na.rm = TRUE)),
+  summarize(percent = round(mean(valid, na.rm = TRUE), 2),
             total = n(),
             `valid responses` = sum(valid, na.rm = TRUE)) %>%
   left_join(lang) %>% select(source, language, `valid responses`, total, percent) %>%
