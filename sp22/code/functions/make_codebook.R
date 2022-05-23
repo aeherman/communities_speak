@@ -78,7 +78,14 @@ make_codebook <- function(df) {
   }) %>% reduce(bind_rows)
   
   codebook <- var_values %>% left_join(var_types, by = c("variable")) %>%
-    select(q, origin, variable, type, value, label, description)
+    select(q, origin, variable, type, value, label, description) %>%
+    arrange(
+      # question order
+      as.integer(str_extract(q, "(?<=q)[[:digit:]]{1,2}")),
+      # within question order, arrange by type of variable
+      factor(origin, levels = c("survey question", "survey question dummy", "created variable")),
+      # order by coded values within question type
+      as.integer(str_extract(q, "(?<!_.{1,2})(?<=_)[[:digit:]]{1,2}")))
   return(codebook)
 }
 
