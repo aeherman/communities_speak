@@ -26,7 +26,7 @@ lapply(files[str_detect(files, "survey_codebook")], function(file) load(file, en
 getwd()
 source("functions/clean_data.R")
 
-survey_id <- gs4_find() %>% filter(str_detect(name, "Individual Survey") & str_detect(name, "May")) %>% select(id, name)
+survey_id <- gs4_find() %>% filter(str_detect(name, "Individual Survey- English - S22_May")) %>% select(id, name)
 
 survey <- read_sheet(survey_id$id, sheet = "Sheet1") %>%
   rename_all(stringr::str_to_lower) %>%
