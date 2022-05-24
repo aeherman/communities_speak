@@ -26,7 +26,9 @@ lapply(files[str_detect(files, "survey_codebook")], function(file) load(file, en
 getwd()
 source("functions/clean_data.R")
 
-survey_id <- gs4_find() %>% filter(str_detect(name, "Individual Survey- English - S22_May")) %>% select(id, name)
+gs4_found <- gs4_find()
+
+survey_id <- gs4_found %>% filter(str_detect(name, "Individual Survey- English - S22_May")) %>% select(id, name)
 
 survey <- read_sheet(survey_id$id, sheet = "Sheet1") %>%
   rename_all(stringr::str_to_lower) %>%
@@ -35,6 +37,22 @@ survey <- read_sheet(survey_id$id, sheet = "Sheet1") %>%
   select(responseid, recordeddate, duration, userlanguage, source, distributionchannel, order, matches("q")) %>%
   mutate_at(vars(-recordeddate), ~str_to_lower(as.character(.))) %>% na_if("null") %>%
   unnest(recordeddate) %>% distinct
+
+census <- gs4_found %>% filter(str_detect(name, "DECENNIALPL2020.P4-2022-05-24T145132")) %>% pull(id) %>%
+  read_sheet(sheet = "table") %>%
+  mutate(race = stringi::stri_trans_general(race, "latin-ascii") %>%
+                   str_to_lower %>% str_replace(":|alone", "") %>% trimws) %>%
+  filter(!is.na(cat)) %>% select(-cat) %>%
+  arrange(race) %>%
+  mutate(target = count/sum(count),
+         label = c("indigenous american / first nations (including american indian or alaska native)",
+                   "asian",
+                   "black or african american",
+                   "hispanic or latinx",
+                   "native hawaiian or pacific islander",
+                   "two or more races",
+                   "other",
+                   "white (non-hispanic or latino)"))
 
 boroughs <- read_csv("../data/input/boroughs.csv") %>% distinct # question: why are there repeats for the same zipcode
 ```
@@ -118,8 +136,8 @@ final_clean <- final_clean %>%
 
 hist(final_clean$completion)
 mean(!is.na(final_clean$q2))
-save(final_clean, file = "../data/processed/final_clean.rdata")
-write_csv(final_clean, file = "../data/processed/final_clean.csv")
+save(final_clean, file = "../data/processed/cleaned.rdata")
+write_csv(final_clean, file = "../data/processed/cleaned.csv")
 colMeans(is.na(survey))
 colMeans(is.na(final_clean))
 
@@ -334,7 +352,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     race_census = str_replace_all(q7,
                                   c(".*hispanic or latinx.*" = "hispanic or latinx",
                                     ".*;.*" = "two or more races",
-                                    "prefer not to answer|(?<!;)other" = NA_character_))
+                                    "prefer not to answer" = NA_character_))
     
     
     )
@@ -381,42 +399,32 @@ names(wrangled)[match(key, names(wrangled))] <- value
 ```
 
 # Weights
+
+```{r}
+weighted <- wrangled %>% count(race_census) %>%
+  filter(!is.na(race_census)) %>% mutate(actual = n/sum(n)) %>%
+  left_join(census, by = c("race_census" = "label")) %>%
+  select(-count, -race) %>%
+  mutate(`target/actual` = glue::glue("{target}/{actual}"),
+         weight = target/actual,
+         weight = labelled(weight, setNames(weight, race_census))) %>%
+  arrange(weight)
+```
+
 Only to be applied once the survey is complete
 
-```{r eval=F}
-# weights
-to_subtract <- wrangled %>%
-  filter(race_his_lat == 1) %>%
-  count(race) %>% mutate(race_census = str_replace_all(race, c("hispanic or latinx;" = "",
-                                                               ".*;.*" = "two or more races"))) %>%
-  group_by(race_census) %>% summarize(minus = sum(n)/nrow(wrangled)) %>%
-  mutate(minus = ifelse(str_detect(race_census, "latinx"), 0, minus))
-
-census_ <- to_subtract %>%
-  full_join(census, by = c("race_census" = "race")) %>% 
-  mutate(new_target = round(target - minus, digits = 3))
-
-weights <- wrangled %>% count(race_census) %>%
-  filter(!race_census %in% c("prefer not to answer", "other", NA_character_)) %>%
-  mutate(actual = round(n/sum(n), digits = 3)) %>% left_join(census_) %>%
-  mutate(weight = new_target/actual) %>%
-  mutate(weight = labelled(weight, setNames(weight, race_census)),
-         `new_target/actual` = glue::glue("{new_target}/{actual}")) %>%
-  select(race_census, n, target, new_target, actual, `new_target/actual`, weight)
-
-
-# extra NAs account for prefer not to answer and other
-
+```{r}
 wrangled <- wrangled %>%
-  left_join(select(weights, race_census, weight), by = c("race_census")) %>%
-  fastDummies::dummy_cols("race_census") %>%
+  left_join(select(weighted, race_census, weight), by = c("race_census")) %>%
+  fastDummies::dummy_cols("race_census", ignore_na = TRUE) %>%
   rename(race_census_his_lat = "race_census_hispanic or latinx",
          race_census_twomore = "race_census_two or more races",
          race_census_black = "race_census_black or african american",
-         race_census_indian = "race_census_indigenous american / first nations (including american indian or alaska native)",
+         race_census_ind =
+           "race_census_indigenous american / first nations (including american indian or alaska native)",
+         #race_census_haw = "native hawaiian or pacific islander",
          race_census_white = "race_census_white (non-hispanic or latino)"
-         ) %>% 
-  select(-race_census_NA)
+         )
 ```
 
 
@@ -424,12 +432,11 @@ wrangled <- wrangled %>%
 
 ```{r}
 today <- gsub("-", "", Sys.Date())
-
-write_dta(wrangled, #%>% mutate(weight = as.numeric(weight)),
+write_excel_csv(weighted, file = "../data/processed/weighted.csv")
+write_dta(wrangled %>% mutate(weight = as.numeric(weight)),
           path = paste0("../data/output/wrangled.dta"))
 saveRDS(wrangled, file = "../data/output/wrangled.rds")
 write_excel_csv(wrangled, file = "../data/output/wrangled.csv")
-#write_excel_csv(weights, file = "../data/output/weights.csv")
 ```
 
 # Other validation
