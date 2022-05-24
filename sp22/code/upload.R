@@ -20,7 +20,7 @@ lapply(list.files(glue::glue("{project_path}data/processed"), full.names = TRUE)
     spreadsheet <- "spreadsheet"
   }
   
-  drive_upload(media = file, path = glue::glue("{googledrive_path}data/processed/{name}ed{today}.{ending}"),
+  drive_upload(media = file, path = glue::glue("{googledrive_path}data/processed/{name}{today}.{ending}"),
                type = spreadsheet)
   
 })
