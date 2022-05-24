@@ -162,6 +162,9 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     brooklyn_bi = labelled::to_character(borough) == "brooklyn",
     queens_bi = labelled::to_character(borough) == "queens",
     
+    #### transform binary variables ####
+    across(c(q28, q31, q32), ~ifelse(. == 3, NA_integer_, 2 - .), .names = "{col}_bi"),
+    
     #### income variables ####
     # income change variables
     inc_neg = q14 < q13,
@@ -268,7 +271,9 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     hh_size = rowSums(across(starts_with("q26"))),
     hh_ad_one = q26_1 + q26_2 == 1,
     
-    no_find_cc = str_detect(labelled::to_character(q31), "no\\b"),
+    # fix this third option: not applicable
+    no_find_cc_bi = str_detect(labelled::to_character(q31), "no\\b"),
+    # also need_Cc
     
     #### residence variables ####
     # fix this
@@ -356,15 +361,27 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     
     
     )
+
+# naming
+
+indeces <- which(survey_codebook_labelled$q %in% colnames(wrangled))
+key <- survey_codebook_labelled$q[indeces]
+value <- survey_codebook_labelled$full_label[indeces]
+
+names(wrangled)[match(key, names(wrangled))] <- value
+
 # naming q34
 #indeces34 <- which(str_detect(survey_codebook_labelled$q, "34"))
 #key34 <- survey_codebook_labelled$q[indeces34]
-key34_ <- colnames(wrangled)[str_detect(colnames(wrangled), "34") & str_detect(colnames(wrangled), "good|bad")]
-key34 <- str_replace(key34_, "_(good|bad)", "")
-indeces34 <- which(survey_codebook_labelled$q %in% key34)
-values34 <- survey_codebook_labelled$full_label[indeces34]
-values34_ <- unlist(lapply(values34, function(value34) paste(value34, c("good", "bad"), sep = "_")))
-names(wrangled)[match(key34_, names(wrangled))] <- values34_
+keyq_ <- colnames(wrangled)[str_detect(colnames(wrangled), "q[[:digit:]]{1,2}")]
+key_split <- str_split(keyq_, "_(?=[[:alpha:]])")
+pre <- unlist(lapply(key_split, first))
+suf <- unlist(lapply(key_split, last))
+#keyq <- str_replace(keyq_, "_[[:alpha:]]*$", "")
+indecesq <- match(pre, survey_codebook_labelled$q)
+valuesq <- survey_codebook_labelled$full_label[indecesq]
+valuesq_ <- paste(valuesq, suf, sep = "_")
+names(wrangled)[match(keyq_, names(wrangled))] <- valuesq_
 
 # labelling
 na_omit <- new_vars %>% na.omit()
@@ -389,13 +406,7 @@ dim_after <- dim(wrangled)
 all.equal(dim_before, dim_after)
 
 
-# naming
 
-indeces <- which(survey_codebook_labelled$q %in% colnames(wrangled))
-key <- survey_codebook_labelled$q[indeces]
-value <- survey_codebook_labelled$full_label[indeces]
-
-names(wrangled)[match(key, names(wrangled))] <- value
 ```
 
 # Weights
