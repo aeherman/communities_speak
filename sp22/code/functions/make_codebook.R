@@ -83,7 +83,7 @@ make_codebook <- function(df) {
       # question order
       as.integer(str_extract(q, "(?<=q)[[:digit:]]{1,2}")),
       # within question order, arrange by type of variable
-      factor(origin, levels = c("survey question", "survey question dummy", "created variable")),
+      factor(origin, levels = c("metadata", "survey question", "survey question dummy", "created variable")),
       # order by coded values within question type
       as.integer(str_extract(q, "(?<!_.{1,2})(?<=_)[[:digit:]]{1,2}")))
   return(codebook)
