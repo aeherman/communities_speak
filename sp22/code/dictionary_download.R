@@ -5,8 +5,8 @@ library(tidyverse)
 library(rjson)
 
 setwd("~/communities_speak/sp22")
-load("data/processed/survey_codebook_items.rdata")
-load("data/processed/survey_codebook_to_labels.rdata")
+load("data/processed/survey_codebook_types.rdata")
+load("data/processed/survey_codebook_tolabel.rdata")
 
 
 labelled_dummies <- id_labelling %>% read_sheet(sheet = "dummies_labelled", na = c("na", "NA", ""))
@@ -27,4 +27,4 @@ survey_codebook_labelled <- labelled_dummies %>%
 
 new_vars <- id_labelling %>% read_sheet(sheet = "new_vars")# %>% na.omit
 
-save(survey_codebook_labelled, new_vars, file = "data/processed/survey_codebook_labels.rdata")
+save(survey_codebook_labelled, new_vars, file = "data/processed/survey_codebook_labeled.rdata")

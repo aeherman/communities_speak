@@ -123,7 +123,7 @@ text <- survey_codebook %>% filter(type == "te" | str_detect(q, "text")) %>% pul
 likert <- survey_codebook %>% filter(selector == "likert", subselector != "multipleanswer") %>% pull(q)
 mavr <- survey_codebook %>% filter(type == "mc" & selector == "mavr" | subselector == "multipleanswer", !str_detect(q, "text")) %>% pull(q)
 
-save(survey_codebook, simple, text, likert, mavr, file = "data/processed/survey_codebook_items.rdata")
+save(survey_codebook, simple, text, likert, mavr, file = "data/processed/survey_codebook_types.rdata")
 
 
 to_label <-
@@ -144,6 +144,6 @@ dummies_to_label <- to_label %>% ungroup %>% select(qid, q, to_label) %>% unique
 write_sheet(qs_to_label, id_labelling, "qs_to_label")
 write_sheet(dummies_to_label, id_labelling, "dummies_to_label")
 
-save(to_label, qs_to_label, dummies_to_label, id_labelling, file = "data/processed/survey_codebook_to_labels.rdata")
+save(to_label, qs_to_label, dummies_to_label, id_labelling, file = "data/processed/survey_codebook_tolabel.rdata")
 
 # hand write in variables
