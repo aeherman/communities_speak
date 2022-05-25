@@ -69,7 +69,9 @@ Get important metadata on each of the questions that facilitates wrangling
 ```{r}
 final_clean <- survey[c('responseid', 'recordeddate')] %>% left_join(clean_data(df = survey)) %>%
   #filter(responseid == "r_1jthhnt6oyjloix") %>%
-  left_join(boroughs, by = c("q3" = "zip"))
+  left_join(boroughs, by = c("q3" = "zip")) %>%
+  # fix the senior question by hand
+  mutate(q26_1 = ifelse(q26_1 > 65, 1, q26_1))
 
 completion <- lapply(final_clean$responseid, function(id) {
 #for(id in final_clean$responseid) {
@@ -404,9 +406,16 @@ wrangled[to_label] <- new_vars_to_label
 
 dim_after <- dim(wrangled)
 all.equal(dim_before, dim_after)
+```
 
-
-
+```{r}
+lapply(select_if(wrangled, labelled::is.labelled), function(col) {
+  label_values <- sort(as.integer(attributes(col)$labels))
+  actual_values <- as.integer(sort(unique(col)))
+  result <- all(actual_values %in% label_values)
+  #result <- all.equal(label_values, actual_values)
+  return(result)
+}) %>% unlist %>% mean
 ```
 
 # Weights
