@@ -71,7 +71,7 @@ final_clean <- survey[c('responseid', 'recordeddate')] %>% left_join(clean_data(
   #filter(responseid == "r_1jthhnt6oyjloix") %>%
   left_join(boroughs, by = c("q3" = "zip")) %>%
   # fix the senior question by hand
-  mutate(q26_1 = ifelse(q26_1 > 65, 1, q26_1))
+  mutate(q26_1 = ifelse(q26_1 >= 65, 1, q26_1))
 
 completion <- lapply(final_clean$responseid, function(id) {
 #for(id in final_clean$responseid) {
@@ -368,7 +368,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
 
 indeces <- which(survey_codebook_labelled$q %in% colnames(wrangled))
 key <- survey_codebook_labelled$q[indeces]
-value <- survey_codebook_labelled$full_label[indeces]
+value <- survey_codebook_labelled$full_name[indeces]
 
 names(wrangled)[match(key, names(wrangled))] <- value
 
@@ -381,11 +381,11 @@ pre <- unlist(lapply(key_split, first))
 suf <- unlist(lapply(key_split, last))
 #keyq <- str_replace(keyq_, "_[[:alpha:]]*$", "")
 indecesq <- match(pre, survey_codebook_labelled$q)
-valuesq <- survey_codebook_labelled$full_label[indecesq]
+valuesq <- survey_codebook_labelled$full_name[indecesq]
 valuesq_ <- paste(valuesq, suf, sep = "_")
 names(wrangled)[match(keyq_, names(wrangled))] <- valuesq_
 
-# labelling
+# labeling
 na_omit <- new_vars %>% na.omit()
 to_label <- na_omit$var_name[na_omit$var_name %in% colnames(wrangled)]
 new_vars_to_label <- lapply(to_label, function(col) {

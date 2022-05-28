@@ -9,7 +9,7 @@ library(rjson)
 setwd("~/communities_speak/sp22")
 
 # This section would be for adding in labels in advance #### 
-id_labelling <- gs4_find() %>% filter(name == "labelling") %>% pull(id)
+id_labeling <- gs4_find() %>% filter(name == "labeling") %>% pull(id)
 
 file <- fromJSON(file = "~/communities_speak/sp22/data/input/individual_survey_s22.qsf")$SurveyElements
 elements <- unlist(lapply(file, function(element) element$PrimaryAttribute))
@@ -126,24 +126,24 @@ mavr <- survey_codebook %>% filter(type == "mc" & selector == "mavr" | subselect
 save(survey_codebook, simple, text, likert, mavr, file = "data/processed/survey_codebook_types.rdata")
 
 
-to_label <-
+to_name <-
   # filter for variables to be dummied
   survey_codebook %>% filter(q %in% mavr) %>%
   # list them out in long format
-  tidytext::unnest_tokens(output = to_label, token = "regex", input = choices, pattern = ";", drop = FALSE) %>%
+  tidytext::unnest_tokens(output = to_name, token = "regex", input = choices, pattern = ";", drop = FALSE) %>%
   group_by(q) %>%
   # number them according to their coding in qualtrics, but leave behind the q_stem for later merging
   mutate(q_stem = q, q = glue::glue("{q}_{row_number()}")) %>%
-  mutate(to_label = trimws(to_label))
+  mutate(to_name = trimws(to_name))
 
 # label question stems
-qs_to_label <- survey_codebook %>% select(qid, q, block_title, text, part)
+qs_to_name <- survey_codebook %>% select(qid, q, block_title, text, part)
 # label dummy variable labels
-dummies_to_label <- to_label %>% ungroup %>% select(qid, q, to_label) %>% unique %>% filter(!is.na(to_label))
+dummies_to_name <- to_name %>% ungroup %>% select(qid, q, to_name) %>% unique %>% filter(!is.na(to_name))
 
-write_sheet(qs_to_label, id_labelling, "qs_to_label")
-write_sheet(dummies_to_label, id_labelling, "dummies_to_label")
+write_sheet(qs_to_name, id_labeling, "qs_to_name")
+write_sheet(dummies_to_name, id_labeling, "dummies_to_name")
 
-save(to_label, qs_to_label, dummies_to_label, id_labelling, file = "data/processed/survey_codebook_tolabel.rdata")
+save(to_name, qs_to_name, dummies_to_name, id_labeling, file = "data/processed/survey_codebook_toname.rdata")
 
 # hand write in variables
