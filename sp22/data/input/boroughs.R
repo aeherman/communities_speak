@@ -57,3 +57,5 @@ write_csv(boroughs, file = "boroughs.csv")
 borough_id <- gs4_find() %>% filter(name == "tracker_sp22") %>% pull(id)
 write_sheet(boroughs, borough_id, "zip_dictionary")
 
+write_sheet(final_clean %>% filter(is.na(test_response)) %>% select(userlanguage),
+            borough_id, "language_fix")
