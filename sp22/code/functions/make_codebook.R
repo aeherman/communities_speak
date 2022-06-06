@@ -6,8 +6,8 @@ make_codebook <- function(df) {
     as_tibble() %>% mutate(variable = var_names) %>% rename(type = value)
   
   var_values <- lapply(colnames(df), function(col) {
-    if(col %in% survey_codebook_labelled$full_label){
-      row <- survey_codebook_labelled[survey_codebook_labelled$full_label == col, ]
+    if(col %in% survey_codebook_labelled$full_name){
+      row <- survey_codebook_labelled[survey_codebook_labelled$full_name == col, ]
       q <- row$q
       origin <- row$origin
       description <- row$text
@@ -45,7 +45,7 @@ make_codebook <- function(df) {
       value <- "id column"
       label <- NA_character_
       
-    } else if(col %in% survey_codebook_labelled$full_label){
+    } else if(col %in% survey_codebook_labelled$full_name){
       
       if(str_detect(as.character(col), "text")) {
         value <- "te"
