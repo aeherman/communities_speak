@@ -34,7 +34,8 @@ survey <- read_sheet(survey_id$id, sheet = "Sheet1") %>%
   rename_all(stringr::str_to_lower) %>%
   rename(duration = "duration (in seconds)", order = fl_16_do) %>%
   filter(row_number() > 1) %>%
-  select(responseid, recordeddate, duration, userlanguage, source, distributionchannel, order, matches("q")) %>%
+  select(responseid, recordeddate, duration, userlanguage, source, distributionchannel, order, matches("q"),
+         -q_language) %>%
   mutate_at(vars(-recordeddate), ~str_to_lower(as.character(.))) %>% na_if("null") %>%
   unnest(recordeddate) %>% distinct
 
