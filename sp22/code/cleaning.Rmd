@@ -34,10 +34,13 @@ survey <- read_sheet(survey_id$id, sheet = "Sheet1") %>%
   rename_all(stringr::str_to_lower) %>%
   rename(duration = "duration (in seconds)", order = fl_16_do) %>%
   filter(row_number() > 1) %>%
-  select(responseid, recordeddate, duration, userlanguage, source, distributionchannel, order, matches("q"),
+  select(responseid, recordeddate, duration, userlanguage, source,
+         gc, aid,
+         distributionchannel, order, matches("q"),
          -q_language) %>%
   mutate_at(vars(-recordeddate), ~str_to_lower(as.character(.))) %>% na_if("null") %>%
-  unnest(recordeddate) %>% distinct
+  unnest(recordeddate) %>% distinct %>%
+  mutate(source = ifelse(is.na(aid), source, "eme"))
 
 census <- gs4_found %>% filter(str_detect(name, "DECENNIALPL2020.P4-2022-05-24T145132")) %>% pull(id) %>%
   read_sheet(sheet = "table") %>%
@@ -130,7 +133,7 @@ final_clean <- final_clean %>%
     #test = if_any(everything(), ~str_detect(., pattern = "^test$")),
          source = ifelse(is.na(source), "communities speak", source),
     valid = ifelse(is.na(test_response), valid, NA_integer_)) %>%
-  select(responseid, recordeddate, duration, userlanguage, source, order,
+  select(responseid, recordeddate, duration, userlanguage, source, aid, order,
          completion, valid, test_response, borough, starts_with("q"))
 
 #final_clean %>%
