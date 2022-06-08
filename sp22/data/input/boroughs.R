@@ -51,11 +51,10 @@ boroughs <- sf::st_read("zipcodes/ZIP_CODE_040114.shp") %>%
 ## /html/body/div[1]/div[2]/div/table
 
 
-#save(boroughs, file = "boroughs.rdata")
+save(boroughs, file = "boroughs.rdata")
 write_csv(boroughs, file = "boroughs.csv")
 
 borough_id <- gs4_find() %>% filter(name == "tracker_sp22") %>% pull(id)
 write_sheet(boroughs, borough_id, "zip_dictionary")
 
-write_sheet(final_clean %>% filter(is.na(test_response)) %>% select(userlanguage),
-            borough_id, "language_fix")
+
