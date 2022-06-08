@@ -1,10 +1,17 @@
 # Default Setup for POA
 library("tidyverse")
 library("labelled")
-source("communities_speak_theme.R")
-source("../../code/functions/make_plots.R")
-#poa <- readRDS("../data/output/poa.rds")
-#wrangled <- readRDS("../data/output/wrangled20220410.rds")
+library("rprojroot")
+
+criterion <- rprojroot::has_file(".git/index")
+root <- find_root_file("sp22", criterion = criterion)
+
+# code
+source(file.path(root, "code/communities_speak_theme.R"))
+source(find_root_file("code/functions/make_plots.R", criterion = criterion))
+
+# data
+wrangled <- readRDS(file.path(root, "data/output/wrangled.rds"))
 
 # thresholds
 min_duration <- 100 # 100 seconds
@@ -24,7 +31,7 @@ demographics <-
     "mar", # f
     "sch_level_cat", # g
     "hh_ch_0_17_bi", # h
-    "hh_65_bi", # i
+    "hh_sn_65_bi", # i
     "inc_dist", # j figure out if it is past or present
     "emp_status_before", # k
     "emp_status_after", # k
