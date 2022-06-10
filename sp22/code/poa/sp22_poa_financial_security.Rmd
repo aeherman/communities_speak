@@ -1,0 +1,159 @@
+---
+title: "sp22_poa_financial_security"
+author: "Arielle Herman"
+date: "6/10/2022"
+output:
+  pdf_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+setwd("..")
+source("default_setup.R")
+
+fin_sec_dem <- c("gen", "hh_sn_65_bi", "hh_ch_0_17_bi", "race_census", "borough")
+names(fin_sec_dem) <- fin_sec_dem
+```
+
+# Financial Security [run gender, family, race, borough]
+
+## Income Distribution
+
+```{r}
+categories <- attributes(wrangled$inc_after)$labels
+
+wrangled %>%
+  select(inc_before, inc_after) %>%
+  count(inc_before) %>%
+  mutate(across(where(is.labelled), labelled::to_character, .names = "{col}_label"))
+
+
+arranged <- tibble(range = names(categories)) %>%
+  left_join(wrangled %>% mutate(range = labelled::to_character(inc_before)) %>%
+              count(range, inc_before)) %>%
+  mutate(range = str_replace_all(range, c("under" = "$0 -", "or above" = "- $400,001+"))) %>%
+  separate(col = range, into = c("min", "max"), sep = " - ", remove = FALSE) %>%
+  mutate(across(min:max, ~as.double(str_replace_all(., "\\$|,|\\+", "")))) %>%
+  
+  na.omit()# come back to top bracket later
+  
+inc_dist_plot <- arranged %>%
+  
+  ggplot(aes(y = reorder(range, max), alpha = n), show.legend = FALSE) +
+  #geom_col(aes(x = max)) +
+  geom_linerange(aes(xmin = min, xmax = max, size = n), color = project_pal[4], show.legend = FALSE) +
+  geom_vline(xintercept = c(35000, 69500),
+             #labels = c("poverty line", "median income"),
+             lty = "dashed") +
+  geom_text(aes(x = max, label = n), hjust = -0.2, color = project_pal[4], size = 3, show.legend = FALSE) +
+  scale_x_continuous(labels = scales::dollar) +
+  #annotate("text", x = 0, y = c(poverty_line), label = c("Respondents\nBelow Poverty Line"))
+  #geom_jitter(data = wrangled, aes(x = ))
+  ylab("Income Bracket\n") + xlab("\nIncome Range") +
+  ggtitle("Respondent Income Distribution\n")
+
+inc_dist_plot
+```
+
+## Income Distribution by Demographic
+
+```{r}
+lapply(fin_sec_dem, function(facet) {
+  sym_facet <- sym(facet)
+  wrangled %>% select(inc_before, !!sym_facet) %>%
+    mutate(across(!!sym_facet, labelled::to_factor)) %>%
+    ggplot() + geom_bar(aes(x = inc_before)) +
+    facet_grid(cols = vars(!!sym_facet)) +
+    ggtitle(glue::glue("Income Distribution by {facet}"))
+})
+
+wrangled %>%
+  select(inc_before, fin_sec_dem) %>%
+  mutate(across(c(hh_ch_0_17_bi, hh_sn_65_bi), labelled::to_factor)) %>%
+  ggplot() + geom_bar(aes(x = inc_before)) + 
+  facet_grid(vars(hh_sn_65_bi), vars(hh_ch_0_17_bi))
+```
+
+# POA
+
+## 2.1)Households that saw a reduction in income between before the pandemic  and currently [12 &13]
+
+1.	Compare predicted present income with income before March 2020 income to find positive or negative change
+2.	Run distribution of negative changes over population
+3.	Run distribution by sub-demographics (a-k)
+a.	Compare and find gaps (test unequal proportions)
+
+```{r}
+make_plots(wrangled, fin_sec_dem, "inc_neg", show = "TRUE",
+           title = "Households that saw a reduction in income between before the pandemic  and currently")
+```
+
+## 2.2)Households whose income dropped below the poverty line from 2020 to 2021 [12 & 13]
+
+1.	Run distribution over population
+2.	Run distribution by sub-demographics (a-k) and type of previous employment [13]
+a.	Compare and find gaps (test unequal proportions)
+
+```{r}
+make_plots(wrangled %>% filter(inc_be_pov_before == 0), # filter for those who started above the poverty line
+           by_vars = fin_sec_dem, hyp_var = "inc_drop_pov",
+           title = "Respondents whose household income\ndropped below the poverty line")
+
+```
+
+## 2.4 - 2.5)People who had difficulty paying bills or rent in the past year
+
+### 2.4)People who had difficulty paying bills in the past year [21]
+
+1.	Run distribution over population
+2.	Run distribution by sub-demographics (a-k)
+a.	Compare and find gaps (test unequal proportions)
+
+
+### 2.5)People who had difficulty paying rent in the past year [21]
+
+1.	Run distribution over population
+2.	Run distribution by sub-demographics (a-k)
+a.	Compare and find gaps (test unequal proportions)
+
+```{r}
+make_plots(wrangled, fin_sec_dem, c("diff_bill", "diff_rent"),
+           title = "People who had difficulty\npaying bills or rent in the past year\n")
+```
+
+## 2.6) Households that fell below median income from before the pandemic (2020) to 2021
+1.	Run distribution over population
+2.	Run distribution over all the sub demographic group
+
+```{r}
+make_plots(wrangled, fin_sec_dem, "inc_drop_med",
+           title = "Households that fell below median income\n")
+```
+
+## 2.7 - 2.8)Houoseholds that experienced food insecuirty in the past year [21, 25]
+
+### 2.7)Households that experienced food insecurity in the past year [21]
+
+1.	Run binary distribution over population
+a.	Indicators: worried about food running out, ran out of food/ unable to afford food 
+b.	Yes = 1+ indicator
+c.	No = 0 indicators
+2.	Run continuous distribution over population
+a.	Indicators: worried about food running out, ran out of food/ unable to afford food 
+b.	Very food insecure = 2 indicators
+c.	Somewhat food insecure = worried about food not lasting (OR experienced food bought didn’t last i.e. 1 indicator?)
+d.	Not food insecure = 0 indicators
+
+### 2.8)Households with children were more likely to experience food insecurity in the past year [25,21]
+
+1.	Find respondents who had at least one child (child under 4 or school-aged child) [25]
+a.	Find proportion of subset who are considered food insecure [21] (use binary definition above)
+b.	Find proportion not in subset who are considered food insecure and compare (test unequal proportions)
+
+```{r}
+mean(wrangled$food_insec, na.rm = TRUE)
+
+make_plots(wrangled, fin_sec_dem, "food_insec",
+           title = "Households that experienced food insecurity in the past year")
+```
+
