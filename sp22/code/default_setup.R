@@ -12,6 +12,8 @@ source(find_root_file("code/functions/make_plots.R", criterion = criterion))
 
 # data
 wrangled <- readRDS(file.path(root, "data/output/wrangled.rds"))
+load(file.path(root, "data/processed/cleaned.rdata"))
+load(file.path(root, "data/processed/survey_codebook_labeled.rdata"))
 
 # thresholds
 min_duration <- 100 # 100 seconds
