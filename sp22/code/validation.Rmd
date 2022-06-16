@@ -14,6 +14,34 @@ library(labelled)
 source("default_setup.R")
 ```
 
+# age and household size
+
+```{r}
+hh <- c("responseid", "age", "hh_sn_65", "hh_ad_18_64", "hh_ch_4_17", "hh_ch_0_4", "hh_size")
+
+range(wrangled$hh_size, na.rm = TRUE)
+table(wrangled$hh_ad_18_64)
+table(wrangled$hh_sn_65)
+wrangled %>% count(any_else)
+wrangled %>% filter(hh_size >= 20) %>% select(responseid, age, relig, borough, starts_with("hh") & !ends_with("bi")) %>% arrange(desc(hh_size)) %>% mutate(relig = labelled::to_factor(relig))
+
+
+wrangled %>% filter(hh_size == 0)
+wrangled %>% select(age, hh_sn_65, hh_ad_18_64, hh_ch_4_17, hh_ch_0_4)
+
+wrangled %>% select(hh, mar) %>%
+  filter(!if_all(contains("hh"), is.na)) %>%
+  mutate(test = case_when(
+    age > 65 & hh_sn_65 == 0 | age > 17 & age < 65 & hh_ad_18_64 == 0  ~ FALSE,
+    TRUE ~ TRUE
+  )) %>% filter(!test) %>% mutate(mar = labelled::to_factor(mar))
+
+
+wrangled %>% filter(mar == 2, hh_sn_65 + hh_ad_18_64 < 2) %>% select(hh)
+
+
+```
+
 
 # When do we lose respondents?
 
@@ -21,8 +49,8 @@ Analyzing when we lose respondents will help us shape the structure and question
 
 
 ```{r include=F}
-selected <- final_clean %>% filter(is.na(test_response)) %>%
-  select(contains("q"), order) %>% select(!matches("text")) %>% filter(q2 == 1)
+selected <- final_clean %>% filter(is.na(test_response), q2 == 1) %>%
+  select(contains("q"), order) %>% select(!matches("text"))
 
 no_response <- selected %>% filter(if_all(everything(), is.na)) %>% nrow
 one_response <- selected %>% filter(if_all(-q2, is.na)) %>% nrow
@@ -33,11 +61,12 @@ n <- selected %>% nrow
 # validate disqualification criteria
 
 ```{r}
-by_reqs <- final_clean %>% group_by(
+by_reqs <- final_clean %>% filter(is.na(test_response)) %>% group_by(
   q2 == 1,
   completion >= 0.5,
   duration >= 100
 ) %>% count
+by_reqs
 
 kableExtra::kable(by_reqs)
 ```
@@ -99,7 +128,7 @@ test[[1]] %>% #rownames_to_column() %>%
   filter(!str_detect(q,"text|[:digit:]{1,2}_[2-8]")) %>%
   mutate(q_order = row_number())
 
-trimws(stringi::stri_trans_general(sub %>% pull(block_title) %>% .[2], "latin-ascii")
+stringi::stri_trans_general(sub %>% pull(block_title) %>% .[2], "latin-ascii")
 utf8::utf8_print(trimws(sub %>% pull(block_title) %>% .[2]), utf8 = FALSE)
 
 sub %>% filter(!str_detect(q,"text|[:digit:]{1,2}_[2-8]"))
@@ -172,7 +201,10 @@ to_plot_tibble %>% ggplot(aes(x = no, y = mean)) + geom_line(lty = "dashed") +
   labs(title = "Proportion Incomplete Responses per Question") +#,
        #subtitle = "among respondents who completed less than 50% of the survey") +
   ylab(NULL) + xlab(NULL) +
-  ggrepel::geom_text_repel(aes(x = no, y = mean, label = ifelse(no %in% c(3, 13, 21, 25, 32), paste0("q", no), ""))) +
+  ggrepel::geom_text_repel(aes(x = no, y = mean,
+                               #label = ifelse(no %in% c(3, 13, 22, 25, 32, 38, 45), paste0("q", no), "")
+                               label = glue::glue("q{no}")
+                               )) +
   theme(legend.position = "none") +
   annotate("text", x = 29, y = .96, label = "Conditional\nChildren Qs: q26-q31", hjust = 0) +
   annotate("text", x = 16, y = .96, label = "Conditional\nUnemployment Qs: q17-q18", hjust = 1) +
