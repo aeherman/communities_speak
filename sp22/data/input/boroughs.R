@@ -5,11 +5,12 @@ library(tidyverse)
 setwd("~/communities_speak/sp22/data/input")
 boroughs <- sf::st_read("zipcodes/ZIP_CODE_040114.shp") %>%
   mutate(borough = case_when(
-    str_detect(COUNTY, "^Queens$") ~ COUNTY,
-    str_detect(PO_NAME, "^(Brooklyn|Bronx|Staten Island)$") ~ PO_NAME,
-    str_detect(PO_NAME, "New York") ~ "Manhattan",
-    str_detect(COUNTY, "Kings") ~ "Queens"
-  )) %>% mutate(borough = str_to_lower(borough)) %>%
+    COUNTY == "New York" ~ "Manhattan",
+    COUNTY %in% c("Bronx", "Queens") ~ COUNTY,
+    PO_NAME %in% c("Brooklyn", "Staten Island") ~ PO_NAME)) %>%
+  mutate(borough = str_to_lower(borough))
+
+boroughs_csv <- boroughs %>%
   as_tibble() %>% transmute(zip = as.integer(ZIPCODE), borough) %>% arrange(borough, zip) %>% na.omit() %>% distinct %>%
     filter(!(zip == 11370 & borough == "bronx"))
 
@@ -51,10 +52,8 @@ boroughs <- sf::st_read("zipcodes/ZIP_CODE_040114.shp") %>%
 ## /html/body/div[1]/div[2]/div/table
 
 
-save(boroughs, file = "boroughs.rdata")
-write_csv(boroughs, file = "boroughs.csv")
+save(boroughs_csv, file = "boroughs.rdata")
+write_csv(boroughs_csv, file = "boroughs.csv")
 
 borough_id <- gs4_find() %>% filter(name == "tracker_sp22") %>% pull(id)
-write_sheet(boroughs, borough_id, "zip_dictionary")
-
-
+write_sheet(boroughs_csv, borough_id, "zip_dictionary")
