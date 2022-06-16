@@ -34,20 +34,23 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
     
     filtered <- reshaped %>% filter(if_all(starts_with("denom"), ~.>=min)) #%>% select(-!!sym_var, -width)
     
-    p.values <- c()
-    cats <- filtered[[item]]
-    p.values_table <- matrix(ncol = length(cats), nrow = length(cats))
-    colnames(p.values_table) <- cats
-    rownames(p.values_table) <- cats
-    i <- 1
-    if(length(hyp_var) == 1){
+    p.values <- lapply(setNames(hyp_var, hyp_var), function(var){
+      sub <- filtered %>% filter(hyp_var == var)
+      cats <- sub[[item]]
+      
+      #p.values <- c()
+      p.values_table <- matrix(ncol = length(cats), nrow = length(cats))
+      colnames(p.values_table) <- cats
+      rownames(p.values_table) <- cats
+      i <- 1
+      
       for(cat1 in cats) {
         for(cat2 in cats) {
           if(cat1 == cat2) {
             next
           }
-          temp <- filtered[cats == cat1,][c("n", "denom")] %>%
-            rbind(filtered[cats == cat2,][c("n", "denom")]) %>%
+          temp <- sub[cats == cat1,][c("n", "denom")] %>%
+            rbind(sub[cats == cat2,][c("n", "denom")]) %>%
             mutate(p = sum(n)/sum(denom),
                    q = 1 - p,
                    denom_p = denom*p,
@@ -74,12 +77,11 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
           #i <- i+1
         }
       }
-    } else {
-      p.values <- "testing"
-    }
+      return(p.values_table)
+    })
     
-    # return plots that have at least on statistically significant value
-    if(all(is.na(p.values_table)) | is.null(p.values_table) & is.null(show) & length(hyp_var == 1)) {
+    # return plots that have at least one statistically significant value
+    if(all(is.na(unlist(p.values))) & is.null(show) | is.null(p.values) & is.null(show) & length(hyp_var) == 1) {
       return(NULL)
     } else {
       plot <- filtered %>% #filter(n >= min) %>%
@@ -91,8 +93,13 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
                    fill = hyp_var,
                    color = hyp_var)) +
         geom_col(position = "dodge") +
-        geom_text(aes(label = glue::glue("{signif(prop, 2)*100}%\n{n}/{denom}")),
-                  hjust = 0.5, vjust = -0.5, position = position_dodge(width = 0.9),
+        geom_text(aes(label = glue::glue("{signif(prop, 2)*100}% {n}/{denom}")),
+                  # vertical
+                  #hjust = 0.5, vjust = -0.5,
+                  #position = position_dodge(width = 0.9),
+                  # horizontal
+                  hjust = -0.1,
+                  position = position_dodge(width = 0.9),
                   size = 3) + 
       
       
@@ -100,7 +107,7 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
         #geom_col(aes(x = p, y = "All")) +
         
         # colors
-        coord_flip() +
+        #coord_flip() +
         
         scale_x_continuous(labels = scales::percent, limits = c(0,1)) +
         scale_fill_manual(NULL, values = project_pal) +
@@ -130,9 +137,9 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
             labs(caption = glue::glue("*Categories with less than {min} responses excluded: '{cats}'"))
         }
       
-      if(any(str_length(reshaped[[item]]) >= 20)) {
-        plot <- plot + theme(axis.text.x = element_text(angle = 25, hjust = 1, vjust = 1))
-      }
+      #if(any(str_length(reshaped[[item]]) >= 20)) {
+      #  plot <- plot + theme(axis.text.x = element_text(angle = 25, hjust = 1, vjust = 1))
+      #}
       
       if(length(hyp_var) == 1) {
         plot <- plot + theme(legend.position = "none")
@@ -142,7 +149,7 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
       }
         
     }
-    return(list(plot = plot, p.values = p.values_table))
+    return(list(plot = plot, p.values = p.values))
   })
   return(out)
 }
