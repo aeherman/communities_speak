@@ -1,0 +1,74 @@
+---
+title: "Health Brief Findings"
+author: "Arielle Herman"
+date: "5/3/2022"
+output:
+  pdf_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+source("poa/default_setup.R")
+```
+
+```{r}
+wrangled$mntl_hlth_pile
+sample <- make_plots(wrangled, "race_census",
+           c("mntl_hlth_pile_bi", "mntl_hlth_unc_bi"),
+           title = "Sample Plot", conf = 0.1)$race_census$plot
+sample + ggtitle("Sample Plot Demonstrating\nProportion Who Experienced Stressors\nby Race Category")
+```
+
+# Summary
+
+All the below numbers affirm the analysis in the health brief.  Still, I have rerun the data to account for three updates:
+
+- inc_be_pov_after: two changes
+  1) now correctly indicates "at or below poverty" (more correct given our categories and poverty line), and
+  2) now correctly coded on the "after" question (q14, as opposed to the before question, q13)
+- stress_bi: I accidentally reversed it the first time I coded it, but it is coded correctly now
+- some small differences in the percentages (that are noted in the health brief outline)
+
+# Averages
+
+```{r}
+# boosting rate
+mean(wrangled$boost == 1, na.rm = TRUE)
+
+# average stress score
+mean(wrangled$stress_score, na.rm = TRUE)
+```
+
+```{r results='asis', echo=FALSE}
+tables <- lapply(c("race_census", "borough", "hh_ch_0_17_bi", "inc_be_pov_after", "rate_gov_good", "sch_level_cat"),
+       function(dem) {
+  sym_dem <- sym(dem)
+  table <- wrangled %>% group_by(!!sym_dem) %>%
+    summarize(
+      count = n(),
+      mean_score = signif(mean(stress_score, na.rm = TRUE), 2)) %>%
+    ungroup() %>% arrange(mean_score) %>%
+    mutate(percent = scales::percent(count/sum(count))) %>%
+    select(!!sym_dem, count, percent, mean_score) %>%
+    mutate(across(labelled::is.labelled, ~stringr::str_to_title(labelled::to_character(.))))
+  return(table)
+})
+lapply(tables, kableExtra::kable)
+```
+
+# Boosting Rate
+
+```{r}
+make_plots(wrangled %>% mutate(boost = boost == 1),
+           c("race_census", "borough", "hh_ch_0_17_bi", "inc_be_pov_after", "rate_gov_good"),
+           hyp_var = "boost",
+           title = "Boosting Rates")
+
+```
+
+# Average Stress Scores
+
+```{r}
+make_plots(wrangled, c("race_census", "sch_level_cat"), "stress_bi",
+           title = "Greater than average stress score")
+```

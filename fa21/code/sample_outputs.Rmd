@@ -1,0 +1,17 @@
+---
+title: "sample_plots"
+author: "Arielle Herman"
+date: "5/11/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+getwd()
+source("poa/default_setup.R")
+```
+
+```{r}
+make_plots
+wrangled$mntl_hlth_conf_bi
+make_plots(wrangled, by_vars = "race_census", hyp_var = "mntl_hlth_conf_bi", show = "True")
+```

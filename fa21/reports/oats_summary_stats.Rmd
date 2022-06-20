@@ -1,0 +1,94 @@
+---
+title: "Oats Summary Statistics"
+date: "4/5/2022"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+poa <- readRDS("../data/output/poa.rds")
+source("../code/functions/communities_speak_theme.R")
+
+median_age <- poa %>% #filter(age >= 65) %>%
+  pull(age) %>% median(na.rm = TRUE)
+median_sn_age <- poa %>% filter(age >= 65) %>% pull(age) %>% median(na.rm = TRUE)
+seniors <- nrow(poa %>% filter(age >= 65))
+total <- nrow(poa)
+
+```
+
+# Data Description
+
+- Out of **`r total`** respondents, **`r seniors`** or **`r scales::percent(seniors/total)`** were 65 and older.
+- The median age of respondents was **`r  median_age`**
+- The median age of senior respondents (respondents 65 or older) was **`r  median_sn_age`**
+
+```{r echo=F}
+poa %>% #filter(age >= 65) %>%
+  ggplot() + geom_bar(aes(x = age, y = ..prop..), fill = project_pal[4]) +
+  scale_y_continuous(NULL, labels = scales::percent) +
+  xlab("\nAge (yrs)") + ggtitle("Age Distribution of All Respondents") +
+  geom_vline(aes(xintercept = median_age)) +
+  geom_text(aes(x = median_age, y = .03),
+            label = glue::glue("Median Age: {median_age}"), hjust = -0.1,
+            size = 4)
+
+# internet access distribution
+poa %>% filter(age >= 65) %>%
+  ggplot() + geom_bar(aes(x = age, y = ..prop..), fill = project_pal[4]) +
+  scale_y_continuous(NULL, labels = scales::percent) +
+  xlab("\nAge (yrs)") + ggtitle("Age Distribution of Senior Respondents") +
+  geom_vline(aes(xintercept = median_sn_age)) +
+  geom_text(aes(x = median_sn_age, y = .1),
+            label = glue::glue("Median Senior Age: {median_sn_age}"), hjust = -0.1,
+            size = 4)
+```
+
+# Internet Access
+
+The clear majority of senior respondents have strong internet access.
+
+```{r echo=F}
+# proportion with internet access
+kableExtra::kable(poa %>% filter(age >= 65) %>% count(internet) %>%
+                    mutate(internet = labelled::to_character(internet)) %>%
+  rbind(tibble(internet = "total", n = seniors)) %>% mutate(Percent = scales::percent(n/seniors)) %>%
+  rename("Senior Respondents' Internet Access" = internet, "Number" = n))
+```
+
+# Household Demographics
+
+**30%** of respondents live with a senior citizen, and **8%** of respondents - who are not seniors themselves - live with a senior citizen
+
+```{r echo=F}
+# proportion of nonseior repspondents who live in a household with 65+
+# proportion  of all respondents who live in a household with 65 +
+kableExtra::kable(poa %>% summarize("All Respondents" = mean(hh_64_bi, na.rm = TRUE),
+                  "Respondents Less than 65" = mean(hh_64_bi == 1 & age < 65, na.rm = TRUE)) %>%
+  mutate_all(scales::percent))
+
+```
+
+# Access to Healthcare
+
+```{r include=F}
+# difficulty accessing medical care and medication
+prop_hstnt_hc <- poa %>% filter(age >= 65) %>% summarize(prop = mean(hstnt_hc, na.rm = TRUE)) %>% pull(prop)
+```
+
+ **`r scales::percent(prop_hstnt_hc)`** of senior respondents were hesitant to approach a healthcare facility.
+
+
+```{r include=F, eval=F}
+library(googledrive)
+
+today <- gsub("-", "", Sys.Date())
+
+googledrive_path <- "Communities Speak/Subteams/Data Subteam/Individual Survey-2(POA/Codebook/Census Figures)/cleaning/"
+
+drive_upload(media = paste0("~/communities_speak/reports/oats_summary_stats.pdf"), path = paste0(googledrive_path, "visuals/oats_summary_stats", today, ".pdf"), overwrite = TRUE)
+
+```

@@ -1,0 +1,46 @@
+---
+title: "data_request_20220419"
+author: "Arielle Herman"
+date: "4/19/2022"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+source("poa/default_setup.R")
+```
+
+```{r}
+demo_plus <- c(demographics[c(-2, -3)], "boost_bi", "mntl_hlth_bi", "mntl_hlth_state_bi")
+names(demo_plus) <- demo_plus
+
+issues <- c("stress", "food", "wtr", "hc")
+resources <- c("fam", "gov", "fb", "np")
+variables <- lapply(issues, function(issue) paste("lr", issue, resources, sep = "_")) %>% unlist
+names(variables) <- variables
+
+make_plots(wrangled, demo_plus, paste("lr", c("stress", "food", "wtr"), "fb", sep = "_"), min = 8)
+
+make_plots(wrangled, demographics[c(-2, -3)], c("mntl_hlth_bi", "mntl_hlth_state_bi"))
+
+plots <- lapply(variables, function(variable) {
+  splitted <- stringr::str_split(variable, "_") %>% unlist
+  issue <- splitted[2]
+  resource <- splitted[3]
+  make_plots(
+    wrangled, demo_plus, variable,
+    title = glue::glue("Percent Respondents who would reach out to\n{resource} regarding {issue}"),
+    min = 6)
+})
+length(plots)
+flattened <- flatten(plots)
+256 - length(flattened[unlist(lapply(flattened, is.null))])
+length(flattened[!is.null(flattened)])
+length(flatten(plots))
+plot
+make_plots(wrangled, "borough", c("mntl_hlth_bi", "mntl_hlth_state_bi"))
+demo_plus
+```

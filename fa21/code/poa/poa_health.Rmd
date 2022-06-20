@@ -1,0 +1,219 @@
+---
+title: "poa_health_8-13"
+author: "Arielle Herman"
+date: "3/29/2022"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+getwd()
+source("default_setup.R")
+#wrangled <- readRDS("../data/output/wrangled20220306.rds")
+# maybe load in the poa version of the data
+```
+
+# 4.1)Households with a case of COVID-19 [31]
+
+Run distribution over population
+Run distribution by sub-demographics (a-k)
+Compare and find gaps (test unequal proportions)
+
+```{r}
+mean(wrangled$posi_all, na.rm = TRUE)
+plots <- make_plots(wrangled,
+           by_vars = demographics, hyp_var = "posi_all", title = "Households with a case of COVID")
+plots$decade <- plots$decade + labs(subtitle = NULL)
+plots$race_census <- plots$race_census + labs(subtitle = NULL)
+plots$sch_level_cat <- plots$sch_level_cat + labs(subtitle = NULL)
+plots[c(-5, -13)]
+```
+
+## how many unemployed only after and didn't get vaccinated?
+
+```{r}
+make_plots(wrangled %>% filter(emp_change == 1), "vax", "emp_after_un", show = "yes", title = "Proportion Unemployed by Vaccination Status")
+```
+
+
+Individuals with a case of case of COVID-19
+Run distribution over population
+Run distribution by sub-demographics (a-k)
+Compare and find gaps (test unequal proportions)
+
+
+4.2)People who have been vaccinated against COVID-19 [32]
+Run distribution over population
+Run distribution by sub-demographics (a-k)
+Compare and find gaps (test unequal proportions)
+
+```{r}
+make_plots(wrangled, by_vars = demographics, hyp_var = "vax_bi")
+```
+
+4.3)People who have received a booster vaccine dose [38]
+Run distribution over population
+Run distribution by sub-demographics (a-k)
+Compare and find gaps (test unequal proportions)
+
+```{r}
+mean(wrangled$boost_bi, na.rm = TRUE)
+make_plots(wrangled, demographics, "boost_bi")[
+  c("borough", "race_census", "not_eng", "sch_level_cat", "inc_dist", "emp_status_after", "res_cat")]
+```
+
+4.4)People who returned to work in person are more likely to be vaccinated against COVID-19
+Find respondents who returned to work in person or hybrid [20]
+Find proportion of subset who reported being at least partially vaccinated against COVID-19 [32]
+Find proportion not in subset who reported being at least partially vaccinated against COVID-19 and compare (test unequal proportions)
+
+```{r}
+make_plots(wrangled, by_vars = "vax_bi", hyp_var = "wrk_in")$vax + ggtitle("Proprotion of Respondents who returned to work hybrid or in-person\nby vaccination status")
+```
+
+4.5)People who ranked the government response as average or above average were more likely to be vaccinated against COVID-19
+Find respondents who rated the government response as average, good, or excellent [33]
+Find proportion of subset who reported being at least partially vaccinated against COVID-19 [32]
+Find proportion not in subset who reported being at least partially vaccinated against COVID-19 and compare (test unequal proportions)
+
+## Findings: nope
+
+```{r}
+make_plots(wrangled, "rate_gov_good", "vax_bi")
+```
+
+4.7)People who have been discriminated against or are worried about discrimination due to COVID-19 [37]
+Run distribution over population
+Run distribution by sub-demographics (a-k)
+Compare and find gaps (test unequal proportions)
+
+```{r}
+mean(wrangled$discrim_bi, na.rm = TRUE)
+plots <- make_plots(wrangled, demographics, "discrim_bi", min = 10)
+plots$race_census <- plots$race_census + labs(subtitle = NULL)
+plots
+```
+
+
+
+# 4.8)People who have experienced abuse or violence due to COVID-19 [36]
+Run distribution over population
+Run distribution by sub-demographics (a-k)
+Compare and find gaps (test unequal proportions)
+
+
+```{r warning=F, echo = F}
+mean(wrangled$exp_ab_or_vi, na.rm = TRUE)
+#poa %>% mutate(exp_ab_or_vi = exp_ab_or_vi == 1)
+plots <- make_plots(wrangled,
+           by_vars = demographics, hyp_var = "exp_ab_or_vi",
+           title = "Proportion of Respondents to Experience Abuse or Violence due to COVID-19")
+plots
+```
+
+# 4.9)People who experienced at least one mental health challenge in the last month [41]
+Run categorical distribution over population (0-4)
+Indicators: responses to [41]
+Unable to control: fairly often or very often
+Confident: never or almost never
+Going your way: never or almost never
+Piling up: fairly often or very often
+Yes = 1+ indicators
+No = 0 indicators
+Run distribution by sub-demographics (a-k)
+
+
+```{r warning=F, echo = F}
+#poa %>% select(contains("mntl_hlth")) %>% mutate_if(labelled::is.labelled, labelled::to_factor)
+plots <- make_plots(wrangled, demographics, hyp_var = "mntl_hlth_bi", title = "Proportion of Respondents Experiencing\nat Least One Mental Health Challenge")
+plots$decade <- plots$decade + labs(subtitle = "*some statistically significant differences")
+plots$sch_level_cat <- plots$sch_level_cat + labs(subtitle = "*some statistically significant differences")
+plots
+
+make_plots(wrangled, demographics, "mntl_hlth_state_bi", title = "Respondents Experiencing Mental Health Challenges")
+wrangled$mntl_hlth_st
+```
+
+# 4.10)People who are currently unemployed are more likely to experience at least one form of mental health challenge in the last month
+Find respondents who are currently unemployed [17]
+Find proportion of subset that experienced at least one challenge in the last month [41]
+Find proportion not in subset and compare (test unequal proportions)
+
+```{r}
+wrangled %>% select(contains("rescale")) %>% pivot_longer(contains("rescale")) %>%
+  mutate(label = labelled::to_character(value),
+         color = case_when(
+           value == 0 ~ "neutral",
+           value > 0 ~ "positive",
+           value < 0 ~ "negative"
+         )) %>% group_by(name, label, value) %>% summarize(n = n()) %>%
+  drop_na %>%
+  ggplot(aes(x = value, y = name, color = as.integer(value))) + geom_line() + geom_point(aes(size = n))
+```
+
+```{r warning=F, echo = F, eval=F}
+make_plots(wrangled, by_vars = "emp_after_un", hyp_var = "mntl_hlth_bi", conf = .15, title = "Proportion of respondents who have a mental health challenge")
+```
+
+# 4.12)People who have been discriminated against are more likely to experience at least one mental health challenge
+Find respondents who have been discriminated against [37]
+Find proportion of subset that experienced at least one challenge in the last month [41]
+Find proportion not in subset and compare (test unequal proportions)
+
+```{r warning=F, echo = F}
+make_plots(wrangled, by_vars = "discrim_bi", hyp_var = "mntl_hlth_bi",
+           title = "Proportion of Respondents to experience\nat least one Mental Health Challenge")$discrim_bi + labs(subtitle = NULL)
+
+make_plots(wrangled, by_vars = "discrim_bi", hyp_var = "mntl_hlth_state_bi",
+           title = "Proportion of Respondents to experience\nat least one Mental Health Challenge")$discrim_bi + labs(subtitle = NULL)
+```
+
+# 4.13) People who have expressed hesitancy since the city reopened in approaching a healthcare facility  [40]
+Run distribution over population
+Run distribution by sub-demographics (a-k)
+Compare and find gaps (test unequal proportions)
+
+```{r warning=F, echo = F}
+# fix show feature
+make_plots(wrangled,
+           by_vars = demographics, hyp_var = "hstnt_hc",
+           title = "Proportion of Respondents\nhesitant to approach a healthcare facility")
+```
+
+# 4.11)People who have experienced abuse or violence are more likely to experience at least one mental health challenge
+Run binary distribution over population [36]
+Yes = experienced verbal abuse or physical abuse
+No = has not experienced any abuse or violence
+Find respondents who have experienced violence or abuse
+Find proportion of subset that experienced at least one challenge in the last month [41]
+Find proportion not in subset and compare (test unequal proportions)
+
+```{r warning=F, echo = F}
+make_plots(wrangled, by_vars = "exp_ab_or_vi", hyp_var = "mntl_hlth_bi",
+           title = "Proportion of Respondents to experience at least one Mental Health Challenge")
+```
+
+# 4.14)Health will be positively correlated with going back to work in person for respondents above median age
+Run distribution by age
+Look at health concerns as related to going back to work divided by age category
+
+```{r}
+#not sure I understand
+
+median_age <- median(wrangled$age)
+```
+
+# 4.15) People who were concerned/ not concerned about the Delta variant
+Run distribution over population
+Compare distribution by concern about Delta variant
+
+```{r warning=F, echo = F}
+plots <- make_plots(wrangled, by_vars = demographics, hyp_var = "vrnts_bi",
+           title = "Proportion Concened about covid variants", min = 10)
+plots$decade <- plots$decade + labs(subtitle = "*some statistically significant differences")
+plots
+```
+
+```{r eval=F, include=F}
+drive_upload(media = "poa_health_8-13.pdf", path = paste0("Communities Speak/Subteams/Data Subteam/Data Findings + VIZ_IS_2/Findings/POA_HEALTH_FULL_ARIELLE_0329.pdf"))
+```
