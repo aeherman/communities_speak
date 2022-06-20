@@ -8,7 +8,7 @@ root <- find_root_file("sp22", criterion = criterion)
 
 # code
 source(file.path(root, "code/communities_speak_theme.R"))
-source(find_root_file("code/functions/make_plots.R", criterion = criterion))
+source(file.path(root, "code/functions/make_plots.R"))
 
 # data
 wrangled <- readRDS(file.path(root, "data/output/wrangled.rds"))
