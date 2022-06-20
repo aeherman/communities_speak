@@ -17,6 +17,7 @@ library(rjson)
 library(googlesheets4)
 #source("functions/fixup.R")
 source("default_setup.R")
+source("functions/make_codebook.R")
 
 files <- list.files("../data/processed", full.names = TRUE)
 lapply(files[str_detect(files, "survey_codebook")], function(file) load(file, envir = .GlobalEnv))
@@ -28,7 +29,7 @@ source("functions/clean_data.R")
 
 gs4_found <- gs4_find()
 
-survey_id <- gs4_found %>% filter(str_detect(name, "Individual Survey- English - S22_June")) %>% select(id, name)
+survey_id <- gs4_found %>% filter(str_detect(name, "Individual Survey- English - S22 - ID9027670072_June")) %>% select(id, name)
 
 survey <- read_sheet(survey_id$id, sheet = "Sheet1") %>%
   rename_all(stringr::str_to_lower) %>%
@@ -132,7 +133,10 @@ final_clean <- final_clean %>%
     #borough_good = !is.na(borough),
     #test = if_any(everything(), ~str_detect(., pattern = "^test$")),
          source = ifelse(is.na(source), "communities speak", source),
-    valid = ifelse(is.na(test_response), valid, NA_integer_)) %>%
+    valid = ifelse(is.na(test_response), valid, NA_integer_),
+    # add one for people who responded that their age and not in that bracket
+    q26_1 = ifelse(q5 >= 65 & q26_1 == 0, 1, q26_1),
+    q26_2 = ifelse(q5 >= 18 & q5 < 65 & q26_2 == 0, 1, q26_2)) %>%
   select(responseid, recordeddate, duration, userlanguage, source, aid, order,
          completion, valid, test_response, borough, starts_with("q"))
 
