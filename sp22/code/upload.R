@@ -1,5 +1,6 @@
 # upload
-
+library(googledrive)
+library(googlesheets4)
 today <- gsub("-", "", Sys.Date())
 
 googledrive_path <- "Communities Speak/Subteams/Data Subteam/cleaning/sp22/"
@@ -49,5 +50,5 @@ lapply(list.files(glue::glue("{project_path}code/functions"), full.names = TRUE)
 })
 
 drive_upload(media = glue::glue("{project_path}code/cleaning.Rmd"), path = glue::glue("{googledrive_path}code/cleaning{today}.Rmd"), overwrite = TRUE)
-drive_upload(media = glue::glue("{project_path}code/emerson_demographics.pdf"), path = glue::glue("{googledrive_path}reports/panel_vs_online{today}.pdf"), overwrite = TRUE)
+drive_upload(media = glue::glue("{project_path}reports/emerson_demographics.pdf"), path = glue::glue("{googledrive_path}reports/panel_vs_online{today}.pdf"), overwrite = TRUE)
 
