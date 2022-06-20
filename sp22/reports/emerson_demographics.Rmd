@@ -9,12 +9,12 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-source("../default_setup.R")
+source("../code/default_setup.R")
 ```
 
 # Demographic Distribution in Panel Data vs. Online Responses
 
-Below are basic bar plots that compare the demographic distributions of panel and online respondents in the following categories:
+Below are bar plots that compare the demographic distributions of panel and online respondents in the following areas:
 
 1. Gender
 2. Race (census categories)
@@ -23,6 +23,8 @@ Below are basic bar plots that compare the demographic distributions of panel an
 5. Sexual Orientation
 6. Language Spoken at Home
 7. Level of Education
+
+The percents are calculated as the proportion of respondents in a given demographic category per respondent source.  For example, 57% of the panel respondents identified as female, whereas 78% of the online respondents identified as female.
 
 ```{r}
 demographic_qs <- c("gen", "race_census", "mar", "relig", "sex", "not_eng", "sch_level")
@@ -40,18 +42,29 @@ plots <- lapply(demographic_qs, function(q) {
   plot <- wrangled %>%
     count(source = source == "eme", !!sym_q) %>%
     na.omit %>%
+    group_by(source) %>%
     mutate(across(!!sym_q,
                   ~stringi::stri_trans_general(stringr::str_to_title(labelled::to_factor(.)),
                                                "latin-ascii")),
+           prop = n / sum(n),
            # hackey text fixes
            across(!!sym_q, ~str_replace_all(., c("Transgender.*" = "Transgender",
                                                  "Indigenous.*" = "Indigenous American",
                                                  "^Yes$" = "Not English at Home",
-                                                 "^No$" = "English at Home")))) %>%
-    ggplot() + geom_col(aes(x = n, y = reorder(!!sym_q, n), fill = source), position = "dodge") +
-    scale_fill_manual(NULL, labels = c("Online Responses", "Panel (Emerson)"), values = project_pal[c(1,3)]) +
+                                                 "^No$" = "English at Home",
+                                                 "^Married.*" = "Married / Partnership")))) %>%
+    ggplot(aes(x = prop, y = reorder(!!sym_q, n), fill = source)) +
+    geom_col(position = position_dodge(width = 0.9)) +
+    geom_text(aes(label = glue::glue("{signif(prop, 2)*100}%"), color = source),
+              hjust = -0.1, position = position_dodge(width = 0.9), size = 3.5, show.legend = FALSE) +
+    
+    scale_fill_manual(NULL, labels = c("Online Responses", "Panel (Emerson)"),
+                      values = project_pal[c(1,3)]) +
+    scale_color_manual(NULL, values = project_pal[c(1,3)]) +
+    scale_x_continuous(labels = scales::percent, limits = c(0,1)) +
     ylab(NULL) + xlab(NULL) + ggtitle(str_to_sentence(q_text)) +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") +
+    labs(subtitle = "*Proportion of respondents by source")
   return(plot)
     #ggtitle(glue::glue("Income Distribution by {facet}"))
 })
