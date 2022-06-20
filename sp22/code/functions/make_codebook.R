@@ -88,9 +88,3 @@ make_codebook <- function(df) {
       as.integer(str_extract(q, "(?<!_.{1,2})(?<=_)[[:digit:]]{1,2}")))
   return(codebook)
 }
-
-codebook <- make_codebook(wrangled) %>% arrange(as.integer(str_extract(q, "(?<=q)[[:digit:]]{1,2}")))
-
-today <- gsub("-", "", Sys.Date())
-View(codebook)
-write_excel_csv(codebook, glue::glue("~/communities_speak/sp22/data/output/codebook.csv"))

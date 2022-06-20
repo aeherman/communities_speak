@@ -455,12 +455,19 @@ wrangled <- wrangled %>%
 # Save
 
 ```{r}
+# data
 today <- gsub("-", "", Sys.Date())
 write_excel_csv(weighted, file = "../data/processed/weighted.csv")
 write_dta(wrangled %>% mutate(weight = as.numeric(weight)),
           path = paste0("../data/output/wrangled.dta"))
 saveRDS(wrangled, file = "../data/output/wrangled.rds")
 write_excel_csv(wrangled, file = "../data/output/wrangled.csv")
+
+# codebook
+codebook <- make_codebook(wrangled) %>% arrange(as.integer(str_extract(q, "(?<=q)[[:digit:]]{1,2}")))
+View(codebook)
+write_excel_csv(codebook, glue::glue("~/communities_speak/sp22/data/output/codebook.csv"))
+
 ```
 
 # Other validation
