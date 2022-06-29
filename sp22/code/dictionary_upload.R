@@ -6,12 +6,13 @@ library(googlesheets4)
 library(tidyverse)
 library(rjson)
 
-setwd("~/communities_speak/sp22")
+root <- find_root_file("sp22", criterion = criterion)
+setwd(root)
 
 # This section would be for adding in labels in advance #### 
 id_labeling <- gs4_find() %>% filter(name == "labeling") %>% pull(id)
 
-file <- fromJSON(file = "~/communities_speak/sp22/data/input/individual_survey_s22.qsf")$SurveyElements
+file <- fromJSON(file = "data/input/individual_survey_s22.qsf")$SurveyElements
 elements <- unlist(lapply(file, function(element) element$PrimaryAttribute))
 
 # record survey question blocks ####

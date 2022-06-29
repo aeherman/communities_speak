@@ -4,7 +4,9 @@ library(googlesheets4)
 library(tidyverse)
 library(rjson)
 
-setwd("~/communities_speak/sp22")
+root <- find_root_file("sp22", criterion = criterion)
+setwd(root)
+
 load("data/processed/survey_codebook_types.rdata")
 load("data/processed/survey_codebook_toname.rdata")
 

@@ -470,7 +470,8 @@ write_excel_csv(wrangled, file = "../data/output/wrangled.csv")
 # codebook
 codebook <- make_codebook(wrangled) %>% arrange(as.integer(str_extract(q, "(?<=q)[[:digit:]]{1,2}")))
 View(codebook)
-write_excel_csv(codebook, glue::glue("~/communities_speak/sp22/data/output/codebook.csv"))
+getwd()
+write_excel_csv(codebook, glue::glue("../data/output/codebook.csv"))
 
 ```
 
