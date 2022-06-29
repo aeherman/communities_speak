@@ -1,0 +1,149 @@
+---
+title: "plan_of_analysis"
+author: "Arielle Herman"
+date: "2/11/2022"
+output:
+  pdf_document:
+    toc: true
+  html_document:
+    toc: true
+    df_print: paged
+---
+
+```{r setup, warning=F, message=F, include=F}
+library(tidyverse)
+library(haven)
+library(gfonts)
+library(ggVennDiagram)
+source("../default_setup.R")
+```
+
+# Distributions
+
+```{r}
+wrangled %>%
+  group_by(emp_change, inc_neg) %>%
+  mutate(n = factor(n())) %>%
+  filter(!is.na(emp_change) & !is.na(inc_neg)) %>%
+  ggplot(aes(x = factor(emp_change), y = factor(inc_neg), color = n)) + geom_jitter() +
+  scale_color_manual(values = project_pal) +
+  ggtitle("Distribution of Respondents\nby Employment Change and Negative Income Change") +
+  xlab("Employment Change") + ylab("Negative Income Change\n")
+```
+
+# 1.1)People who changed employment status between before the pandemic and currently (2021) [14 &15]
+
+1.	Run distribution over population
+2.	Run distribution by sub-demographics (a-k)
+a.	Compare and find gaps (test unequal proportions)
+
+
+```{r}
+mean(wrangled$emp_change, na.rm = TRUE)
+
+make_plots(wrangled, demographics, "emp_change")
+```
+
+# 1.2) People who are currently unemployed who were not unemployed in before the pandemic (March 2020)  [14&15]
+
+1.	Run distribution over population
+2.	Run distribution by sub-demographics (a-k) and type of previous employment [14]
+a.	Compare and find gaps (test unequal proportions)
+
+```{r}
+mean(wrangled$emp_after_un, na.rm = TRUE)
+make_plots(wrangled, demographics, "emp_after_un")
+```
+
+# 1.3)Higher paid employees were less likely to face job status changes during the pandemic [12,14,15]
+
+1.	Find proportion of people people who earned salaries above median income [12]
+a.	Find proportion of subset who faced a job status change [14 &15]
+i.	Distill the list of of respondents who faced an adverse job change i.e. those who faced an income reduction correspondingly to the job change [14&15]
+ii.	Job change to be considered adverse only if accompanied by reduction in family income
+b.	Find proportion not in subset who faced adviser job change and compare (test unequal proportions)
+
+```{r}
+make_plots(wrangled %>% filter(emp_change == 1),
+           by_vars = c("inc_ab_med", "inc_be_med"), hyp_var = "inc_neg",
+           title = "Respondents who experienced\nan adverse or neutral/positive job change")
+```
+
+# 1.5 - 1.7
+
+## 1.5)People with at least a Bachelor’s degree were more/less likely to face job status changes during the pandemic [11, 14,15]
+
+1.	Find proportion of respondents who have a Bachelor’s degree and above [11]
+a.	Find proportion of subset who faced job status changes [14 &15]]. Similar to the hypothesis above, job changes only to be considered adverse if accompanied by reduction in income
+b.	Find proportion not in subset and compare (test unequal proportions)
+
+## 1.6)People who had insurance (any form) were less likely to face changes in job status [22,14,15]
+
+1.	Find respondents who have any form of insurance [21]
+a.	Find proportion of subset who faced job status changes [14 & 15] (adverse job status changes)
+b.	Find proportion not in subset and compare (test unequal proportions)
+
+## 1.7)People who were on private insurance were least likely to face changes in job status [14,15,22]
+
+1.	Find respondents who have private insurance [21]
+a.	Find proportion of subset who faced job status changes [14 & 15]
+2.	Find respondents who have insurance that is not private [21]
+a.	Find proportion of subset who faced job status changes [14 &15]
+3.	Compare groups of privately insured vs those with other types of insurance with respect to job status changes (test unequal proportions)
+
+```{r}
+#table(wrangled$ins[str_detect(wrangled$ins, ";")])
+new_variables <- c("sch_bach", # 1.5
+                   "ins_has", # 1.6
+                   "ins_prvt") # 1.7
+new_variables <- setNames(new_variables, new_variables)
+
+make_plots(df = wrangled,
+           by_vars = new_variables,
+           hyp_var = "emp_change", min = 5,
+           title = "Proportion to Experience a job change")
+
+make_plots(df = wrangled %>% filter(emp_change == 1),
+           by_vars = new_variables,
+           hyp_var = "inc_neg",
+           title = "Proportion to Experience an Adverse job change")
+```
+
+# 1.8)Higher paid employees (above median income) were less likely to return to working in-person [12,13,19]
+
+1.	Find respondents who are earning above median income [12 &13]
+a.	Find proportion who are working fully virtual and hybrid mode [18]
+b.	Find proportion not in subset and compare
+       2. Find respondents who are earning below median income [12 &13]
+a.	Find proportion who are working fully in-person [18]
+b.	Find proportion not in subset and compare
+
+```{r}
+make_plots(wrangled %>% filter(wrk != 4), c("inc_ab_med_after", "inc_be_pov_after"), "wrk_in",
+           title = "Proportion of Respondents who returned\nto working in-person or hybrid",
+           show = TRUE)
+```
+
+# 1.9)People who are unemployed and currently receiving unemployment benefits [17]
+
+1.	Run distribution over population
+2.	Run distribution by sub-demographics (a-m)
+a.	Compare and find gaps (test unequal proportions)
+
+```{r}
+mean(wrangled$unemp_ben == 1, na.rm = TRUE)
+make_plots(wrangled %>% mutate(temp = unemp_ben == 1), demographics, "temp")
+```
+
+
+# 1.10)Reasons for employment change
+      1. Run sub demographic distribution over each reason of employment change
+      2. Run distribution over population.
+```{r}
+emp_reas <- wrangled %>% select(starts_with("emp_reas_")) %>% colnames()
+names(emp_reas) <- emp_reas
+
+lapply(emp_reas[1:2], function(reason) {
+  make_plots(wrangled, demographics, reason, title = reason)
+})
+```
