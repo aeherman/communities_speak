@@ -10,7 +10,7 @@ library(tidyverse)
 
 
 # by_vars -> "by"
-make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
+make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.01,
                        title = "Title", show = NULL) {
   
   #sym_var <- sym(hyp_var)
@@ -29,7 +29,12 @@ make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.1,
       separate(name, into = c("hyp_var", "stat"), sep = "\\_(?=\\d)") %>%
       mutate(stat = str_replace_all(stat, c("1" = "n", "2" = "denom", "3" = "prop"))) %>%
       pivot_wider(id_cols = c(!!sym_item, "hyp_var"), names_from = stat) %>%
-      na.omit %>% mutate_if(labelled::is.labelled, labelled::to_character) %>%
+      na.omit %>%
+      mutate_if(labelled::is.labelled, labelled::to_character) %>%
+      mutate(across(!!sym_item,
+                    ~str_replace_all(.,
+                                    c("transgender.*" = "transgender",
+                                      "indigenous.*" = "Indigenous American")))) %>%
       arrange(hyp_var, prop)
     
     filtered <- reshaped %>% filter(if_all(starts_with("denom"), ~.>=min)) #%>% select(-!!sym_var, -width)
