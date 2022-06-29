@@ -1,0 +1,129 @@
+---
+title: "poa_access_gov"
+author: "Arielle Herman"
+date: "4/10/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+setwd("..")
+source("default_setup.R")
+```
+
+
+# 7.1)People who had difficulty accessing social services or benefits [21]
+
+1.	Run distribution over population
+2.	Run distribution by sub-demographics (a-k)
+a.	Compare and find gaps (test unequal proportions)
+
+```{r}
+mean(wrangled$diff_ss, na.rm = TRUE)
+
+make_plots(wrangled, demographics, "diff_ss", title = "Difficulty accessing Social security benefits")
+```
+
+
+# 7.2)Households with children in public schools are more likely to give higher ratings to neighborhood public schools [32, 26]
+
+1.	Run binary distribution for overall rating of neighborhood schools 
+Not Poor=Excellent, Good
+Poor=Fair, Poor
+2.	Find subset of population which are hhs with children in each binary category 
+a.	Compare the strength of the subset with non-hhs with children in each subset
+
+```{r}
+mean(wrangled$rate_neigh_pub, na.rm = TRUE)
+mean(wrangled$rate_neigh_pub_good, na.rm = TRUE)
+mean(wrangled$rate_neigh_pub_bad, na.rm = TRUE)
+
+make_plots(wrangled, "hh_ch_0_17_bi", "rate_neigh_pub_good", title = "Good or Excellent Rating of Public Schools", show = "true")
+make_plots(wrangled, "hh_ch_0_17_bi", "rate_neigh_pub_bad", title = "Poor or Very Poor Rating of Public Schools")
+```
+
+# 7.3)Attitude towards Police Responsiveness
+
+1.	Run binary distribution over the overall rating of Police responsiveness (as described in 7.3)
+2.	Run distribution by sub-demographics
+
+```{r}
+mean(wrangled$rate_neigh_pol, na.rm = TRUE)
+mean(wrangled$rate_neigh_pol_good, na.rm = TRUE)
+mean(wrangled$rate_neigh_pol_bad, na.rm = TRUE)
+
+make_plots(wrangled, demographics, "rate_neigh_pol_good", title = "Positively Rated Police Responsiveness")
+make_plots(wrangled, demographics, "rate_neigh_pol_bad", title = "Negatively Rated Police Responsiveness")
+```
+
+# 7.4)Respondents from the Bronx (high crime rate as compared to to other boroughs) are more likely to rate Police Responsiveness as poor [32, 2]
+
+1.	Run binary distribution for overall rating of Police responsiveness (as described in 7.2)
+2.	Find subset of population who are from Bronx in both the category responsenses
+a.	Compare and contrast the responses between the Bronx and on-Bronx population
+
+```{r}
+make_plots(wrangled, "borough",
+           "rate_neigh_pol_bad", title = "Negatively Rated Police Responsiveness")
+```
+
+# 7.5)Respondents from low income brackets (at or below median income) are more likely to rate neighbourhood safety poorly
+
+3.	Run binary distribution for overall rating of Police responsiveness (as described in 7.3)
+4.	Find subset of population who are from above median income  in both the category responsenses
+b.	Compare and contrast the responses between high and low income population
+
+```{r}
+mean(wrangled$rate_neigh_pre, na.rm = TRUE)
+make_plots(wrangled, "inc_dist", "rate_neigh_pre_bad", title = "Rated Crime Prevention Well")
+make_plots(wrangled, "inc_dist", "rate_neigh_pre_good", title = "Rated Crime Prevention Poorly")
+```
+
+# 7.6) People who rated city/state/federal government response to the pandemic well were more likely to indicate they would turn to the government if they needed help
+
+1.	Find respondents who rated city/state/federal government response as good or excellent [31]
+a.	Find proportion of subset who indicated they would use the government for at least one need [33]
+b.	Find proportion not in subset who indicated they would use the government for at least one need and compare (test unequal proportions)
+
+```{r}
+prop_rate_above_ave <- mean(wrangled$rate_gov_all_ave, na.rm = TRUE)
+
+mean_val <- mean(6 - wrangled %>% select(rate_gov_fed, rate_gov_sta, rate_gov_cit) %>% unlist, na.rm = TRUE)
+
+wrangled %>% ggplot(aes(x = rate_gov_all_ave)) + geom_bar() + geom_vline(xintercept = mean_val)
+
+make_plots(wrangled, "lr_gov", c("rate_gov_all_bad", "rate_gov_all_good"),
+           title = "Rated Federal, State, and City Government (Very) poorly", show = "TRUE")
+```
+
+# 7.7)Run distribution over the rating of each neighborhood service
+
+1.	Run binary distribution for overall rating of all neighborhood services as done for police responsiveness in 7.2
+
+```{r}
+rate_neigh <- select(wrangled, starts_with("rate_neigh") & (ends_with("good") | ends_with("bad"))) %>% colnames %>% sort
+
+lapply(rate_neigh, function(item) {
+  make_plots(wrangled, demographics, item, title = item)
+})
+```
+# 7.8 - 7.9
+
+## 7.8)Respondents who experienced a reduced income were more likely to rate government response poorly [12 &13]
+
+1.	Run binary distribution over rating government response question 
+Poor=Poor or Very Poor
+Not Poor=Good, Excellent, Average
+2.	Find proportion which rated government response poorly [31]
+              Poorly=Poor or Very Poor
+a.	Find subset of population who witnessed a reduced income
+b.	Compare with others who did not
+
+## 7.9) Respondents who faced housing insecurity were more like to rate government response poorly [21, 31]
+       1.Find proportion of households who faced housing security [21]
+        2.Find subset of population who rated government response poorly and compare with        other group i.e. not poorly [31]
+
+```{r}
+
+make_plots(wrangled, c("inc_neg", "house_insec"), "rate_gov_all_bad", show = TRUE,
+           title = "Rated Government Poorly")
+```

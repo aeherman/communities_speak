@@ -451,7 +451,7 @@ wrangled <- wrangled %>%
          race_census_black = "race_census_black or african american",
          race_census_ind =
            "race_census_indigenous american / first nations (including american indian or alaska native)",
-         #race_census_haw = "native hawaiian or pacific islander",
+         race_census_haw = "race_census_native hawaiian or pacific islander",
          race_census_white = "race_census_white (non-hispanic or latino)"
          )
 ```
