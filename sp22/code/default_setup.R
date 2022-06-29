@@ -26,17 +26,10 @@ median_inc_val <- 69500
 
 demographics <-
   c("borough", # a
-    "decade", # b (from poa data)
     "gen", # c
     "race_census", # d
-    "not_eng", # e
-    "mar", # f
-    "sch_level_cat", # g
     "hh_ch_0_17_bi", # h
     "hh_sn_65_bi", # i
-    "inc_dist", # j figure out if it is past or present
-    "emp_status_before", # k
-    "emp_status_after", # k
-    "res_cat" # l
+    "inc_dist" # j figure out if it is past or present
     )
 names(demographics) <- demographics
