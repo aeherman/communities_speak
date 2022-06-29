@@ -353,8 +353,9 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     rate_gov_all_bad = if_all(starts_with("q33"), ~.>3),
     rate_gov_all_ave = round(rowMeans(6 - across(starts_with("q33"))), digits = 4),
     
-    across(c(q34_4, q34_5, q34_8, q34_9), ~ . < 3, .names = "{col}_good"),
-    across(c(q34_4, q34_5, q34_8, q34_9), ~ . > 3, .names = "{col}_bad"),
+    across(c(q34_4, q34_5, q34_6, q34_8, q34_9), ~ . < 3, .names = "{col}_good"),
+    across(c(q34_4, q34_5, q34_6, q34_8, q34_9), ~ . > 3, .names = "{col}_bad"),
+    
     
     #### access variables ####
     lr_fam = if_any(starts_with("q35_") & ends_with("_5"), ~.==1),
