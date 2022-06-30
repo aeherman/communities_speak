@@ -1,0 +1,220 @@
+---
+title: "poa_children_families"
+author: "Arielle Herman"
+date: "4/10/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+source("../default_setup.R")
+```
+
+```{r}
+wrangled %>%
+  ggplot(aes(x = hh_size, group = hh_ch_0_17_bi)) + geom_bar()
+
+range(wrangled$hh_size, na.rm = TRUE)
+
+wrangled %>% select(hh_size, hh_sn_65, hh_ad_18_64, hh_ch_4_17, hh_ch_0_4) %>% filter(hh_size > 20)
+
+df_ch <- wrangled %>% filter(hh_ch_0_17_bi == 1)
+```
+
+# 3.1)People who had difficulties accessing childcare in the past year [21]
+
+1.	Run distribution over population
+2.	Run distribution by sub-demographics (a-n)
+a.	Compare and find gaps (test unequal proportions)
+
+```{r}
+mean(wrangled$diff_cc, na.rm = TRUE)
+make_plots(df_ch, demographics, "diff_cc", title = "Proportion of Respondents With Children\nwho experienced difficulty accessing childcare")
+```
+
+# 3.2)People who need childcare, but cannot afford it [30]
+
+1.	Run distribution over population
+2.	Run distribution over sub-demographics, specifically race, location/borough, and income
+3.	Run distribution over size of household [30]
+
+```{r}
+mean(df_ch$need_cc_bi, na.rm = TRUE)
+make_plots(df_ch,
+           c(demographics, "hh_size"), "need_cc_bi",
+           title = "Respondents who Need Chidcare but cannot afford it", show = TRUE)
+```
+
+# 3.3)People who have had full-time jobs pre-pandemic and currently are more likely to have or have had difficulties finding childcare [14, 29]
+
+1.	Find respondents who indicated they work full-time [14]
+a.	Find proportion of subset who reported having difficulty accessing childcare currently and/or in the past year [21] [29] [29]
+b.	Find proportion not in subset who reported having difficulty accessing childcare currently and/or in the past year and compare (test unequal proportions)
+
+```{r}
+ggplot(df_ch %>% filter(!is.na(diff_cc)),
+       aes(x = inc_dist, fill = labelled::to_factor(diff_cc))) + geom_bar(position = position_dodge()) +
+  facet_wrap(. ~ labelled::to_factor(emp_before_ft)) +
+  scale_fill_manual(NULL, values = project_pal) +
+  theme(legend.position = "bottom")
+
+make_plots(df_ch, c("emp_before_ft", "emp_after_ft"), "diff_cc",
+           title = "Respondents with difficulty finding childcare\n")
+```
+
+# 3.4, 3.11, 3.13, 3.14
+
+## 3.4)People who returned to work in-person are more likely to have difficulties finding childcare
+
+1.	Find respondents who indicated they returned to work in-person [19]
+a.	Find proportion of subset who reported having difficulty accessing child care currently and/or in the past year [21]
+b.	Find proportion not in subset who reported having difficulty accessing childcare currently and/or in the past year and compare (test unequal proportions)
+
+## 3.11)Households in Bronx and Queens are more likely to not be able to afford childcare/had difficulty with childcare 
+
+1.	Find proportions of households who could not afford childcare/had difficulty with childcare who are from Bronx/Queens 
+2.	Compare with families from other boroughs
+
+## 3.13)Households that had difficulty accessing childcare during the pandemic are more likely to be concerned about their students’ academic level 
+
+1.	Find households that indicated they are concerned about their children’s academic level [28]
+a.	Find proportion of subset that had difficulty accessing childcare over the past year [21]
+b.	Find proportion not in subset and compare (test unequal proportions)
+
+## 3.14)Households that had difficulty accessing childcare during the pandemic are more likely to be concerned about their students’ comfort around other students
+
+2.	Find households that indicated they are concerned about their children’s comfort around other students [28]
+a.	Find proportion of subset that had difficulty accessing childcare over the past year [21]
+b.	Find proportion not in subset and compare (test unequal proportions)
+
+
+```{r}
+make_plots(df_ch, c("wrk_in", "borough", "att_con_acad", "att_con_comf"),
+           c("diff_cc", "need_cc_bi", "no_find_cc_bi"),
+           title = "Difficulty Accessing Childcare")
+```
+
+# 3.5)Single person households with children are more likely to have or have had difficulties accessing childcare [25,21]
+
+1.	Find respondents who are single person households [25]
+a.	Find proportion of subset who reported having difficulty accessing child care currently and/or in the past year [21]
+b.	Find proportion not in subset who reported having difficulty accessing childcare currently and/or in the past year and compare (test unequal proportions)
+2.	Find respondents who are single person households [24]
+a.	Find proportion of of subset who reported that they need childcare but cannot afford it [30]
+b.	Find proportion not in subset who reported that they need childcare but cannot afford it and compare (test unequal proportions)
+
+```{r}
+make_plots(df_ch, "hh_ad_one", c("diff_cc", "need_cc_bi"),
+           title = "Respondents Who are the only adult in their household")
+```
+
+# 3.6)Households with children in public schools were more likely to have difficulty accessing childcare in the past year
+
+1.	Find households with children in all public schools and traditional public schools [26]
+a.	Find proportion of subset (public school, traditional public school - separate tests) that had difficulty accessing childcare in the past six months [21]
+b.	Find proportion not in subset that had difficulty accessing childcare in the past six months and compare (test unequal proportions) [30]
+
+```{r}
+mean(df_ch$att_sch_pub, na.rm = TRUE)
+make_plots(df_ch, "att_sch_pub", c("diff_cc", "need_cc_bi"))
+```
+
+# 3.7)Households above the median income were more likely to look towards friends/families for childcare needs rather than government resources 
+
+1.	Find respondents who are above median income and have children in the household [13, 25]
+a.	Find proportion of subset who looks towards friends and family for childcare needs [33]
+2.	Find respondents who indicated they are below median income and have children in the household [14, 25]
+a.	Find proportion of subset who looks towards friends and family for childcare needs [33]
+b.	Compare both proportions (test unequal proportions)
+
+```{r}
+make_plots(df_ch, "inc_dist", "lr_cc_fam",
+           title = "Proportion of Respondents who look to friends and family for childcare\n")
+```
+
+# 3.8)Households at or below median income were more likely to rely on the government for childcare 
+
+1.	Find households whose reported 2021 income was below below the median [13]
+a.	Find proportion of subset who rely on government resources for childcare needs [33]
+b.	Find proportion not in subset and compare (test unequal proportions)
+
+
+```{r}
+make_plots(df_ch, "inc_dist", "lr_cc_gov")
+```
+# 3.9)Households that did/did not send their children back to in-person school
+
+1.	Households that did send their children back to in person school
+a.	Find proportion of of households that did send their children back to in person school [26]
+2.	Households that did not send their children back to in person school
+a.	Run distribution over sub demographics(a-o)
+b.	Run distribution over reason for not returning to school
+i.	Run distribution over sub demographics (a-o) for each concern
+
+```{r}
+mean(df_ch$att_prsn_bi, na.rm = TRUE)
+
+df_ch %>% count(att_prsn_bi, att_not) %>% mutate_if(haven::is.labelled, labelled::to_factor)
+
+concerns <- wrangled %>% select(starts_with("att_con_") & !ends_with("text")) %>% colnames()
+
+lapply(c(demographics, concerns), function(item) {
+  make_plots(df_ch, item, "att_prsn_bi", title = con)
+})
+```
+
+# 3.10) Summary of all concerns regarding children attending full-time schools [28]
+
+1.	Run by population for all responses
+2.	Run each concern based on all the sub demographic categories
+
+```{r}
+mean(df_ch$att_con_num, na.rm = TRUE)
+# should add a certainty measure
+wrangled %>% group_by(race_census) %>% summarize(mean = mean(att_con_num, na.rm = TRUE)) %>%
+  na.omit() %>%
+  ggplot(aes(x = mean, y = reorder(race_census, mean))) + geom_point() +
+  ggtitle("Number of Concerns for In-Person School By Race") + xlab(NULL) + ylab(NULL) +
+  labs(subtitle = "NOTE: Count varies by category")
+
+lapply(concerns, function(con) {
+  make_plots(df_ch, demographics, con, title = con)
+})
+```
+
+# 3.12)Households that did not send their children back to school because they are concerned about COVID-19 are more likely to have had at least one person in the household test positive for COVID-19
+
+1.	Find proportion of households with children that are not sending their children to in person school and report the reason they are not sending them back is because of concerns of COVID-19 [27.a]]
+a.	Find proportion of subset that had at least one person in their household test positive for COVID-19[36]
+b.	From proportion not in subset and compare (test unequal proportions)
+
+```{r}
+mean(df_ch$att_prsn_bi, na.rm = TRUE)
+
+df_ch %>% filter(att_prsn_bi < 1) %>%
+  mutate(att_not = to_factor(att_not)) %>%
+  select(att_not, att_not_text)
+
+make_plots(df_ch %>% filter(att_prsn_bi != 1),
+           "att_con_covid", "posi_all",
+           title = "Proportion of Respondents\n(who didn't send their children back to school and fear covid)\n who had at least one household member test positive\n")
+```
+
+
+# 3.15)Respondents who have a low income (below median income) are more likely to be worried about transport while their child attends in-person school 
+
+1.	Find proportion who cite transport as one of their concerns when their child [27]
+a.	Find subset below median income [13]
+b.	Compare with respondents above median income
+
+```{r}
+mean(df_ch$att_con_trans, na.rm = TRUE)
+make_plots(df_ch, "att_con_trans", "inc_be_med_before", show = "yes")
+```
+
+3.16) Households below median income were more likely to struggle with affordability of childcare(run it by ages, 0-14, 4-17)
+1.	Run it by each sub demographic group
+
+
+```{r}
+make_plots(df_ch, c(demographics, "hh_ch_0_4_bi", "hh_ch_4_17_bi", "inc_be_med"), "need_cc_bi")
+```

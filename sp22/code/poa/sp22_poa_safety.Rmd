@@ -1,0 +1,130 @@
+---
+title: "poa_safety"
+author: "Arielle Herman"
+date: "4/9/2022"
+output:
+  pdf_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+source("../default_setup.R")
+```
+
+# 5.1)People who experienced or worried about discrimination due to the pandemic [30]
+
+Run distribution over population
+Run distribution by sub-demographics (a-k)
+Compare and find gaps (test unequal proportions)
+
+```{r}
+mean(wrangled$discrim_bi, na.rm = TRUE)
+make_plots(wrangled, demographics, "discrim_bi", title = "Percent Respondents who experienced or\nworried about discrimination due to the pandemic")
+```
+
+5.2)People who felt unsafe in their neighborhood in the past six months [17]
+Run distribution over population
+Run distribution by sub-demographics (a-m)
+Compare and find gaps (test unequal proportions)
+
+```{r}
+mean(wrangled$diff_neigh)
+make_plots(wrangled, demographics, "diff_neigh", title = "Proportion of People who felt unsafe\nin their neighborhood")
+```
+
+
+# 5.3)Respondents who have a low income (below median income) are more likely to experience  violence ]12 &13]
+
+Find proportion who faced discrimination or violence[34]
+Find subset who are below median income[13]
+Compare and contrast with group who are above median income within the larger proportion
+
+```{r}
+mean(wrangled$diff_neigh, na.rm = TRUE)
+
+make_plots(wrangled, demographics, "exp_vi", title = "Percent Respondents Who experienced violence")
+```
+
+# 5.4)Respondents who are homemakers are more likely to experience verbal abuse and physical violence since the pandemic started [14, 15, 34, 35]
+
+Find proportion of respondents who faced discrimination or violence when homemakers before [14] compared to after [15] the pandemic
+Compare proportion of respondents who experienced violence and were homemakers before but not after, with those who were homemakers after but not before
+Compare homemakers to nonhomemakers
+Run on subdemographics (a-m)
+
+```{r}
+wrangled %>% count(emp_before_hm, emp_after_hm)
+
+make_plots(wrangled %>% mutate(emp_hm = emp_before_hm == 1 & emp_after_hm == 1),
+           c("emp_before_hm", "emp_after_hm", "emp_hm"), "exp_ab_or_vi", show = TRUE)
+```
+
+# 5.5)Respondents in the gig economy are more worried about delta variants [41]
+
+1.	Find proportion of respondents who were in the gig economy and those who are not [15]
+2.	FInd subset who are worried about delta variants [26a]
+a.	Compare proportion who are gig economy with those who are not
+
+```{r}
+make_plots(wrangled, "emp_before_gig", "vrnts_con", title = "Concern for Delta Variants")
+```
+# 5.6 - 5.7
+
+## 5.6)Respondents who felt unsafe in their neighborhoods were dissatisfied with other community services [32]
+
+Find proportion of respondents who felt unsafe in their neighborhood [17]
+Run binary distribution of who did and did not feel unsafe over the following categories from question 32:
+Emergency medical services
+Maintenance of parks and recreational facilities
+Police responsiveness to calls or complaints
+Prevents of local crime / safety
+Group respondents by whether or not they were dissatisfied with one of the above four listed neighborhood services
+Compare those who did and did not feel unsafe
+
+## 5.7)Respondents who are dissatisfied with housing code enforcement are more likely to feel unsafe in their neighborhood[32, 17]
+
+Find proportion who felt unsafe in neighborhood
+Find subset who are dissatisfied with housing code enforcement
+Compare proportion who did and did not feel unsafe depending on dissatisfaction with housing code enforcement
+
+
+```{r}
+rate_neigh <- select(wrangled, starts_with("rate_neigh") & (ends_with("good") | ends_with("bad"))) %>% colnames %>% sort
+
+lapply(rate_neigh, function(item) {
+  make_plots(wrangled, "diff_neigh", item,
+             title = item)
+})
+```
+
+# 5.8, 5.10
+
+## 5.8)Respondents of certain races are more likely to experience abuse / violence / discrimination [34, 35]
+
+Run binary distribution by race
+
+## 5.10)Respondents who have a low income (at or below median income) are more likely to experience  violence [13, 34 ]
+
+1.	Find proportion who faced abuse or violence [34]
+2.	Find subset who are below median income[13]
+a.	Compare and contrast with group who are above median income within the larger proportion
+
+```{r}
+wrangled$inc_be_med
+make_plots(wrangled, c("race_census", "inc_be_med_before", "inc_be_med"), "exp_ab_or_vi", title = "Percent Respondents who Experienced\nViolence or Abuse due to COVID-19")
+```
+
+
+# 5.9) Distribution over each activity/place which has been avoided due to safety concern 
+
+1.	Run sub demographic distribution over each activity/place which has been avoided 
+2.	Run over responses over each population
+
+```{r}
+av_covid <- wrangled %>% select(starts_with("av_covid_") & !ends_with("text")) %>% colnames()
+
+lapply(av_covid, function(av) {
+  make_plots(wrangled, demographics, av, title = av)
+})
+```
+
