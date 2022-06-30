@@ -16,7 +16,7 @@ library(tidyverse)
 library(haven)
 library(gfonts)
 library(ggVennDiagram)
-source("../default_setup.R")
+source("../../code/default_setup.R")
 ```
 
 # Distributions

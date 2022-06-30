@@ -8,7 +8,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-source("../default_setup.R")
+source("../../code/default_setup.R")
 #wrangled <- readRDS("../data/output/wrangled20220306.rds")
 # maybe load in the poa version of the data
 ```

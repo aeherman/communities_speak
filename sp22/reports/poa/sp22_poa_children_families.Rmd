@@ -7,7 +7,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
-source("../default_setup.R")
+source("../../code/default_setup.R")
 ```
 
 ```{r}

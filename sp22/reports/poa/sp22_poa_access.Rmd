@@ -9,7 +9,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
-source("../default_setup.R")
+source("../../code/default_setup.R")
 ```
 
 # 6.1)People who had difficulty accessing resources  [20]
