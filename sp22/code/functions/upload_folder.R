@@ -1,5 +1,6 @@
-upload_folder <- function(googledrive_path = "Communities Speak/Subteams/Data Subteam/cleaning/sp22/",
-                          project_path = "~/communities_speak/sp22/",
+upload_folder <- function(googledrive_path = "Communities Speak/Subteams/Data Subteam/cleaning/sp22",
+                          project_path = rprojroot::find_root_file("sp22",
+                                                        criterion = rprojroot::has_file(".git/index")),
                           today = gsub("-", "", Sys.Date()),
                           pattern. = NULL,
                           file_path)
@@ -11,7 +12,7 @@ upload_folder <- function(googledrive_path = "Communities Speak/Subteams/Data Su
     stop(str_sub(file_path, -1) == "/")
   }
   
-  files <- list.files(glue::glue("{project_path}{file_path}"), full.names = TRUE)
+  files <- list.files(glue::glue("{project_path}/{file_path}"), full.names = TRUE)
   
   if(!is.null(pattern.)) {
     files <- grep(files, pattern = pattern., value = TRUE)
@@ -34,7 +35,7 @@ upload_folder <- function(googledrive_path = "Communities Speak/Subteams/Data Su
       return(NULL)
     } else {
       drive_upload(media = file,
-                   path = glue::glue("{googledrive_path}{file_path}/{name}{today}.{ending}"),
+                   path = glue::glue("{googledrive_path}/{file_path}/{name}{today}.{ending}"),
                    type = spreadsheet)
     }
     
