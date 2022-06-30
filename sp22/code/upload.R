@@ -49,6 +49,22 @@ lapply(list.files(glue::glue("{project_path}code/functions"), full.names = TRUE)
   drive_upload(media = file, path = glue::glue("{googledrive_path}code/functions/{partial}"), overwrite = TRUE) 
 })
 
+# upload POAs
+lapply(grep(list.files(glue::glue("{project_path}code/poa")), pattern = "pdf", value = TRUE),
+       function(file) {
+         full_name <- glue::glue("{project_path}code/poa/{file}")
+         modified <- str_replace_all(as.Date(file.info(full_name)$mtime), "-", "")
+         
+         if(today == modified) {
+           return(NULL)
+         } else {
+           pre <- unlist(strsplit(file, "\\."))[1]
+           drive_upload(media = glue::glue(full_name),
+                        path = glue::glue("{googledrive_path}reports/poa/{pre}{today}.pdf"),
+                        overwrite = overwrite)
+         }
+       })
+
 drive_upload(media = glue::glue("{project_path}code/cleaning.Rmd"), path = glue::glue("{googledrive_path}code/cleaning{today}.Rmd"), overwrite = TRUE)
 drive_upload(media = glue::glue("{project_path}reports/emerson_demographics.pdf"), path = glue::glue("{googledrive_path}reports/panel_vs_online{today}.pdf"), overwrite = TRUE)
 
