@@ -8,11 +8,12 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-setwd("..")
-source("default_setup.R")
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+source("../default_setup.R")
 
 fin_sec_dem <- c("gen", "hh_sn_65_bi", "hh_ch_0_17_bi", "race_census", "borough")
 names(fin_sec_dem) <- fin_sec_dem
+
 ```
 
 # Financial Security [run gender, family, race, borough]

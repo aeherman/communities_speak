@@ -6,6 +6,7 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 source("../default_setup.R")
 ```
 
@@ -158,7 +159,7 @@ df_ch %>% count(att_prsn_bi, att_not) %>% mutate_if(haven::is.labelled, labelled
 concerns <- wrangled %>% select(starts_with("att_con_") & !ends_with("text")) %>% colnames()
 
 lapply(c(demographics, concerns), function(item) {
-  make_plots(df_ch, item, "att_prsn_bi", title = con)
+  make_plots(df_ch, item, "att_prsn_bi", title = item)
 })
 ```
 

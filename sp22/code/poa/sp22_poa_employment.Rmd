@@ -11,6 +11,7 @@ output:
 ---
 
 ```{r setup, warning=F, message=F, include=F}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 library(tidyverse)
 library(haven)
 library(gfonts)
