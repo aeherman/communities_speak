@@ -2,7 +2,7 @@
 library(googledrive)
 library(googlesheets4)
 
-source("functions/upload_folder.R")
+source("sp22/code/functions/upload_folder.R")
 
 upload_folder(file_path = "data/processed")
 upload_folder(file_path = "data/output")
