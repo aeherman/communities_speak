@@ -66,6 +66,8 @@ a.	Compare and contrast the responses between the Bronx and on-Bronx population
 ```{r}
 make_plots(wrangled, "borough",
            "rate_neigh_pol_bad", title = "Negatively Rated Police Responsiveness")
+
+make_plots(wrangled, "bronx_bi", "rate_neigh_pol_bad", title = "Negatively Rated Police Responsiveness", show = TRUE) #added by Brendan
 ```
 
 # 7.5)Respondents from low income brackets (at or below median income) are more likely to rate neighbourhood safety poorly
@@ -77,7 +79,7 @@ b.	Compare and contrast the responses between high and low income population
 ```{r}
 mean(wrangled$rate_neigh_pre, na.rm = TRUE)
 make_plots(wrangled, "inc_dist", "rate_neigh_pre_bad", title = "Rated Crime Prevention Well")
-make_plots(wrangled, "inc_dist", "rate_neigh_pre_good", title = "Rated Crime Prevention Poorly")
+make_plots(wrangled, "inc_dist", "rate_neigh_pre_good", title = "Rated Crime Prevention Poorly", show = TRUE)
 ```
 
 # 7.6) People who rated city/state/federal government response to the pandemic well were more likely to indicate they would turn to the government if they needed help
@@ -91,7 +93,7 @@ prop_rate_above_ave <- mean(wrangled$rate_gov_all_ave, na.rm = TRUE)
 
 mean_val <- mean(6 - wrangled %>% select(rate_gov_fed, rate_gov_sta, rate_gov_cit) %>% unlist, na.rm = TRUE)
 
-wrangled %>% ggplot(aes(x = rate_gov_all_ave)) + geom_bar() + geom_vline(xintercept = mean_val)
+wrangled %>% ggplot(aes(x = rate_gov_all_ave)) + geom_bar() + geom_vline(xintercept = mean_val) + ggtitle("Avg. rating for city, state, federal gov't", subtitle = "1=excellent -> 5=very poor") #title added by Brendan
 
 make_plots(wrangled, "lr_gov", c("rate_gov_all_bad", "rate_gov_all_good"),
            title = "Rated Federal, State, and City Government (Very) poorly", show = "TRUE")

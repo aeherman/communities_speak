@@ -107,7 +107,7 @@ b.	Find proportion not in subset who reported that they need childcare but canno
 
 ```{r}
 make_plots(df_ch, "hh_ad_one", c("diff_cc", "need_cc_bi"),
-           title = "Respondents Who are the only adult in their household")
+           title = "Respondents Who are the only adult in their household") 
 ```
 
 # 3.6)Households with children in public schools were more likely to have difficulty accessing childcare in the past year
@@ -118,7 +118,9 @@ b.	Find proportion not in subset that had difficulty accessing childcare in the 
 
 ```{r}
 mean(df_ch$att_sch_pub, na.rm = TRUE)
-make_plots(df_ch, "att_sch_pub", c("diff_cc", "need_cc_bi"))
+make_plots(df_ch, "att_sch_pub", c("diff_cc", "need_cc_bi"), show = TRUE, title = "diff_cc and need_cc_bi")#added show=TRUE
+make_plots(df_ch, "att_sch_chart", c("diff_cc", "need_cc_bi"), show = TRUE, title = "diff_cc and need_cc_bi") #added
+make_plots(df_ch, "att_sch_mag", c("diff_cc", "need_cc_bi"), show = TRUE, title = "diff_cc and need_cc_bi") #added
 ```
 
 # 3.7)Households above the median income were more likely to look towards friends/families for childcare needs rather than government resources 
@@ -142,7 +144,7 @@ b.	Find proportion not in subset and compare (test unequal proportions)
 
 
 ```{r}
-make_plots(df_ch, "inc_dist", "lr_cc_gov")
+make_plots(df_ch, "inc_dist", "lr_cc_gov", show = TRUE, title = "lr_cc_gov") #added show=TRUE
 ```
 # 3.9)Households that did/did not send their children back to in-person school
 
@@ -199,7 +201,7 @@ df_ch %>% filter(att_prsn_bi < 1) %>%
 
 make_plots(df_ch %>% filter(att_prsn_bi != 1),
            "att_con_covid", "posi_all",
-           title = "Proportion of Respondents\n(who didn't send their children back to school and fear covid)\n who had at least one household member test positive\n")
+           title = "Proportion of Respondents\n(who didn't send their children back to school and fear covid)\n who had at least one household member test positive\n", show = TRUE) #added show = TRUE
 ```
 
 
@@ -211,7 +213,7 @@ b.	Compare with respondents above median income
 
 ```{r}
 mean(df_ch$att_con_trans, na.rm = TRUE)
-make_plots(df_ch, "att_con_trans", "inc_be_med_before", show = "yes")
+make_plots(df_ch, "att_con_trans", "inc_be_med_before", show = "yes", title = "inc_be_med_before")
 ```
 
 3.16) Households below median income were more likely to struggle with affordability of childcare(run it by ages, 0-14, 4-17)

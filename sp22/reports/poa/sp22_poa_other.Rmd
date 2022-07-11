@@ -55,7 +55,7 @@ vi) Adultcare
 ```{r}
 wrangled %>% select(starts_with("lr_"))
 
-wrangled %>% mutate(across(starts_with("lr_") & is.labelled, as.integer)) %>%
+df <- wrangled %>% mutate(across(starts_with("lr_") & is.labelled, as.integer)) %>%
   pivot_longer(is.integer & starts_with("lr_")) %>%
   select(name,value) %>%
   mutate(name = str_replace(name, "lr_", "")) %>%
@@ -66,7 +66,47 @@ wrangled %>% mutate(across(starts_with("lr_") & is.labelled, as.integer)) %>%
   group_by(area) %>% #mutate(denom = sum(n)) %>%
   arrange(area, desc(n)) %>%
   #filter(row_number() <= 1) #%>%
-  ungroup() %>%
-  ggplot(aes(x = area, y = resource)) + geom_point()
+  ungroup() %>% data.frame()
+
+
+plot_1 <- ggplot(df, aes(x = resource, y = n)) + geom_bar(stat = "identity") + facet_wrap(~area, ncol = 3) + theme(axis.text.x = element_text(angle = 90))
+
+plot_1
 
 ```
+```{r}
+make_plots(wrangled, by_vars = demographics, hyp_var = c("lr_cc_corp", "lr_cc_fam", "lr_cc_fb", "lr_cc_gov", "lr_cc_np"), title = "lr_cc")
+```
+```{r}
+make_plots(wrangled, by_vars = demographics, hyp_var = c("lr_ec_corp", "lr_ec_fam", "lr_ec_fb", "lr_ec_gov", "lr_ec_np"), title = "lr_ec")
+
+```
+```{r}
+make_plots(wrangled, by_vars = demographics, hyp_var = c("lr_food_corp", "lr_food_fam", "lr_food_fb", "lr_food_gov", "lr_food_np"), title = "lr_food")
+
+```
+```{r}
+make_plots(wrangled, by_vars = demographics, hyp_var = c("lr_hc_corp", "lr_hc_fam", "lr_hc_fb", "lr_hc_gov", "lr_hc_np"), title = "lr_hc")
+
+```
+
+```{r}
+make_plots(wrangled, by_vars = demographics, hyp_var = c("lr_stress_corp", "lr_stress_fam", "lr_stress_fb", "lr_stress_gov", "lr_stress_np"), title = "lr_stress")
+
+```
+
+```{r}
+make_plots(wrangled, by_vars = demographics, hyp_var = c("lr_trans_corp", "lr_trans_fam", "lr_trans_fb", "lr_trans_gov", "lr_trans_np"), title = "lr_trans")
+
+```
+
+```{r}
+make_plots(wrangled, by_vars = demographics, hyp_var = c("lr_util_corp", "lr_util_fam", "lr_util_fb", "lr_util_gov", "lr_util_np"), title = "lr_util")
+
+```
+
+```{r}
+make_plots(wrangled, by_vars = demographics, hyp_var = c("lr_wtr_corp", "lr_wtr_fam", "lr_wtr_fb", "lr_wtr_gov", "lr_wtr_np"), title = "lr_wtr")
+
+```
+#Demographic plots here omitted if they do not show more than one statistically significant result.

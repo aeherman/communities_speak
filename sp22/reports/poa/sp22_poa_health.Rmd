@@ -40,8 +40,9 @@ mean(wrangled$posi_all, na.rm = TRUE)
 mean(wrangled$posi_yes, na.rm = TRUE)
 
 make_plots(wrangled, by_vars = demographics,
-         hyp_var = c("posi_all", "posi_yes"), title = "Households and Individuals with a case of COVID")
+         hyp_var = c("posi_all", "posi_yes"), title = "Households and Individuals with a case of COVID", show = TRUE) #added here show = TRUE
   
+cat("Plots for by gen and inc_dist are not showing at least one statistically significant result")
 ```
 
 # 4.3)People who have received a booster vaccine dose [38]
@@ -53,7 +54,9 @@ a.	Compare and find gaps (test unequal proportions)
 ```{r}
 mean(wrangled$boost_bi, na.rm = TRUE)
 
-make_plots(wrangled, demographics, "boost_bi", "Respondents who have received a booster vaccine dose")
+make_plots(wrangled, by_vars=demographics, hyp_var="boost_bi", title = "Respondents who have received a booster vaccine dose", show = TRUE)
+
+cat("Plot for gen is not showing at least one statistically significant result")
 ```
 
 # 4.4)People who returned to work in person are more likely to be boosted  against COVID-19
@@ -81,7 +84,7 @@ b.	Find proportion not in subset who reported being at boosted or at least partl
 3.	Compare and contrast with the population who rated the response of the government below average.
 
 ```{r}
-make_plots(wrangled, c("rate_gov_all_good", "rate_gov_all_bad"), "boost_bi",
+make_plots(wrangled, by_var =c("rate_gov_all_good", "rate_gov_all_bad"), hyp_var ="boost_bi",
            title = "Respondents who were boosted\n")
 ```
 
@@ -93,7 +96,9 @@ a.	Compare and find gaps (test unequal proportions)
 
 ```{r}
 mean(wrangled$discrim_bi, na.rm = TRUE)
-make_plots(wrangled, demographics, "discrim_bi", title = "Respondents who experienced or worried about discrimination\n")
+make_plots(wrangled, demographics, "discrim_bi", title = "Respondents who experienced or worried about discrimination\n", show =)
+
+cat("Plots for gen and inc_dist do not show at least one statistically significant result")
 ```
 
 # 4.7)People who have experienced abuse or violence due to COVID-19 [34]
@@ -106,7 +111,9 @@ a.	Compare and find gaps (test unequal proportions)
 mean(wrangled$exp_ab_or_vi, na.rm = TRUE)
 #poa %>% mutate(exp_ab_or_vi = exp_ab_or_vi == 1)
 make_plots(wrangled, by_vars = demographics, hyp_var = "exp_ab_or_vi",
-           title = "Respondents who experienced Abuse or Violence due to COVID-19\n")
+           title = "Respondents who experienced Abuse or Violence due to COVID-19\n", show = TRUE)
+
+cat("Plots for borough, gen, and inc_dist do not show at least one statistically significant result")
 ```
 
 # 4.8)People who score more than average on the quantified mental health quantified questions [38]
@@ -115,7 +122,9 @@ make_plots(wrangled, by_vars = demographics, hyp_var = "exp_ab_or_vi",
 2.	Run distribution by sub-demographics
 
 ```{r}
-make_plots(wrangled, demographics, "stress_bi", title = "People who scored more than average stress\n")
+make_plots(wrangled, demographics, "stress_bi", title = "People who scored more than average stress\n", show = TRUE)
+
+cat("Plot for gen does not show at least one statistically signifcant result")
 ```
 
 # 4.9 - 4.12
@@ -159,7 +168,10 @@ make_plots(wrangled,
              "exp_ab_and_vi",
              # 4.12
              "discrim_bi"),
-           "stress_bi", title = "Respondents who scored\nhigher than average stress\n")
+           "stress_bi", title = "Respondents who scored\nhigher than average stress\n", show =TRUE)
+
+cat("Plots for rate_gov_all_bad and exp_ab_and_vi are not showing at least one statistically significant result")
+
 ```
 
 # 4.13) Run distribution over each activity which has been avoided because of Covid-19 
@@ -174,6 +186,7 @@ lapply(av_covid, function(var) {
   make_plots(wrangled, demographics, var, title = glue::glue("Respondents who avoided {var}"))
 })
 
+cat("Plots with no statistically significant result are omitted from printing. See those marked with 'NULL' above.")
 ```
 
 # 4.15) Distribution over frequency of testing
@@ -186,6 +199,8 @@ lapply(1:4, function(var) {
   make_plots(wrangled %>% mutate(test_freq = test == var), demographics, "test_freq",
              title = glue::glue("Respondents who tested {freq}"))
 })
+
+cat("Plots with no statistically significant result are omitted from printing. See those marked with 'NULL' above.")
 ```
 
 # 4.16) Distribution over each difficulty faced while testing
@@ -202,4 +217,6 @@ lapply(test_diffs, function(test_diff) {
   make_plots(wrangled, demographics, test_diff,
              title = paste("Respondents who experienced the following difficulty:", difficulty, sep = "\n"))
 })
+
+cat("Plots with no statistically significant result are omitted from printing. See those marked with 'NULL' above.")
 ```

@@ -42,7 +42,9 @@ a.	Compare and find gaps (test unequal proportions)
 ```{r}
 mean(wrangled$emp_change, na.rm = TRUE)
 
-make_plots(wrangled, demographics, "emp_change")
+make_plots(wrangled, demographics, "emp_change", title = "emp_change", show = TRUE)
+
+cat("plots for hh_sn_65_bi, hh_ch_0_17_bi, borough, gen, do not have\nat least one statistically significant result")
 ```
 
 # 1.2) People who are currently unemployed who were not unemployed in before the pandemic (March 2020)  [14&15]
@@ -53,7 +55,9 @@ a.	Compare and find gaps (test unequal proportions)
 
 ```{r}
 mean(wrangled$emp_after_un, na.rm = TRUE)
-make_plots(wrangled, demographics, "emp_after_un")
+make_plots(wrangled, demographics,"emp_after_un", show = TRUE, title = "emp_after_un")
+
+cat("Plots for borough, gen, hh_sn_65_bi, hh_ch_0_17_bi do not have\nat least one statistically significant result")
 ```
 
 # 1.3)Higher paid employees were less likely to face job status changes during the pandemic [12,14,15]
@@ -67,7 +71,9 @@ b.	Find proportion not in subset who faced adviser job change and compare (test 
 ```{r}
 make_plots(wrangled %>% filter(emp_change == 1),
            by_vars = c("inc_ab_med", "inc_be_med"), hyp_var = "inc_neg",
-           title = "Respondents who experienced\nan adverse or neutral/positive job change")
+           title = "Respondents who experienced\nan adverse or neutral/positive job change", show = TRUE)
+
+cat("Plot for inc_be_med does not have one statistically significant result")
 ```
 
 # 1.5 - 1.7
@@ -102,12 +108,15 @@ new_variables <- setNames(new_variables, new_variables)
 make_plots(df = wrangled,
            by_vars = new_variables,
            hyp_var = "emp_change", min = 5,
-           title = "Proportion to Experience a job change")
+           title = "Proportion to Experience a job change", show = TRUE)
+print("Plots for ins_has, ins_prvt are not showing statistically significant results")
 
 make_plots(df = wrangled %>% filter(emp_change == 1),
            by_vars = new_variables,
            hyp_var = "inc_neg",
-           title = "Proportion to Experience an Adverse job change")
+           title = "Proportion to Experience an Adverse job change", show = TRUE)
+
+cat("Plots for sch_bach, ins_has, ins_prvt do not have\nat least one statistically significant result")
 ```
 
 # 1.8)Higher paid employees (above median income) were less likely to return to working in-person [12,13,19]
@@ -133,7 +142,8 @@ a.	Compare and find gaps (test unequal proportions)
 
 ```{r}
 mean(wrangled$unemp_ben == 1, na.rm = TRUE)
-make_plots(wrangled %>% mutate(temp = unemp_ben == 1), demographics, "temp")
+make_plots(wrangled %>% mutate(temp = unemp_ben == 1), demographics, "temp", show = TRUE, title = "unemp_ben")
+print("None of these plots have at least one statistically significant result")
 ```
 
 
@@ -145,6 +155,8 @@ emp_reas <- wrangled %>% select(starts_with("emp_reas_")) %>% colnames()
 names(emp_reas) <- emp_reas
 
 lapply(emp_reas[1:2], function(reason) {
-  make_plots(wrangled, demographics, reason, title = reason)
+  make_plots(wrangled, demographics, reason, title = reason, show = TRUE)
 })
+
+cat("Only the plot for emp_reas_laid by gen has\n at least one statistically significant result")
 ```

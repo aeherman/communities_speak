@@ -20,7 +20,7 @@ Compare and find gaps (test unequal proportions)
 
 ```{r}
 mean(wrangled$discrim_bi, na.rm = TRUE)
-make_plots(wrangled, demographics, "discrim_bi", title = "Percent Respondents who experienced or\nworried about discrimination due to the pandemic")
+make_plots(wrangled, demographics, "discrim_bi", title = "Percent Respondents who experienced or\nworried about discrimination due to the pandemic", show = T)
 ```
 
 5.2)People who felt unsafe in their neighborhood in the past six months [17]
@@ -43,7 +43,9 @@ Compare and contrast with group who are above median income within the larger pr
 ```{r}
 mean(wrangled$diff_neigh, na.rm = TRUE)
 
-make_plots(wrangled, demographics, "exp_vi", title = "Percent Respondents Who experienced violence")
+make_plots(wrangled, demographics, "exp_vi", title = "Percent Respondents Who experienced violence", show = TRUE)
+
+cat("Plots for borough, gen, race_census, hh_sn_65_bi do not show at least one statistically significant result")
 ```
 
 # 5.4)Respondents who are homemakers are more likely to experience verbal abuse and physical violence since the pandemic started [14, 15, 34, 35]
@@ -57,7 +59,9 @@ Run on subdemographics (a-m)
 wrangled %>% count(emp_before_hm, emp_after_hm)
 
 make_plots(wrangled %>% mutate(emp_hm = emp_before_hm == 1 & emp_after_hm == 1),
-           c("emp_before_hm", "emp_after_hm", "emp_hm"), "exp_ab_or_vi", show = TRUE)
+           c("emp_before_hm", "emp_after_hm", "emp_hm"), "exp_ab_or_vi", title = "exp_ab_or_vi", show = TRUE)
+
+cat("Plots are not showing statistically significant results")
 ```
 
 # 5.5)Respondents in the gig economy are more worried about delta variants [41]
@@ -67,7 +71,9 @@ make_plots(wrangled %>% mutate(emp_hm = emp_before_hm == 1 & emp_after_hm == 1),
 a.	Compare proportion who are gig economy with those who are not
 
 ```{r}
-make_plots(wrangled, "emp_before_gig", "vrnts_con", title = "Concern for Delta Variants")
+make_plots(wrangled, "emp_before_gig", "vrnts_con", title = "Concern for Delta Variants", show = TRUE)
+
+cat("Plots are not showing statistically significant results")
 ```
 # 5.6 - 5.7
 
@@ -94,8 +100,10 @@ rate_neigh <- select(wrangled, starts_with("rate_neigh") & (ends_with("good") | 
 
 lapply(rate_neigh, function(item) {
   make_plots(wrangled, "diff_neigh", item,
-             title = item)
+             title = item, show = TRUE)
 })
+
+cat("Plots for rate_neigh_pol_bad and rate_neigh_rec_bad are not showing statistically significant results")
 ```
 
 # 5.8, 5.10
@@ -112,7 +120,9 @@ a.	Compare and contrast with group who are above median income within the larger
 
 ```{r}
 wrangled$inc_be_med
-make_plots(wrangled, c("race_census", "inc_be_med_before", "inc_be_med"), "exp_ab_or_vi", title = "Percent Respondents who Experienced\nViolence or Abuse due to COVID-19")
+make_plots(wrangled, c("race_census", "inc_be_med_before", "inc_be_med"), "exp_ab_or_vi", title = "Percent Respondents who Experienced\nViolence or Abuse due to COVID-19", show = TRUE)
+
+cat("Plots for inc_be_med and inc_be_med_before are not showing statistically significant results")
 ```
 
 
@@ -127,5 +137,7 @@ av_covid <- wrangled %>% select(starts_with("av_covid_") & !ends_with("text")) %
 lapply(av_covid, function(av) {
   make_plots(wrangled, demographics, av, title = av)
 })
+
+cat("Plots without statistically significant results are omitted, when marked with NULL above")
 ```
 
