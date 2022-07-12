@@ -11,12 +11,20 @@ library(labelled)
 
 #load("../data/processed/final_clean.rdata")
 #source("thresholds.R")
-source("default_setup.R")
+source("../code/default_setup.R")
 ```
 
 # age and household size
 
 ```{r}
+final_clean %>%
+  mutate(hh_size = rowSums(across(starts_with("q26")))) %>%
+  filter(hh_size > 20) %>% select(q5, completion, q8, starts_with("q26"))
+
+wrangled %>% filter(age >= 65) %>% filter(hh_sn_65_bi == 0) %>% select(age, starts_with("hh"))
+wrangled %>% filter(age >= 18, age < 65, hh_ad_18_64 < 1) %>% select(age, mar, hh_ad_18_64)
+wrangled %>% filter(mar == 2) %>% select(age, mar,hh_sn_65_bi, hh_ad_18_64)
+
 hh <- c("responseid", "age", "hh_sn_65", "hh_ad_18_64", "hh_ch_4_17", "hh_ch_0_4", "hh_size")
 
 range(wrangled$hh_size, na.rm = TRUE)
