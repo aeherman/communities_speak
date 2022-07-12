@@ -84,7 +84,7 @@ Compare and find gaps (test unequal proportions)
 ```{r}
 wrangled %>% count(trans)
 
-wrangled %>% ggplot(aes(x = trans)) + geom_histogram()
+wrangled %>% ggplot(aes(x = trans)) + geom_histogram() 
 
 lapply(demographics, function(dm) {
   sym_dm <- sym(dm)
@@ -118,7 +118,7 @@ Compare and find gaps (test unequal proportions)
 ```{r}
 mean(wrangled$diff_trans, na.rm = TRUE)
 
-make_plots(wrangled, demographics, "diff_trans")
+make_plots(wrangled, demographics, "diff_trans", title = "Difficulty finding transportation") #title added by Brendan
 ```
 
 # 6.6) People who are renting public housing or with public assistance were more likely to experience difficulty finding housing in the past six year 
@@ -128,9 +128,15 @@ Find proportion of subset who indicated difficulty finding housing in the past y
 Find proportion not in subset who indicated difficulty finding housing in the past year and compare (test unequal proportions)
 
 ```{r}
-mean(wrangled$res_cat == 1)
+#mean(wrangled$res_cat == 1)
+
+res_cat_1 <- filter(wrangled, res_cat == 1)
+
+(prop_insecure <- data.frame(table(res_cat_1$house_insec)) %>% rename("Having difficulty finding housing?" = Var1) %>% mutate(percent = Freq / sum(Freq))) #added by Brendan
+
 
 make_plots(wrangled, "res_cat", "house_insec", title = "Difficulty finding housing")
+
 ```
 
 # 6.7) Households below median income were more likely to have difficulty with transportation during the pandemic
@@ -174,8 +180,8 @@ Find subset of respondents who are most likely to use faith-based resources [33]
 Find proportion not in subset and compare (test unequal proportions)
 
 ```{r}
-make_plots(wrangled, "lr_fb", "internet_acc", title = "Strong or Limited Internet Access")
-make_plots(wrangled, "lr_fb", "internet_lim", title = "Limited or No Internet Access")
+make_plots(wrangled, "lr_fb", "internet_acc", title = "Strong or Limited Internet Access", show = TRUE)
+make_plots(wrangled, "lr_fb", "internet_lim", title = "Limited or No Internet Access", show = TRUE) #show set = true here for both by Brendan
 ```
 
 # 6.10) Households below median income are more likely to rate maintenance of parks and services as poor [13, 32]

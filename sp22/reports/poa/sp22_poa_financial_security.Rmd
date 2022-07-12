@@ -87,6 +87,8 @@ a.	Compare and find gaps (test unequal proportions)
 ```{r}
 make_plots(wrangled, fin_sec_dem, "inc_neg", show = "TRUE",
            title = "Households that saw a reduction in income between before the pandemic  and currently")
+
+cat("None of these plots show statistically significant results")
 ```
 
 ## 2.2)Households whose income dropped below the poverty line from 2020 to 2021 [12 & 13]
@@ -98,8 +100,8 @@ a.	Compare and find gaps (test unequal proportions)
 ```{r}
 make_plots(wrangled %>% filter(inc_be_pov_before == 0), # filter for those who started above the poverty line
            by_vars = fin_sec_dem, hyp_var = "inc_drop_pov",
-           title = "Respondents whose household income\ndropped below the poverty line")
-
+           title = "Respondents whose household income\ndropped below the poverty line", show=TRUE)
+cat("Plots for hh_sn_65_bi, hh_ch_0_17_bi, borough do not have\n at least one statistically significant result")
 ```
 
 ## 2.4 - 2.5)People who had difficulty paying bills or rent in the past year
@@ -119,7 +121,9 @@ a.	Compare and find gaps (test unequal proportions)
 
 ```{r}
 make_plots(wrangled, fin_sec_dem, c("diff_bill", "diff_rent"),
-           title = "People who had difficulty\npaying bills or rent in the past year\n")
+           title = "People who had difficulty\npaying bills or rent in the past year\n", show = TRUE)
+
+cat("Plots for gen and hh_ch_0_17_bi do not show at least one statistically significant result")
 ```
 
 ## 2.6) Households that fell below median income from before the pandemic (2020) to 2021
@@ -128,7 +132,9 @@ make_plots(wrangled, fin_sec_dem, c("diff_bill", "diff_rent"),
 
 ```{r}
 make_plots(wrangled, fin_sec_dem, "inc_drop_med",
-           title = "Households that fell below median income\n")
+           title = "Households that fell below median income\n", show = TRUE)
+
+cat("None of these plots show at least one statistically significant result")
 ```
 
 ## 2.7 - 2.8)Houoseholds that experienced food insecuirty in the past year [21, 25]
@@ -155,6 +161,8 @@ b.	Find proportion not in subset who are considered food insecure and compare (t
 mean(wrangled$food_insec, na.rm = TRUE)
 
 make_plots(wrangled, fin_sec_dem, "food_insec",
-           title = "Households that experienced food insecurity in the past year")
+           title = "Households that experienced food insecurity in the past year", show = TRUE)
+
+cat("Plots for gen and hh_sn_65_bi do not have at least one statistically significant result.")
 ```
 
