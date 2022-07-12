@@ -62,6 +62,7 @@ census <- gs4_found %>% filter(str_detect(name, "DECENNIALPL2020.P4-2022-05-24T1
 
 boroughs <- read_csv("../data/input/boroughs.csv") %>% distinct # question: why are there repeats for the same zipcode
 ```
+
 # Var Dictionary
 Combine with codebook in order to easily rename columns in the cleaned dataset
 
@@ -135,6 +136,9 @@ final_clean <- final_clean %>%
     #test = if_any(everything(), ~str_detect(., pattern = "^test$")),
          source = ifelse(is.na(source), "communities speak", source),
     valid = ifelse(is.na(test_response), valid, NA_integer_),
+    
+    hh_size = rowSums(across(starts_with("q26"))),
+    valid = ifelse(hh_size <= 20 | is.na(valid) | is.na(hh_size), valid, 0),
     # add one for people who responded that their age and not in that bracket
     q26_1 = ifelse(q5 >= 65 & q26_1 == 0, 1, q26_1),
     q26_2 = ifelse(q5 >= 18 & q5 < 65 & q26_2 == 0, 1, q26_2)) %>%
