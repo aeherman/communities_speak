@@ -6,7 +6,8 @@ library(googlesheets4)
 library(tidyverse)
 library(rjson)
 
-root <- find_root_file("sp22", criterion = criterion)
+criterion <- rprojroot::has_file(".git/index")
+root <- rprojroot::find_root_file("sp22", criterion = criterion)
 setwd(root)
 
 # This section would be for adding in labels in advance #### 
