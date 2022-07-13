@@ -1,5 +1,5 @@
 # 
-project_pal <- rev(c("#9585AB", "#864C67", "#394C73", "#073552"))
+project_pal <- rev(c("#9585AB", "#915C83", "#864C67", "#394C73", "#073552"))
 background <- "#bbd9eb"
 
 library(ggplot2)
