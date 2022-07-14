@@ -14,17 +14,26 @@ fa21/data/
 
 ## ignore data elements created during cleaning process that are unnecessary to run POA scripts and other validation scripts
 ### miscellaneous
-sp22/data/input/survey*.csv            # old copies of survey data.  survey data now stored on google drive.
-sp22/data/input/zipcodes/              # see NYC OpenData
+#### old copies of survey data. survey data now stored on google drive
+sp22/data/input/survey*.csv
+#### see NYC OpenData
+sp22/data/input/zipcodes/
 
 
 ### elements used to label the data and create the codebook
-sp22/data/processed/survey_codebook_toname.rdata             # from upload_dictionary.R and uploaded to google drive labeling sheet
-sp22/data/processed/survey_codebook_labeled.rdata             # created by hand in google drive labeling sheet and pulled back to r with download_dictionary.R
-sp22/data/processed/survey_codebook_types.rdata               # variable types, used to clean different variable types appropriately
+#### from upload_dictionary.R and uploaded to google drive labeling sheet
+sp22/data/processed/survey_codebook_toname.rdata
+#### created by hand in google drive labeling sheet and pulled back to r with download_dictionary.R
+sp22/data/processed/survey_codebook_labeled.rdata
+#### variable types, used to clean different variable types appropriately
+sp22/data/processed/survey_codebook_types.rdata
 
 ### elements uploaded to google drive but not git
-sp22/data/processed/cleaned.csv        # cleaned data before naming the variables in readable format
-sp22/data/output/codebook.csv          # wrangled codebook
-sp22/data/output/wrangled.dta          # wrangled data in stata format
-sp22/data/output/wrangled.csv          # wrangled data in readable format
+#### cleaned data before naming the varaibles in readable format
+sp22/data/processed/cleaned.csv
+#### wrangled codebook
+sp22/data/output/codebook.csv
+#### wrangled data in stata format
+sp22/data/output/wrangled.dta
+#### wrangled data in readable format
+sp22/data/output/wrangled.csv
