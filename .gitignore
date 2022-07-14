@@ -1,0 +1,30 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+fa21/data/
+
+# sp22/data
+## the following data elements are not ignored
+### input/individual_survey_s22.qsf    # survey questionnaire dictionary
+### input/boroughs.csv                 # zipcodes as gleaned from the openNYC shapefile
+### input/boroughs.rdata               # zipcodes in small format
+### processed/cleaned.rdata            # cleaned and labeled data before naming the variables and wrangling, invalid responses specified but not removed.
+### output/wrangled.rds                # final data after labeling the data, creating analysis variables, and removing invalid responses
+
+## ignore data elements created during cleaning process that are unnecessary to run POA scripts and other validation scripts
+### miscellaneous
+sp22/data/input/survey*.csv            # old copies of survey data.  survey data now stored on google drive.
+sp22/data/input/zipcodes/              # see NYC OpenData
+
+
+### elements used to label the data and create the codebook
+sp22/data/processed/survey_codebook_toname.rdata             # from upload_dictionary.R and uploaded to google drive labeling sheet
+sp22/data/processed/survey_codebook_labeled.rdata             # created by hand in google drive labeling sheet and pulled back to r with download_dictionary.R
+sp22/data/processed/survey_codebook_types.rdata               # variable types, used to clean different variable types appropriately
+
+### elements uploaded to google drive but not git
+sp22/data/processed/cleaned.csv        # cleaned data before naming the variables in readable format
+sp22/data/output/codebook.csv          # wrangled codebook
+sp22/data/output/wrangled.dta          # wrangled data in stata format
+sp22/data/output/wrangled.csv          # wrangled data in readable format
