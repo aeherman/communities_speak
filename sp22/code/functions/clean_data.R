@@ -1,3 +1,16 @@
+#' Clean survey data
+#'
+#' This function does not replace necssary manual validation steps.
+#' 
+#' Function cleans data by apply labels and values,
+#' creating dummy variables for multiple answer questions.
+#' ensuring variables are stored as the proper type,
+#' changes binaries coded as 1,2 to 1,0, and
+#' removes "prefer not to answer" from a multiple answer response.
+#' 
+#' df: the survey data.
+#' col: unapplied argument intended to help problem-solving by specifying a single column
+#' 
 clean_data <- function(df = survey, col = NULL) {
   by_col <- lapply(setdiff(colnames(df), c("responseid", "recordeddate")), function(col) {
     #for (col in colnames(survey)[-1]) {
