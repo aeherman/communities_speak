@@ -1,0 +1,73 @@
+---
+title: "survey_report"
+author: "Arielle Herman"
+date: "7/12/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+source("../code/default_setup.R")
+```
+
+# How long does it take respondents to complete the survey?
+
+```{r}
+
+med_min <- median(round(wrangled$duration/60))
+quant_range <- quantile(wrangled$duration, probs = seq(0, 1, 0.1))[c(2, 10)]
+wrangled$completion
+
+wrangled %>% mutate(minutes = round(duration/60)) %>%
+  filter(duration > quant_range[1], duration < quant_range[2]) %>%
+  ggplot(aes(x = minutes, fill = completion > .90)) +
+  geom_bar() +
+  geom_vline(xintercept = med_min) +
+  geom_text(aes(x = (med_min + 1), y = 200,
+                label = glue::glue("Median Duration: {med_min} minutes")),
+            hjust = 0) +
+  ylab("Frequency\n") + xlab("\nMinutes") +
+  labs(title = "Response Duration of Valid Surveys",
+       subtitle = "Bottom and top 10% percentiles removed\nto control for outliers") +
+  scale_fill_manual("Completion > 90%", values = project_pal[c(3,1)]) +
+  theme(legend.position = "bottom")
+```
+
+# Response Drop offs
+
+```{r}
+selected <- final_clean %>% filter(is.na(test_response), q2 == 1) %>%
+  select(contains("q"), order) %>% select(!matches("text"))
+
+to_plot <- #final_clean %>%
+  selected %>%
+  #filter(completion < .50) %>%
+  #filter(completion >= .5, q2 == 1, duration >= 100) %>%
+  #select(contains("q")) %>%
+ # filter(!if_all(everything(), is.na)) %>% # about 100 where they didn't fill out anything
+  #select(!matches("text")) %>%
+  is.na
+
+to_plot_tibble <- distinct(tibble(no = as.integer(str_extract(colnames(to_plot), "[:digit:]{1,2}")),
+                                  #question = colnames(to_plot),
+                                  mean = round(colMeans(to_plot), digits = 2))) %>% na.omit()
+                                  #sum = colSums(to_plot))
+
+to_plot_tibble %>% ggplot(aes(x = no, y = mean)) + geom_line(lty = "dashed") +
+  geom_point(aes(color = no %in% c(3, 13, 21, 25, 32))) +
+  scale_y_continuous(label = scales::percent) +
+  labs(title = "Proportion Incomplete Responses per Question") +#,
+       #subtitle = "among respondents who completed less than 50% of the survey") +
+  ylab(NULL) + xlab(NULL) +
+  ggrepel::geom_text_repel(aes(x = no, y = mean,
+                               #label = ifelse(no %in% c(3, 13, 22, 25, 32, 38, 45), paste0("q", no), "")
+                               label = ifelse(no %in% c(3, 13, 21, 25, 32), glue::glue("q{no}"), "")
+                               )) +
+  theme(legend.position = "none") +
+  annotate("text", x = 29, y = .96, label = "Conditional\nChildren Qs: q26-q31", hjust = 0) +
+  annotate("text", x = 16, y = .96, label = "Conditional\nUnemployment Qs: q17-q18", hjust = 1) +
+  annotate("text", x = 40, y = .51, label = "Conditional\nBooster\nQuestion q40", hjust = 0.5) +
+  annotate("text", x = 40, y = .10, label = glue::glue("{nrow(to_plot)} Total\nRespondents")) +
+  scale_color_manual(values = project_pal[c(4, 3)])
+
+```
+
