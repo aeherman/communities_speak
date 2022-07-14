@@ -2,7 +2,10 @@
 library(googledrive)
 library(googlesheets4)
 
-source("sp22/code/functions/upload_folder.R")
+# update for each new survey and in functions/upload_folder.R
+criterion <- rprojroot::has_file(".git/index")
+root <- find_root_file("sp22", criterion = criterion)
+source(file.path(root, "code/functions/upload_folder.R"))
 
 upload_folder(file_path = "data/processed")
 upload_folder(file_path = "data/output")

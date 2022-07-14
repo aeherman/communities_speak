@@ -1,4 +1,5 @@
 #### Create Survey Dictionary for Spring 2022 Communities Speak Individual Survey ####
+# update date
 ## Date: 9 April 2022
 
 library(googledrive)
@@ -7,12 +8,15 @@ library(tidyverse)
 library(rjson)
 
 criterion <- rprojroot::has_file(".git/index")
+# update project root directory
 root <- rprojroot::find_root_file("sp22", criterion = criterion)
 setwd(root)
 
 # This section would be for adding in labels in advance #### 
+# update name of labeling sheet. you may need to filter under other criteria then just the name
 id_labeling <- gs4_find() %>% filter(name == "labeling") %>% pull(id)
 
+# update name of survey dictionary
 file <- fromJSON(file = "data/input/individual_survey_s22.qsf")$SurveyElements
 elements <- unlist(lapply(file, function(element) element$PrimaryAttribute))
 

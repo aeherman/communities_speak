@@ -5,9 +5,10 @@ library(tidyverse)
 library(rjson)
 
 criterion <- rprojroot::has_file(".git/index")
+# update root directory
 root <- rprojroot::find_root_file("sp22", criterion = criterion)
 setwd(root)
-
+# update file names and folders as necessary
 load("data/processed/survey_codebook_types.rdata")
 load("data/processed/survey_codebook_toname.rdata")
 

@@ -1,6 +1,6 @@
 upload_folder <- function(googledrive_path = "Communities Speak/Subteams/Data Subteam/cleaning/sp22",
                           project_path = rprojroot::find_root_file("sp22",
-                                                        criterion = rprojroot::has_file(".git/index")),
+                                                                   criterion = rprojroot::has_file(".git/index")),
                           today = gsub("-", "", Sys.Date()),
                           pattern. = NULL,
                           file_path)

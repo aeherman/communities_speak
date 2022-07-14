@@ -24,11 +24,11 @@ lapply(files[str_detect(files, "survey_codebook")], function(file) load(file, en
 
 #source("clean_data.R")
 #setwd("~/communities_speak/sp22/code")
-getwd()
 source("functions/clean_data.R")
 
 gs4_found <- gs4_find()
 
+# update name of survey
 survey_id <- gs4_found %>% filter(str_detect(name, "Individual Survey- English - S22"),
                                   str_detect(name, "June")) %>% select(id, name)
 
@@ -42,6 +42,7 @@ survey <- read_sheet(survey_id$id, sheet = "Sheet1") %>%
          -q_language) %>%
   mutate_at(vars(-recordeddate), ~str_to_lower(as.character(.))) %>% na_if("null") %>%
   unnest(recordeddate) %>% distinct %>%
+  # update: can remove if we don't need to make this fix for eme
   mutate(source = ifelse(is.na(aid), source, "eme"))
 
 census <- gs4_found %>% filter(str_detect(name, "DECENNIALPL2020.P4-2022-05-24T145132")) %>% pull(id) %>%
@@ -76,13 +77,23 @@ Get important metadata on each of the questions that facilitates wrangling
 ```{r}
 final_clean <- survey[c('responseid', 'recordeddate')] %>% left_join(clean_data(df = survey)) %>%
   #filter(responseid == "r_1jthhnt6oyjloix") %>%
+  # update if zipcode is no logner q3
   left_join(boroughs, by = c("q3" = "zip")) %>%
   # fix the senior question by hand
+  # update appropriately.  can remove if we add validation directly to qualtrics to prevent individuals from entering numbers greater than 15 or something.
   mutate(q26_1 = ifelse(q26_1 >= 65, 1, q26_1))
 
+# update completion according too the appropriate questions and survey flow logic.
+## this code calculates completion rate by
+## 1. iterating through each response
+## 2. removing questions that were not pertinent to the respondent
+## 3. transforming the row into a binary indicating whether or not the response is missing
+## 4. taking the mean value of the row
 completion <- lapply(final_clean$responseid, function(id) {
-#for(id in final_clean$responseid) {
-  #id <- "r_1jthhnt6oyjloix"
+## for loop logic for problem solving individual responses.
+## comment out the return command at the bottom to utilize the for loop.
+## for(id in final_clean$responseid) {
+  
   row <- final_clean[final_clean$responseid == id, ] %>% select(contains("q")) %>%
     select(!matches("_"), contains("q26"), q40_1, q35_1, q34_1, q33_1)
   
@@ -122,6 +133,7 @@ completion <- lapply(final_clean$responseid, function(id) {
 
 final_clean$completion <- completion
 
+# update the question numbers so that validity is caluclated appropriately.
 final_clean <- final_clean %>%
   mutate(test_response = if_any(everything(), str_detect, pattern = "^test$|beta_test")) %>%
   mutate(valid = case_when(
@@ -129,25 +141,18 @@ final_clean <- final_clean %>%
     TRUE ~ 0
   )) %>%
   mutate(
-    #yes_ny = q2 == 1,
-    #complete = completion > 0.5,
-    #plus_18 = q5 > 17,
-    #borough_good = !is.na(borough),
-    #test = if_any(everything(), ~str_detect(., pattern = "^test$")),
-         source = ifelse(is.na(source), "communities speak", source),
+    source = ifelse(is.na(source), "communities speak", source),
     valid = ifelse(is.na(test_response), valid, NA_integer_),
     
+    # update the question number if changed
     hh_size = rowSums(across(starts_with("q26"))),
     valid = ifelse(hh_size <= 20 | is.na(valid) | is.na(hh_size), valid, 0),
+    # update the question number if changed
     # add one for people who responded that their age and not in that bracket
     q26_1 = ifelse(q5 >= 65 & q26_1 == 0, 1, q26_1),
     q26_2 = ifelse(q5 >= 18 & q5 < 65 & q26_2 == 0, 1, q26_2)) %>%
   select(responseid, recordeddate, duration, userlanguage, source, aid, order,
          completion, valid, test_response, borough, starts_with("q"))
-
-#final_clean %>%
-  #filter(responseid == "r_1dmcjaf6vuzlz2a") %>%
-#  count(yes_ny, complete, plus_18, borough_good, valid, test, valid2)
 
 hist(final_clean$completion)
 mean(!is.na(final_clean$q2))
@@ -166,6 +171,11 @@ final_clean %>%
 # Wrangle
 
 ```{r}
+# update all question numbers appropriately if survey questions change in qualtrics
+# update all created variable names if they change (must change this first in the labeling sheet)
+# update any new definitions of old variables
+# add any new variables here and to the labeling sheet
+
 wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/ncol(final_clean)) %>%
   # remove invalid responses
   filter(valid == 1) %>% select(-test_response) %>%
@@ -378,7 +388,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     
     )
 
-# naming
+# naming survey varaibles
 
 indeces <- which(survey_codebook_labelled$q %in% colnames(wrangled))
 key <- survey_codebook_labelled$q[indeces]
@@ -465,6 +475,7 @@ wrangled <- wrangled %>%
 # Save
 
 ```{r}
+# update if folder structure changes
 # data
 today <- gsub("-", "", Sys.Date())
 write_excel_csv(weighted, file = "../data/processed/weighted.csv")
