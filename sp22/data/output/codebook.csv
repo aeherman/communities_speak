@@ -1,0 +1,1115 @@
+﻿"q","origin","variable","type","value","label","description"
+"q0","metadata","responseid","character","id column",NA,"survey response metadata"
+"q0","metadata","recordeddate","POSIXct, POSIXt","2022-04-15 12:46:10; 2022-0...",NA,"survey response metadata"
+"q0","metadata","duration","integer","id column",NA,"survey response metadata"
+"q0","metadata","userlanguage","character","en; es-es; fr; zh-s",NA,"survey response metadata"
+"q0","metadata","source","character","id column",NA,"survey response metadata"
+"q0","metadata","order","character","covidstatus|demographics|fl...",NA,"survey response metadata"
+"q0, q2-48","created variable","completion","numeric","0.511111 to 1",NA,"numeric variable (less than or equal to 1) that indicates the proportion of questions the respondent completed that would have been shown to them.  For example, a respondent that marks that they are not an NY resident would earn a completion score of 1."
+"q0, q2, q3, q5, completion, test_response","created variable","valid","haven_labelled, vctrs_vctr, integer","0
+1","invalid
+valid","binary indicating whether or not the survey response is considered valid"
+"q0, race_census","created variable","weight","haven_labelled, vctrs_vctr, double","0.292856256092242
+0.592776602135673
+0.619148210777694
+0.706505764125187
+0.826114120238504
+0.922876393068557
+1.15180982755304
+1.60763197123941","other
+black or african american
+native hawaiian or pacific islander
+hispanic or latinx
+asian
+indigenous american / first nations (including american indian or alaska native)
+two or more races
+white (non-hispanic or latino)","target percentage from census divided by actual percentage in the dataset"
+"q2","survey question","resi_ny","haven_labelled, vctrs_vctr, integer","0
+1","no
+yes","are you a new york city resident?"
+"q3","survey question","zip","numeric","te",NA,"what is your zip code?"
+"q3","created variable","borough","character","bronx; brooklyn; manhattan; queens; staten island",NA,"recoding respondents' zip codes as boroughs, as per the 2018 DoITT: https://data.cityofnewyork.us/d/i8iw-xf4u?category=Business&view_name=Zip-Code-Boundaries"
+"q3","created variable","bronx_bi","haven_labelled, vctrs_vctr, integer","0
+1","other borough
+bronx","binary indicating the respondent is from the bronx"
+"q3","created variable","brooklyn_bi","haven_labelled, vctrs_vctr, integer","0
+1","other borough
+brooklyn","binary indicating the respondent is from brooklyn"
+"q3","created variable","queens_bi","haven_labelled, vctrs_vctr, integer","0
+1","other borough
+queens","binary indicating the respondent is from queens"
+"q4","survey question","intersection","character","te",NA,"what is the closest intersection to where you live? for example, wythe ave and metropolitan ave"
+"q5","survey question","age","integer","te",NA,"how old are you?"
+"q5","created variable","decade","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5
+6
+7
+8
+9
+10","10s
+20s
+30s
+40s
+50s
+60s
+70s
+80s
+90s
+100s","labeled categorical integer labeled with the decade of the respondent's age"
+"q6_5_text","survey question","gen_text","character","te",NA,"with which gender do you identify? (select one)"
+"q6","survey question","gen","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5
+6","male
+female
+non-binary
+transgender (including transgender man and transgender woman)
+other
+prefer not to say","with which gender do you identify? (select one)"
+"q7_7_text","survey question","race_text","character","te",NA,"please choose one or more races/ethnicities that you consider yourself to be. (select all that apply)"
+"q7","survey question","race","character","mc","hispanic or latinx; white (non-hispanic or latino); black or african american; indigenous american / first nations (including american indian or alaska native); asian; native hawaiian or pacific islander; other; prefer not to answer","please choose one or more races/ethnicities that you consider yourself to be. (select all that apply)"
+"q7_1","survey question dummy","race_his_lat","haven_labelled, vctrs_vctr, integer","0
+1","not 'hispanic or latinx'
+hispanic or latinx","please choose one or more races/ethnicities that you consider yourself to be. (select all that apply)"
+"q7_2","survey question dummy","race_white","haven_labelled, vctrs_vctr, integer","0
+1","not 'white (non-hispanic or latino)'
+white (non-hispanic or latino)","please choose one or more races/ethnicities that you consider yourself to be. (select all that apply)"
+"q7_3","survey question dummy","race_black","haven_labelled, vctrs_vctr, integer","0
+1","not 'black or african american'
+black or african american","please choose one or more races/ethnicities that you consider yourself to be. (select all that apply)"
+"q7_4","survey question dummy","race_indian","haven_labelled, vctrs_vctr, integer","0
+1","not 'indigenous american / first nations (including american indian or alaska native)'
+indigenous american / first nations (including american indian or alaska native)","please choose one or more races/ethnicities that you consider yourself to be. (select all that apply)"
+"q7_5","survey question dummy","race_asian","haven_labelled, vctrs_vctr, integer","0
+1","not 'asian'
+asian","please choose one or more races/ethnicities that you consider yourself to be. (select all that apply)"
+"q7_6","survey question dummy","race_haw","haven_labelled, vctrs_vctr, integer","0
+1","not 'native hawaiian or pacific islander'
+native hawaiian or pacific islander","please choose one or more races/ethnicities that you consider yourself to be. (select all that apply)"
+"q7_7","survey question dummy","race_other","haven_labelled, vctrs_vctr, integer","0
+1","not 'other'
+other","please choose one or more races/ethnicities that you consider yourself to be. (select all that apply)"
+"q7_8","survey question dummy","race_pnta","haven_labelled, vctrs_vctr, integer","0
+1","not 'prefer not to answer'
+prefer not to answer","please choose one or more races/ethnicities that you consider yourself to be. (select all that apply)"
+"q7","created variable","race_census","character","asian; black or african ame...; NA",NA,"race variable that aligns with census coding, meaning that respondents that selected hispanic and/or anything else are counted as hispanic, and all other respondents are counted as the one race they selected, or two or more (if they selected multiple races)"
+"q8","survey question","mar","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","single (never married)
+married or in a domestic partnership
+widowed
+divorced
+separated","what is your marital status? (select one)"
+"q9_6_text","survey question","relig_text","character","te",NA,"with which religion do you identify? (select one)"
+"q9","survey question","relig","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5
+6
+7
+8","catholic / catholicism
+protestant / protestantism
+jewish / judaism
+muslim / islam
+hindu / hinduism
+other
+no religion/unaffiliated
+prefer not to say","with which religion do you identify? (select one)"
+"q10_4_text","survey question","sex_text","character","te",NA,"which of the following best describes your sexual orientation? (select one)"
+"q10","survey question","sex","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","heterosexual
+homosexual
+bisexual
+other
+prefer not to say","which of the following best describes your sexual orientation? (select one)"
+"q11","survey question","not_eng","haven_labelled, vctrs_vctr, integer","0
+1","no
+yes","do you speak a language other than english at home? (select one)"
+"q12_9_text","survey question","sch_level_text","character","te",NA,"what is the highest level of school you have completed or the highest degree you have received? (select one)"
+"q12","survey question","sch_level","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5
+6
+7
+8
+9","no high school diploma or equivalent
+high school diploma or equivalent
+some college, no degree
+associate’s degree
+bachelor’s degree
+master’s degree
+professional school degree
+doctorate degree
+other","what is the highest level of school you have completed or the highest degree you have received? (select one)"
+"q12","created variable","sch_level_cat","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","no high school diploma or equivalent
+high school diploma or equivalent
+some college, no degree
+undergraduate degree
+graduate degree","regrouping of school level question as 1) no high school diploma or equivalent, 2) high school diploma or equivalent, 3) some college, 4) undergraduate degree (associate's or bachelor's), and 5) graduate degree (phd, master's, or professional)"
+"q12","created variable","sch_bach","haven_labelled, vctrs_vctr, integer","0
+1","less than a BA
+BA plus","binary indicating the respondent holds at least an undergraduate degree"
+"q13","survey question","inc_before","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","under $12,500
+$12,500 - $36,500
+$36,501 - $69,500
+$69,501 - $139,000
+$139,001 or above","what was your total annual household income before the pandemic (march 2020) before taxes? please include all sources of income. (select one)"
+"q13, q14","created variable","inc_neg","haven_labelled, vctrs_vctr, integer","0
+1","neutral or positive income change
+negative income change","binary indicating negative income change"
+"q13, q14","created variable","inc_pos","haven_labelled, vctrs_vctr, integer","0
+1","neutral or negative income change
+positive income change","binary indicating the respondent experienced a positive income change"
+"q13, q14","created variable","inc_drop_med","haven_labelled, vctrs_vctr, integer","0
+1","income did not drop below median income level
+income dropped below median income level","binary indicating income dropped to at or below the median"
+"q13, q14","created variable","inc_drop_pov","haven_labelled, vctrs_vctr, integer","0
+1","income did not drop below poverty line
+income dropped below poverty line","binary indicating that the respondent dropped to at or below the poverty line"
+"q13","created variable","inc_dist","haven_labelled, vctrs_vctr, integer","1
+2
+3","below 2020 poverty line
+below 2020 median income
+at or above 2020 median income","categorical income distribution"
+"q13","created variable","inc_ab_med_before","haven_labelled, vctrs_vctr, integer","0
+1","at or below 2020 median income
+above 2020 median income","binary indicating income above 2020 median"
+"q13","created variable","inc_be_med_before","haven_labelled, vctrs_vctr, integer","0
+1","at or above 2020 median income
+below 2020 median income","binary indicating income at or below 2020 median"
+"q13","created variable","inc_be_pov_before","haven_labelled, vctrs_vctr, integer","0
+1","at or above poverty line
+below poverty line","binary indicating if the respondent was at or below the poverty line before the pandemic"
+"q13, q14","created variable","inc_ab_med","haven_labelled, vctrs_vctr, integer","0
+1","at or below median income level either before or after the start of the pandemic
+above median income level before and after the start of the pandemic","binary indicating the respondent was above median income level before and after the start of the pandemic"
+"q13, q14","created variable","inc_be_med","haven_labelled, vctrs_vctr, integer","0
+1","above median income either before or after the start
+at or below median income level before and after","binary indicating the respondent was at or below median income level before and after the start of the pandemic"
+"q14","survey question","inc_after","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","under $12,500
+$12,500 - $36,500
+$36,501 - $69,500
+$69,501 - $139,000
+$139,001 or above","what is your total annual household yearly income for 2021 before taxes? please include all sources of income. (select one)"
+"q14","created variable","inc_ab_med_after","haven_labelled, vctrs_vctr, integer","0
+1","at or below 2021 median income
+above 2021 median income","binary indicating income above 2021 median"
+"q14","created variable","inc_be_med_after","haven_labelled, vctrs_vctr, integer","0
+1","at or above 2021 median income
+below 2021 median income","binary indicating income at or below 2021 median"
+"q14","created variable","inc_be_pov_after","haven_labelled, vctrs_vctr, integer","0
+1","at or above poverty line
+below poverty line","binary indicating if the respondent was at or below the poverty line after the pandemic"
+"q15","survey question","emp_before","character","mc","work full-time; work part-time; freelance or consultant; gig worker (uber, lyft, instacart, etc.); small business owner; homemaker; student; retired; unemployed; other","please describe your employment status before the beginning of the pandemic (march 2020). (select all that apply)"
+"q15_1","survey question dummy","emp_before_ft","haven_labelled, vctrs_vctr, integer","0
+1","not 'work full-time'
+work full-time","please describe your employment status before the beginning of the pandemic (march 2020). (select all that apply)"
+"q15_2","survey question dummy","emp_before_pt","haven_labelled, vctrs_vctr, integer","0
+1","not 'work part-time'
+work part-time","please describe your employment status before the beginning of the pandemic (march 2020). (select all that apply)"
+"q15_3","survey question dummy","emp_before_fl","haven_labelled, vctrs_vctr, integer","0
+1","not 'freelance or consultant'
+freelance or consultant","please describe your employment status before the beginning of the pandemic (march 2020). (select all that apply)"
+"q15_4","survey question dummy","emp_before_gig","haven_labelled, vctrs_vctr, integer","0
+1","not 'gig worker (uber, lyft, instacart, etc.)'
+gig worker (uber, lyft, instacart, etc.)","please describe your employment status before the beginning of the pandemic (march 2020). (select all that apply)"
+"q15_5","survey question dummy","emp_before_sb","haven_labelled, vctrs_vctr, integer","0
+1","not 'small business owner'
+small business owner","please describe your employment status before the beginning of the pandemic (march 2020). (select all that apply)"
+"q15_6","survey question dummy","emp_before_hm","haven_labelled, vctrs_vctr, integer","0
+1","not 'homemaker'
+homemaker","please describe your employment status before the beginning of the pandemic (march 2020). (select all that apply)"
+"q15_7","survey question dummy","emp_before_st","haven_labelled, vctrs_vctr, integer","0
+1","not 'student'
+student","please describe your employment status before the beginning of the pandemic (march 2020). (select all that apply)"
+"q15_8","survey question dummy","emp_before_re","haven_labelled, vctrs_vctr, integer","0
+1","not 'retired'
+retired","please describe your employment status before the beginning of the pandemic (march 2020). (select all that apply)"
+"q15_9","survey question dummy","emp_before_un","haven_labelled, vctrs_vctr, integer","0
+1","not 'unemployed'
+unemployed","please describe your employment status before the beginning of the pandemic (march 2020). (select all that apply)"
+"q15_10","survey question dummy","emp_before_other","haven_labelled, vctrs_vctr, integer","0
+1","not 'other'
+other","please describe your employment status before the beginning of the pandemic (march 2020). (select all that apply)"
+"q15","created variable","emp_status_before","character","employed; multiple_other; o...; NA",NA,"regrouping employment before question to: unemployed, employed (full time, part time, freelance, gig worker, small business owner, homemaker), student, disabled, retired, other, multiple_other"
+"q15, q16","created variable","emp_change","haven_labelled, vctrs_vctr, integer","0
+1","did not change employment status
+changed employment status","binary indicating the respondent changed employment status"
+"q15","created variable","emp_before_part_time","haven_labelled, vctrs_vctr, integer","0
+1","not working part time before
+working part time before","binary indicating the respondent was working part time before (q15).  This means the respondent didn't mark full time, and did mark one of 1) part time, 2) freelance, 3) small business owner, and 4) gig worker"
+"q16","survey question","emp_after","character","mc","work full-time; work part-time; freelance or consultant; gig worker (uber, lyft, instacart, etc.); small business owner; homemaker; student; retired; unemployed; other","please describe your current employment status. (select all that apply)"
+"q16_1","survey question dummy","emp_after_ft","haven_labelled, vctrs_vctr, integer","0
+1","not 'work full-time'
+work full-time","please describe your current employment status. (select all that apply)"
+"q16_2","survey question dummy","emp_after_pt","haven_labelled, vctrs_vctr, integer","0
+1","not 'work part-time'
+work part-time","please describe your current employment status. (select all that apply)"
+"q16_3","survey question dummy","emp_after_fl","haven_labelled, vctrs_vctr, integer","0
+1","not 'freelance or consultant'
+freelance or consultant","please describe your current employment status. (select all that apply)"
+"q16_4","survey question dummy","emp_after_gig","haven_labelled, vctrs_vctr, integer","0
+1","not 'gig worker (uber, lyft, instacart, etc.)'
+gig worker (uber, lyft, instacart, etc.)","please describe your current employment status. (select all that apply)"
+"q16_5","survey question dummy","emp_after_sb","haven_labelled, vctrs_vctr, integer","0
+1","not 'small business owner'
+small business owner","please describe your current employment status. (select all that apply)"
+"q16_6","survey question dummy","emp_after_hm","haven_labelled, vctrs_vctr, integer","0
+1","not 'homemaker'
+homemaker","please describe your current employment status. (select all that apply)"
+"q16_7","survey question dummy","emp_after_st","haven_labelled, vctrs_vctr, integer","0
+1","not 'student'
+student","please describe your current employment status. (select all that apply)"
+"q16_8","survey question dummy","emp_after_re","haven_labelled, vctrs_vctr, integer","0
+1","not 'retired'
+retired","please describe your current employment status. (select all that apply)"
+"q16_9","survey question dummy","emp_after_un","haven_labelled, vctrs_vctr, integer","0
+1","not 'unemployed'
+unemployed","please describe your current employment status. (select all that apply)"
+"q16_10","survey question dummy","emp_after_other","haven_labelled, vctrs_vctr, integer","0
+1","not 'other'
+other","please describe your current employment status. (select all that apply)"
+"q16","created variable","emp_status_after","character","employed; multiple_other; o...; NA",NA,"regrouping employment before question to: unemployed, employed (full time, part time, freelance, gig worker, small business owner, homemaker), student, disabled, retired, other, multiple_other"
+"q16","created variable","emp_after_part_time","haven_labelled, vctrs_vctr, integer","0
+1","not working part time after
+working part time after","binary indicating the respondent was working part time after (q16).  This means the respondent didn't mark full time, and did mark one of 1) part time, 2) freelance, 3) small business owner, and 4) gig worker"
+"q17_12_text","survey question","emp_ch_text","character","te",NA,"if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17","survey question","emp_reas","character","mc","laid off; fired; chose to retire; sought better pay; sought better benefits; safety concerns at my previous job; covid-19 concerns at my previous job; lack of adequate childcare; burnt out, unhappy, and/or wanted better work-life balance at previous job; pivoted to a new industry/career; returned to school or job training; other; not applicable","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17_1","survey question dummy","emp_reas_laid","haven_labelled, vctrs_vctr, integer","0
+1","not 'laid off'
+laid off","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17_2","survey question dummy","emp_reas_fire","haven_labelled, vctrs_vctr, integer","0
+1","not 'fired'
+fired","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17_3","survey question dummy","emp_reas_re","haven_labelled, vctrs_vctr, integer","0
+1","not 'chose to retire'
+chose to retire","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17_4","survey question dummy","emp_reas_pay","haven_labelled, vctrs_vctr, integer","0
+1","not 'sought better pay'
+sought better pay","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17_5","survey question dummy","emp_reas_ben","haven_labelled, vctrs_vctr, integer","0
+1","not 'sought better benefits'
+sought better benefits","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17_6","survey question dummy","emp_reas_safe","haven_labelled, vctrs_vctr, integer","0
+1","not 'safety concerns at my previous job'
+safety concerns at my previous job","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17_7","survey question dummy","emp_reas_covid","haven_labelled, vctrs_vctr, integer","0
+1","not 'covid-19 concerns at my previous job'
+covid-19 concerns at my previous job","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17_8","survey question dummy","emp_reas_cc","haven_labelled, vctrs_vctr, integer","0
+1","not 'lack of adequate childcare'
+lack of adequate childcare","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17_9","survey question dummy","emp_reas_burn","haven_labelled, vctrs_vctr, integer","0
+1","not 'burnt out, unhappy, and/or wanted better work-life balance at previous job'
+burnt out, unhappy, and/or wanted better work-life balance at previous job","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17_10","survey question dummy","emp_reas_new","haven_labelled, vctrs_vctr, integer","0
+1","not 'pivoted to a new industry/career'
+pivoted to a new industry/career","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17_11","survey question dummy","emp_reas_train","haven_labelled, vctrs_vctr, integer","0
+1","not 'returned to school or job training'
+returned to school or job training","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q17_12","survey question dummy","emp_reas_other","haven_labelled, vctrs_vctr, integer","0
+1","not 'other'
+other","if your employment status has changed (or if you have changed employers), what was the reason for this change? (select all that apply)"
+"q18","survey question","unemp_ben","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4","yes
+no, because they expired
+no, but i tried to apply for benefits
+no, but i did not try to apply for benefits","are you currently receiving unemployment benefits? (select one)"
+"q19","survey question","unemp_tm","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4","less than one month
+between one and three months
+between three and six months
+more than six months","how long have you been receiving unemployment benefits? (select one)"
+"q20","survey question","wrk","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4","yes, i am working fully in-person
+yes, but only in a hybrid model (i am working in-person and at home)
+no, i am fully virtual (i am only working at home)
+i am not working","are you currently working in-person? (select one)"
+"q20","created variable","wrk_in","haven_labelled, vctrs_vctr, integer","0
+1","I am working virtually or not working
+I am working in-person or hybrid","binary indicating the respondent is working in person or hybrid"
+"q21","survey question","res_type","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5
+6
+7
+8","home owner
+condominium owner
+coop owner
+apartment renter in private market
+apartment renter in public housing
+apartment renter with public assistance (voucher)
+house renter
+i do not have a permanent residence right now","which of the following best describes your current new york city residence? (select one)"
+"q21","created variable","res_cat","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4","public
+owner
+renter
+no permanent residence","regrouping residence type as 1) public housing or assistance, 2) home, condominium, or coop owner, 3) private apartment or house renter, 4) no permanent residence"
+"q22_12_text","survey question","diff_text","character","te",NA,"in the past year have you experienced any of the following? (select all that apply)"
+"q22","survey question","diff","character","mc","difficulty finding or relying on childcare; worried about running out of food; ran out of food or was unable to afford food; difficulty receiving/using social services and/or benefits (e.g. food stamps); difficulty getting cleaning supplies or personal protective equipment (ppe), i.e. masks, gloves or antibacterial gel; difficulty accessing or using transportation; difficulty paying bills; difficulty paying rent; difficulty finding housing; eviction or threat of eviction; felt unsafe in your neighborhood; other; none of the above","in the past year have you experienced any of the following? (select all that apply)"
+"q22_1","survey question dummy","diff_cc","haven_labelled, vctrs_vctr, integer","0
+1","not 'difficulty finding or relying on childcare'
+difficulty finding or relying on childcare","in the past year have you experienced any of the following? (select all that apply)"
+"q22_2","survey question dummy","diff_worr","haven_labelled, vctrs_vctr, integer","0
+1","not 'worried about running out of food'
+worried about running out of food","in the past year have you experienced any of the following? (select all that apply)"
+"q22_3","survey question dummy","diff_ran_out","haven_labelled, vctrs_vctr, integer","0
+1","not 'ran out of food or was unable to afford food'
+ran out of food or was unable to afford food","in the past year have you experienced any of the following? (select all that apply)"
+"q22_4","survey question dummy","diff_ss","haven_labelled, vctrs_vctr, integer","0
+1","not 'difficulty receiving/using social services and/or benefits (e.g. food stamps)'
+difficulty receiving/using social services and/or benefits (e.g. food stamps)","in the past year have you experienced any of the following? (select all that apply)"
+"q22_5","survey question dummy","diff_ppe","haven_labelled, vctrs_vctr, integer","0
+1","not 'difficulty getting cleaning supplies or personal protective equipment (ppe), i.e. masks, gloves or antibacterial gel'
+difficulty getting cleaning supplies or personal protective equipment (ppe), i.e. masks, gloves or antibacterial gel","in the past year have you experienced any of the following? (select all that apply)"
+"q22_6","survey question dummy","diff_trans","haven_labelled, vctrs_vctr, integer","0
+1","not 'difficulty accessing or using transportation'
+difficulty accessing or using transportation","in the past year have you experienced any of the following? (select all that apply)"
+"q22_7","survey question dummy","diff_bill","haven_labelled, vctrs_vctr, integer","0
+1","not 'difficulty paying bills'
+difficulty paying bills","in the past year have you experienced any of the following? (select all that apply)"
+"q22_8","survey question dummy","diff_rent","haven_labelled, vctrs_vctr, integer","0
+1","not 'difficulty paying rent'
+difficulty paying rent","in the past year have you experienced any of the following? (select all that apply)"
+"q22_9","survey question dummy","diff_hous","haven_labelled, vctrs_vctr, integer","0
+1","not 'difficulty finding housing'
+difficulty finding housing","in the past year have you experienced any of the following? (select all that apply)"
+"q22_10","survey question dummy","diff_evict","haven_labelled, vctrs_vctr, integer","0
+1","not 'eviction or threat of eviction'
+eviction or threat of eviction","in the past year have you experienced any of the following? (select all that apply)"
+"q22_11","survey question dummy","diff_neigh","haven_labelled, vctrs_vctr, integer","0
+1","not 'felt unsafe in your neighborhood'
+felt unsafe in your neighborhood","in the past year have you experienced any of the following? (select all that apply)"
+"q22_12","survey question dummy","diff_other","haven_labelled, vctrs_vctr, integer","0
+1","not 'other'
+other","in the past year have you experienced any of the following? (select all that apply)"
+"q22_2, q22_3, q22_7, q22_8","created variable","food_insec","haven_labelled, vctrs_vctr, integer","0
+1","neither
+worried about food running out and/or food ran out","binary indicating that the respondent experienced food insecurity"
+"q22_2, q22_3","created variable","fin_insec","haven_labelled, vctrs_vctr, integer","0
+1","did not worry about or have difficulty procuring food or paying bills or rent
+worried about food running out, and/or food ran out, and/or, difficulty paying bills, and/or difficulty paying rent","binary indicating respondent experienced financial insecurity"
+"q22_3, q22_4, q22_5, q22_6, q22_9","created variable","res_insec","haven_labelled, vctrs_vctr, integer","0
+1","no difficulty accessing food, housing, cleanning supplies or transportation
+difficulty accessing or ran out of food, housing, cleaning supplies or transportation","binary indicating respondent ran out of food, or had difficulty accessing food, social security benefits, transportation, housing, or cleaning supplies"
+"q22_8, q22_9","created variable","house_insec","haven_labelled, vctrs_vctr, integer","0
+1","neither
+difficulty paying rent or finding housing","binary indicating respondent experienced difficulty paying bills or paying rent"
+"q23","survey question","ins","character","mc","private insurance; employer-provided insurance; medicare; medicaid; no, i do not have any form of health insurance; i don’t know","do you currently have any form of health insurance? (select all that apply)"
+"q23_1","survey question dummy","ins_prvt","haven_labelled, vctrs_vctr, integer","0
+1","not 'private insurance'
+private insurance","do you currently have any form of health insurance? (select all that apply)"
+"q23_2","survey question dummy","ins_emp","haven_labelled, vctrs_vctr, integer","0
+1","not 'employer-provided insurance'
+employer-provided insurance","do you currently have any form of health insurance? (select all that apply)"
+"q23_3","survey question dummy","ins_care","haven_labelled, vctrs_vctr, integer","0
+1","not 'medicare'
+medicare","do you currently have any form of health insurance? (select all that apply)"
+"q23_4","survey question dummy","ins_caid","haven_labelled, vctrs_vctr, integer","0
+1","not 'medicaid'
+medicaid","do you currently have any form of health insurance? (select all that apply)"
+"q23_5","survey question dummy","ins_none","haven_labelled, vctrs_vctr, integer","0
+1","not 'no, i do not have any form of health insurance'
+no, i do not have any form of health insurance","do you currently have any form of health insurance? (select all that apply)"
+"q23_6","survey question dummy","ins_idk","haven_labelled, vctrs_vctr, integer","0
+1","not 'i don’t know'
+i don’t know","do you currently have any form of health insurance? (select all that apply)"
+"q23_5","created variable","ins_has","haven_labelled, vctrs_vctr, integer","0
+1","do not have insurance
+i have insurance","binary indicating respondent has insurance"
+"q24","survey question","internet","haven_labelled, vctrs_vctr, integer","1
+2
+3","yes, our access is strong
+yes, we have limited internet access
+no, we do not have internet access","do you have access to the internet where you live? (select one)"
+"q24","created variable","internet_lim","haven_labelled, vctrs_vctr, integer","0
+1","strong internet access
+limited or no internet access","binary indicating respondent has limited or no internet access"
+"q24","created variable","internet_acc","haven_labelled, vctrs_vctr, integer","0
+1","no internet access
+strong or limited internet access","binary indicating respondent has internet access"
+"q25","survey question","trans","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13","drive alone
+public bus
+carpool
+bike
+scooter
+subway
+walk
+commuter rail
+vanpool
+private bus, shuttle
+ferry, commuter boat
+taxi, ride hail, for-hire vehicle
+other","which mode of transportation do you most frequently use (select one):"
+"q26_1","survey question","hh_sn_65","numeric","te","free form entry","seniors 65+: counting yourself, how many people live in your household? (enter 0, if there are no members of an age group in your household)"
+"q26_2","survey question","hh_ad_18_64","numeric","te","free form entry","adults 18-64: counting yourself, how many people live in your household? (enter 0, if there are no members of an age group in your household)"
+"q26_3","survey question","hh_ch_4_17","integer","te","free form entry","children 4-17: counting yourself, how many people live in your household? (enter 0, if there are no members of an age group in your household)"
+"q26_4","survey question","hh_ch_0_4","integer","te","free form entry","children under 4: counting yourself, how many people live in your household? (enter 0, if there are no members of an age group in your household)"
+"q26_1","created variable","hh_sn_65_bi","haven_labelled, vctrs_vctr, integer","0
+1","household without seniors
+household with seniors","binary indicating households with seniors"
+"q26_1, q26_3, q26_4","created variable","hh_ch_sn","haven_labelled, vctrs_vctr, integer","0
+1","neither children nor seniors
+household with children and seniors","binary indicating the household has both children and seniors"
+"q26_1, q26_2, q26_3, q26_4","created variable","hh_size","numeric","1 to 13; NA",NA,"numeric variable indicating the respondent's total number of household members"
+"q26_1, q26_2","created variable","hh_ad_one","haven_labelled, vctrs_vctr, integer","0
+1","not single adult household
+single adult household","binary indicating if the respondent is the only senior or adult in their household"
+"q26_3","created variable","hh_ch_4_17_bi","haven_labelled, vctrs_vctr, integer","0
+1","household without children aged 4 to 17
+household with children aged 4 to 17","binary indicating households with minors"
+"q26_3, q26_4","created variable","hh_ch_0_17_bi","haven_labelled, vctrs_vctr, integer","0
+1","household without children
+household with children","binary indicating households with children of any age"
+"q26_4","created variable","hh_ch_0_4_bi","haven_labelled, vctrs_vctr, integer","0
+1","household without children under 4
+household with children under 4","binary indicating households with little children"
+"q27_8_text","survey question","att_sch_text","character","te",NA,"what type(s) of school do the school-aged children in your household attend? (select all that apply)"
+"q27","survey question","att_sch","character","mc","city-wide public school with residence requirements (district schools); city-wide public school- charter; city-wide public school- magnet or specialized; independent; parochial; non-parochial private school; home school; other","what type(s) of school do the school-aged children in your household attend? (select all that apply)"
+"q27_1","survey question dummy","att_sch_pub","haven_labelled, vctrs_vctr, integer","0
+1","not 'city-wide public school with residence requirements (district schools)'
+city-wide public school with residence requirements (district schools)","what type(s) of school do the school-aged children in your household attend? (select all that apply)"
+"q27_2","survey question dummy","att_sch_chart","haven_labelled, vctrs_vctr, integer","0
+1","not 'city-wide public school- charter'
+city-wide public school- charter","what type(s) of school do the school-aged children in your household attend? (select all that apply)"
+"q27_3","survey question dummy","att_sch_mag","haven_labelled, vctrs_vctr, integer","0
+1","not 'city-wide public school- magnet or specialized'
+city-wide public school- magnet or specialized","what type(s) of school do the school-aged children in your household attend? (select all that apply)"
+"q27_4","survey question dummy","att_sch_ind","haven_labelled, vctrs_vctr, integer","0
+1","not 'independent'
+independent","what type(s) of school do the school-aged children in your household attend? (select all that apply)"
+"q27_5","survey question dummy","att_sch_par","haven_labelled, vctrs_vctr, integer","0
+1","not 'parochial'
+parochial","what type(s) of school do the school-aged children in your household attend? (select all that apply)"
+"q27_6","survey question dummy","att_sch_non","haven_labelled, vctrs_vctr, integer","0
+1","not 'non-parochial private school'
+non-parochial private school","what type(s) of school do the school-aged children in your household attend? (select all that apply)"
+"q27_7","survey question dummy","att_sch_home","haven_labelled, vctrs_vctr, integer","0
+1","not 'home school'
+home school","what type(s) of school do the school-aged children in your household attend? (select all that apply)"
+"q27_8","survey question dummy","att_sch_other","haven_labelled, vctrs_vctr, integer","0
+1","not 'other'
+other","what type(s) of school do the school-aged children in your household attend? (select all that apply)"
+"q28","survey question","att_prsn","haven_labelled, vctrs_vctr, integer","1
+2
+3","yes
+no
+not applicable","is your child/children attending school in-person? (select one)"
+"q28","created variable","att_prsn_bi","haven_labelled, vctrs_vctr, integer","0
+1","no
+yes","binary indicating respondent's child(ren) attend(s) school (the initial option ""not applicable"" is included in NA)"
+"q29_4_text","survey question","att_not_text","character","te",NA,"why is your child not attending school in-person? (select one)"
+"q29","survey question","att_not","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4","i am concerned about covid-19
+my family has left new york city
+i am concerned about academic support for my child
+other","why is your child not attending school in-person? (select one)"
+"q30_8_text","survey question","att_con_text","character","te",NA,"do you have any of the following concerns about your child attending school? (select all that apply)"
+"q30","survey question","att_con","character","mc","child contracting the covid-19 virus; child not being academically ready for new grade level this fall; child not feeling comfortable around other children; too many experienced teachers retired; classroom size; transportation; no concerns; other","do you have any of the following concerns about your child attending school? (select all that apply)"
+"q30_1","survey question dummy","att_con_covid","haven_labelled, vctrs_vctr, integer","0
+1","not 'child contracting the covid-19 virus'
+child contracting the covid-19 virus","do you have any of the following concerns about your child attending school? (select all that apply)"
+"q30_2","survey question dummy","att_con_acad","haven_labelled, vctrs_vctr, integer","0
+1","not 'child not being academically ready for new grade level this fall'
+child not being academically ready for new grade level this fall","do you have any of the following concerns about your child attending school? (select all that apply)"
+"q30_3","survey question dummy","att_con_comf","haven_labelled, vctrs_vctr, integer","0
+1","not 'child not feeling comfortable around other children'
+child not feeling comfortable around other children","do you have any of the following concerns about your child attending school? (select all that apply)"
+"q30_4","survey question dummy","att_con_exp","haven_labelled, vctrs_vctr, integer","0
+1","not 'too many experienced teachers retired'
+too many experienced teachers retired","do you have any of the following concerns about your child attending school? (select all that apply)"
+"q30_5","survey question dummy","att_con_size","haven_labelled, vctrs_vctr, integer","0
+1","not 'classroom size'
+classroom size","do you have any of the following concerns about your child attending school? (select all that apply)"
+"q30_6","survey question dummy","att_con_trans","haven_labelled, vctrs_vctr, integer","0
+1","not 'transportation'
+transportation","do you have any of the following concerns about your child attending school? (select all that apply)"
+"q30_7","survey question dummy","att_con_none","haven_labelled, vctrs_vctr, integer","0
+1","not 'no concerns'
+no concerns","do you have any of the following concerns about your child attending school? (select all that apply)"
+"q30_8","survey question dummy","att_con_other","haven_labelled, vctrs_vctr, integer","0
+1","not 'other'
+other","do you have any of the following concerns about your child attending school? (select all that apply)"
+"q30","created variable","att_con_num","integer","1 to 6; NA",NA,"number of concerns"
+"q31","survey question","find_cc","haven_labelled, vctrs_vctr, integer","1
+2
+3","yes
+no
+not applicable","can you find childcare if you need it? (select one)"
+"q31","created variable","find_cc_bi","haven_labelled, vctrs_vctr, integer","0
+1","no
+yes","binary indicating the respondent can find childcare when they need it  (the initial option ""not applicable"" is included in NA)"
+"q31","created variable","no_find_cc_bi","haven_labelled, vctrs_vctr, integer","0
+1","yes i can find childcare when needed
+no, i can't find childcare when needed","binary indicating the respondent could not find childcare when needed"
+"q32","survey question","need_cc","haven_labelled, vctrs_vctr, integer","1
+2
+3","yes
+no
+not applicable","do you need childcare, but your household cannot afford the cost? (select one)"
+"q32","created variable","need_cc_bi","haven_labelled, vctrs_vctr, integer","0
+1","no
+yes","binary indicating respondent needs childcare but can't afford it (the initial option ""not applicable"" is included in NA)"
+"q33_1","survey question","rate_gov_fed","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","excellent
+good
+average
+poor
+very poor","federal government: how would you rate the current government’s response to the covid-19 pandemic?"
+"q33_2","survey question","rate_gov_sta","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","excellent
+good
+average
+poor
+very poor","state government: how would you rate the current government’s response to the covid-19 pandemic?"
+"q33_3","survey question","rate_gov_cit","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","excellent
+good
+average
+poor
+very poor","city government: how would you rate the current government’s response to the covid-19 pandemic?"
+"q33_1","created variable","rate_gov_fed_bad","haven_labelled, vctrs_vctr, integer","0
+1","city response was average, good excellent
+federal response was poor, very poor","binary indicating respondent rated federal response to the COVID-19 pandemic negatively"
+"q33_1, q33_2, q33_3","created variable","rate_gov_all_good","haven_labelled, vctrs_vctr, integer","0
+1","city, state, and federal responses were average or below
+all city, state, and federal responses were good or excellent","binary indicating respondent rated all government service above average"
+"q33_1, q33_2, q33_3","created variable","rate_gov_all_bad","haven_labelled, vctrs_vctr, integer","0
+1","city, state, and federal responses were average or above
+all city, state, and federal responses were poor or very poor","binary indicating respondent rated all government service below average"
+"q33_1, q33_2, q33_3","created variable","rate_gov_all_ave","numeric","1 to 5; NA",NA,"numeric variable indicating the average rating of federal, state, and city governments, on a scale from 1 (very poor) to 5 (excellent)"
+"q33_2","created variable","rate_gov_sta_bad","haven_labelled, vctrs_vctr, integer","0
+1","city response was average, good excellent
+state response was poor, very poor","binary indicating respondent rated state response to the COVID-19 pandemic negatively"
+"q33_3","created variable","rate_gov_cit_bad","haven_labelled, vctrs_vctr, integer","0
+1","city response was average, good excellent
+city response was poor, very poor","binary indicating respondent rated city response to the COVID-19 pandemic negatively"
+"q34_1","survey question","rate_neigh_gar","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","excellent
+good
+fair
+poor
+don’t know/not sure","garbage collection: how would you rate the quality of the following neighborhood services?"
+"q34_2","survey question","rate_neigh_pot","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","excellent
+good
+fair
+poor
+don’t know/not sure","pothole repair: how would you rate the quality of the following neighborhood services?"
+"q34_3","survey question","rate_neigh_lib","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","excellent
+good
+fair
+poor
+don’t know/not sure","libraries: how would you rate the quality of the following neighborhood services?"
+"q34_4","survey question","rate_neigh_pub","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","excellent
+good
+fair
+poor
+don’t know/not sure","neighborhood public schools: how would you rate the quality of the following neighborhood services?"
+"q34_5","survey question","rate_neigh_rec","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","excellent
+good
+fair
+poor
+don’t know/not sure","maintenance of parks and recreational facilities: how would you rate the quality of the following neighborhood services?"
+"q34_6","survey question","rate_neigh_code","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","excellent
+good
+fair
+poor
+don’t know/not sure","housing code enforcement: how would you rate the quality of the following neighborhood services?"
+"q34_7","survey question","rate_neigh_med","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","excellent
+good
+fair
+poor
+don’t know/not sure","emergency medical services: how would you rate the quality of the following neighborhood services?"
+"q34_8","survey question","rate_neigh_pol","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","excellent
+good
+fair
+poor
+don’t know/not sure","police responsiveness to calls or complaints: how would you rate the quality of the following neighborhood services?"
+"q34_9","survey question","rate_neigh_pre","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4
+5","excellent
+good
+fair
+poor
+don’t know/not sure","prevention of local crime/neighborhood safety: how would you rate the quality of the following neighborhood services?"
+"q34_4","created variable","rate_neigh_pub_good","haven_labelled, vctrs_vctr, integer","0
+1","fair, poor, very poor
+excellent, good","binary indicating respondent rated the neighborhood public schools well"
+"q34_4","created variable","rate_neigh_pub_bad","haven_labelled, vctrs_vctr, integer","0
+1","excellent, good, fair
+poor, very poor","binary indicating respondent rated the neighborhood public schools poorly"
+"q34_5","created variable","rate_neigh_rec_good","haven_labelled, vctrs_vctr, integer","0
+1","fair, poor, very poor
+excellent, good","binary indicating respondent rated the local maintenance well"
+"q34_5","created variable","rate_neigh_rec_bad","haven_labelled, vctrs_vctr, integer","0
+1","excellent, good, fair
+poor, very poor","binary indicating respondent rated the local maintenance poorly"
+"q34_8","created variable","rate_neigh_pol_good","haven_labelled, vctrs_vctr, integer","0
+1","fair, poor, very poor
+excellent, good","binary indicating respondent rated the neighborhood police responsiveness well"
+"q34_8","created variable","rate_neigh_pol_bad","haven_labelled, vctrs_vctr, integer","0
+1","excellent, good, fair
+poor, very poor","binary indicating respondent rated the neighborhood police responsiveness poorly"
+"q34_9","created variable","rate_neigh_pre_good","haven_labelled, vctrs_vctr, integer","0
+1","fair, poor, very poor
+excellent, good","binary indicating respondent rated the local crime prevention well"
+"q34_9","created variable","rate_neigh_pre_bad","haven_labelled, vctrs_vctr, integer","0
+1","excellent, good, fair
+poor, very poor","binary indicating respondent rated the local crime prevention poorly"
+"q35_1","survey question","lr_stress","character","matrix","faith-based; community non-profits; government; corporate/business; friends/family; not sure","stress or emotional support: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_2","survey question","lr_trans","character","matrix","faith-based; community non-profits; government; corporate/business; friends/family; not sure","transportation: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_3","survey question","lr_food","character","matrix","faith-based; community non-profits; government; corporate/business; friends/family; not sure","food: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_4","survey question","lr_wtr","character","matrix","faith-based; community non-profits; government; corporate/business; friends/family; not sure","clean water: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_5","survey question","lr_hc","character","matrix","faith-based; community non-profits; government; corporate/business; friends/family; not sure","healthcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_6","survey question","lr_util","character","matrix","faith-based; community non-profits; government; corporate/business; friends/family; not sure","utilities: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_7","survey question","lr_cc","character","matrix","faith-based; community non-profits; government; corporate/business; friends/family; not sure","childcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_8","survey question","lr_ec","character","matrix","faith-based; community non-profits; government; corporate/business; friends/family; not sure","adult care/eldercare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_1_1","survey question dummy","lr_stress_fb","haven_labelled, vctrs_vctr, integer","0
+1","not 'faith-based'
+faith-based","stress or emotional support: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_1_2","survey question dummy","lr_stress_np","haven_labelled, vctrs_vctr, integer","0
+1","not 'community non-profits'
+community non-profits","stress or emotional support: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_1_3","survey question dummy","lr_stress_gov","haven_labelled, vctrs_vctr, integer","0
+1","not 'government'
+government","stress or emotional support: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_1_4","survey question dummy","lr_stress_corp","haven_labelled, vctrs_vctr, integer","0
+1","not 'corporate/business'
+corporate/business","stress or emotional support: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_1_5","survey question dummy","lr_stress_fam","haven_labelled, vctrs_vctr, integer","0
+1","not 'friends/family'
+friends/family","stress or emotional support: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_1_6","survey question dummy","lr_stress_idk","haven_labelled, vctrs_vctr, integer","0
+1","not 'not sure'
+not sure","stress or emotional support: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_2_1","survey question dummy","lr_trans_fb","haven_labelled, vctrs_vctr, integer","0
+1","not 'faith-based'
+faith-based","transportation: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_2_2","survey question dummy","lr_trans_np","haven_labelled, vctrs_vctr, integer","0
+1","not 'community non-profits'
+community non-profits","transportation: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_2_3","survey question dummy","lr_trans_gov","haven_labelled, vctrs_vctr, integer","0
+1","not 'government'
+government","transportation: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_2_4","survey question dummy","lr_trans_corp","haven_labelled, vctrs_vctr, integer","0
+1","not 'corporate/business'
+corporate/business","transportation: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_2_5","survey question dummy","lr_trans_fam","haven_labelled, vctrs_vctr, integer","0
+1","not 'friends/family'
+friends/family","transportation: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_2_6","survey question dummy","lr_trans_idk","haven_labelled, vctrs_vctr, integer","0
+1","not 'not sure'
+not sure","transportation: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_3_1","survey question dummy","lr_food_fb","haven_labelled, vctrs_vctr, integer","0
+1","not 'faith-based'
+faith-based","food: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_3_2","survey question dummy","lr_food_np","haven_labelled, vctrs_vctr, integer","0
+1","not 'community non-profits'
+community non-profits","food: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_3_3","survey question dummy","lr_food_gov","haven_labelled, vctrs_vctr, integer","0
+1","not 'government'
+government","food: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_3_4","survey question dummy","lr_food_corp","haven_labelled, vctrs_vctr, integer","0
+1","not 'corporate/business'
+corporate/business","food: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_3_5","survey question dummy","lr_food_fam","haven_labelled, vctrs_vctr, integer","0
+1","not 'friends/family'
+friends/family","food: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_3_6","survey question dummy","lr_food_idk","haven_labelled, vctrs_vctr, integer","0
+1","not 'not sure'
+not sure","food: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_4_1","survey question dummy","lr_wtr_fb","haven_labelled, vctrs_vctr, integer","0
+1","not 'faith-based'
+faith-based","clean water: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_4_2","survey question dummy","lr_wtr_np","haven_labelled, vctrs_vctr, integer","0
+1","not 'community non-profits'
+community non-profits","clean water: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_4_3","survey question dummy","lr_wtr_gov","haven_labelled, vctrs_vctr, integer","0
+1","not 'government'
+government","clean water: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_4_4","survey question dummy","lr_wtr_corp","haven_labelled, vctrs_vctr, integer","0
+1","not 'corporate/business'
+corporate/business","clean water: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_4_5","survey question dummy","lr_wtr_fam","haven_labelled, vctrs_vctr, integer","0
+1","not 'friends/family'
+friends/family","clean water: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_4_6","survey question dummy","lr_wtr_idk","haven_labelled, vctrs_vctr, integer","0
+1","not 'not sure'
+not sure","clean water: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_5_1","survey question dummy","lr_hc_fb","haven_labelled, vctrs_vctr, integer","0
+1","not 'faith-based'
+faith-based","healthcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_5_2","survey question dummy","lr_hc_np","haven_labelled, vctrs_vctr, integer","0
+1","not 'community non-profits'
+community non-profits","healthcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_5_3","survey question dummy","lr_hc_gov","haven_labelled, vctrs_vctr, integer","0
+1","not 'government'
+government","healthcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_5_4","survey question dummy","lr_hc_corp","haven_labelled, vctrs_vctr, integer","0
+1","not 'corporate/business'
+corporate/business","healthcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_5_5","survey question dummy","lr_hc_fam","haven_labelled, vctrs_vctr, integer","0
+1","not 'friends/family'
+friends/family","healthcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_5_6","survey question dummy","lr_hc_idk","haven_labelled, vctrs_vctr, integer","0
+1","not 'not sure'
+not sure","healthcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_6_1","survey question dummy","lr_util_fb","haven_labelled, vctrs_vctr, integer","0
+1","not 'faith-based'
+faith-based","utilities: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_6_2","survey question dummy","lr_util_np","haven_labelled, vctrs_vctr, integer","0
+1","not 'community non-profits'
+community non-profits","utilities: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_6_3","survey question dummy","lr_util_gov","haven_labelled, vctrs_vctr, integer","0
+1","not 'government'
+government","utilities: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_6_4","survey question dummy","lr_util_corp","haven_labelled, vctrs_vctr, integer","0
+1","not 'corporate/business'
+corporate/business","utilities: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_6_5","survey question dummy","lr_util_fam","haven_labelled, vctrs_vctr, integer","0
+1","not 'friends/family'
+friends/family","utilities: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_6_6","survey question dummy","lr_util_idk","haven_labelled, vctrs_vctr, integer","0
+1","not 'not sure'
+not sure","utilities: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_7_1","survey question dummy","lr_cc_fb","haven_labelled, vctrs_vctr, integer","0
+1","not 'faith-based'
+faith-based","childcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_7_2","survey question dummy","lr_cc_np","haven_labelled, vctrs_vctr, integer","0
+1","not 'community non-profits'
+community non-profits","childcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_7_3","survey question dummy","lr_cc_gov","haven_labelled, vctrs_vctr, integer","0
+1","not 'government'
+government","childcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_7_4","survey question dummy","lr_cc_corp","haven_labelled, vctrs_vctr, integer","0
+1","not 'corporate/business'
+corporate/business","childcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_7_5","survey question dummy","lr_cc_fam","haven_labelled, vctrs_vctr, integer","0
+1","not 'friends/family'
+friends/family","childcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_7_6","survey question dummy","lr_cc_idk","haven_labelled, vctrs_vctr, integer","0
+1","not 'not sure'
+not sure","childcare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_8_1","survey question dummy","lr_ec_fb","haven_labelled, vctrs_vctr, integer","0
+1","not 'faith-based'
+faith-based","adult care/eldercare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_8_2","survey question dummy","lr_ec_np","haven_labelled, vctrs_vctr, integer","0
+1","not 'community non-profits'
+community non-profits","adult care/eldercare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_8_3","survey question dummy","lr_ec_gov","haven_labelled, vctrs_vctr, integer","0
+1","not 'government'
+government","adult care/eldercare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_8_4","survey question dummy","lr_ec_corp","haven_labelled, vctrs_vctr, integer","0
+1","not 'corporate/business'
+corporate/business","adult care/eldercare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_8_5","survey question dummy","lr_ec_fam","haven_labelled, vctrs_vctr, integer","0
+1","not 'friends/family'
+friends/family","adult care/eldercare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_8_6","survey question dummy","lr_ec_idk","haven_labelled, vctrs_vctr, integer","0
+1","not 'not sure'
+not sure","adult care/eldercare: what local resources would you use if you needed help with the items below? (select all that apply)"
+"q35_x_5","created variable","lr_fam","haven_labelled, vctrs_vctr, integer","0
+1","would not reach out to family or friends
+would reach out to family or friends","binary indicating the respondent would reach out to family or friends for help in at least one area"
+"q35_x_3","created variable","lr_gov","haven_labelled, vctrs_vctr, integer","0
+1","would not reach out to local government
+would reach out to local government","binary indicating the respondent would reach out to the local government for help in at least one area"
+"q35_x_1","created variable","lr_fb","haven_labelled, vctrs_vctr, integer","0
+1","would not reach out to faith-based organization
+would reach out to faith-based organization","binary indicating the respondent would reach out to faith-based organization for help in at least one area"
+"q35_x_2","created variable","lr_np","haven_labelled, vctrs_vctr, integer","0
+1","would not reach out
+would reach out","binary indicating that the respondent would reach out to local nonprofits or community organizations"
+"q36","survey question","exp","character","mc","yes, i have experienced verbal abuse; yes, i have experienced physical violence; no, i haven’t experienced any abuse or violence","have you experienced abuse or violence due to covid-19? (select all that apply)"
+"q36_1","survey question dummy","exp_ab","haven_labelled, vctrs_vctr, integer","0
+1","not 'yes, i have experienced verbal abuse'
+yes, i have experienced verbal abuse","have you experienced abuse or violence due to covid-19? (select all that apply)"
+"q36_2","survey question dummy","exp_vi","haven_labelled, vctrs_vctr, integer","0
+1","not 'yes, i have experienced physical violence'
+yes, i have experienced physical violence","have you experienced abuse or violence due to covid-19? (select all that apply)"
+"q36_3","survey question dummy","exp_ab_nor_vi","haven_labelled, vctrs_vctr, integer","0
+1","not 'no, i haven’t experienced any abuse or violence'
+no, i haven’t experienced any abuse or violence","have you experienced abuse or violence due to covid-19? (select all that apply)"
+"q36","created variable","exp_ab_or_vi","haven_labelled, vctrs_vctr, integer","0
+1","experienced neither abuse nor physical violence
+experienced either verbal abuse or physical violence","binary indicating abuse or violence"
+"q36","created variable","exp_ab_and_vi","haven_labelled, vctrs_vctr, integer","0
+1","didn't experience both verbal abuse and physical violence
+experienced both verbal abuse and physical violence","binary indicating abuse and violence"
+"q37","survey question","discrim","haven_labelled, vctrs_vctr, integer","1
+2
+3","yes, i have experienced discrimination
+no, i have not experienced discrimination but i am worried about it
+no, i have not experienced discrimination and am not worried about it","have you been discriminated against due to covid-19? (select one)"
+"q37","created variable","discrim_bi","haven_labelled, vctrs_vctr, integer","0
+1","has neither experienced nor worried about discrimination
+has experienced or worried about discrimination","binary indicating experienced or worried about discrimination"
+"q38","survey question","posi","character","mc","yes, i have tested positive; yes, a member of my household has tested positive; no; prefer not to answer","have you, or anyone in your household, ever tested positive for covid-19? (select all that apply)"
+"q38_1","survey question dummy","posi_yes","haven_labelled, vctrs_vctr, integer","0
+1","not 'yes, i have tested positive'
+yes, i have tested positive","have you, or anyone in your household, ever tested positive for covid-19? (select all that apply)"
+"q38_2","survey question dummy","posi_hh","haven_labelled, vctrs_vctr, integer","0
+1","not 'yes, a member of my household has tested positive'
+yes, a member of my household has tested positive","have you, or anyone in your household, ever tested positive for covid-19? (select all that apply)"
+"q38_3","survey question dummy","posi_no","haven_labelled, vctrs_vctr, integer","0
+1","not 'no'
+no","have you, or anyone in your household, ever tested positive for covid-19? (select all that apply)"
+"q38_4","survey question dummy","posi_pnta","haven_labelled, vctrs_vctr, integer","0
+1","not 'prefer not to answer'
+prefer not to answer","have you, or anyone in your household, ever tested positive for covid-19? (select all that apply)"
+"q38","created variable","posi_all","haven_labelled, vctrs_vctr, integer","0
+1","neither
+yes, i or a member of my household has tested positive","binary indicating the respondent had COVID-19 and/or a member of their household did"
+"q39","survey question","boost","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4","yes
+no
+no, i was never vaccinated
+prefer not to answer","have you received or do you plan to receive the covid-19 booster? (select one)"
+"q39","created variable","boost_bi","haven_labelled, vctrs_vctr, integer","0
+1","no
+yes, i am boosted","binary indicating the respondent has or is planning to be boosted"
+"q40_1","survey question","stress_unc","haven_labelled, vctrs_vctr, double","0
+1
+2
+3
+4","never
+almost never
+sometimes
+fairly often
+very often","in the last month, how often have you felt that you were unable to control the important things in your life?: the questions in this scale ask you about your feelings and thoughts during the last month. for each question, please indicate the response that represents how often you felt or thought a certain way."
+"q40_2","survey question","stress_conf","haven_labelled, vctrs_vctr, double","0
+1
+2
+3
+4","very often
+fairly often
+sometimes
+almost never
+never","in the last month, how often have you felt confident about your ability to handle your personal problems?: the questions in this scale ask you about your feelings and thoughts during the last month. for each question, please indicate the response that represents how often you felt or thought a certain way."
+"q40_3","survey question","stress_way","haven_labelled, vctrs_vctr, double","0
+1
+2
+3
+4","very often
+fairly often
+sometimes
+almost never
+never","in the last month, how often have you felt that things were going your way?: the questions in this scale ask you about your feelings and thoughts during the last month. for each question, please indicate the response that represents how often you felt or thought a certain way."
+"q40_4","survey question","stress_pile","haven_labelled, vctrs_vctr, double","0
+1
+2
+3
+4","never
+almost never
+sometimes
+fairly often
+very often","in the last month, how often have you felt difficulties were piling up so high that you could not overcome them?: the questions in this scale ask you about your feelings and thoughts during the last month. for each question, please indicate the response that represents how often you felt or thought a certain way."
+"q40_1, q40_2, q40_3, q40_4","created variable","stress_score","numeric","0 to 16; NA",NA,"numeric variable indicating respondent's total score on q41 stress indicators"
+"q40_1, q40_2, q40_3, q40_4","created variable","stress_bi","haven_labelled, vctrs_vctr, integer","0
+1","less than or equal to average
+total stress greater than average","binary indicating if the respondent's stress is greater than average"
+"q41_8_text","survey question","av_covid_text","character","te",NA,"at any point in the last 1 month, have you avoided doing any of the following because of covid-19 concerns? (select all that apply)"
+"q41","survey question","av_covid","character","mc","in the last 1 month, i have avoided going to a healthcare facility one or more times.; in the last 1 month, i have avoided leaving my home one or more times.; in the last 1 month, i have avoided using public transportation one or more times; in the last 1 month, i have avoided returning to a shared office space one or more times; in the last 1 month, i have avoided eating at an indoor restaurant one or more times; in the last 1 month, i have avoided attending indoor entertainment one or more times; i have not avoided any of my normal activities; other","at any point in the last 1 month, have you avoided doing any of the following because of covid-19 concerns? (select all that apply)"
+"q41_1","survey question dummy","av_covid_hc","haven_labelled, vctrs_vctr, integer","0
+1","not 'in the last 1 month, i have avoided going to a healthcare facility one or more times.'
+in the last 1 month, i have avoided going to a healthcare facility one or more times.","at any point in the last 1 month, have you avoided doing any of the following because of covid-19 concerns? (select all that apply)"
+"q41_2","survey question dummy","av_covid_hm","haven_labelled, vctrs_vctr, integer","0
+1","not 'in the last 1 month, i have avoided leaving my home one or more times.'
+in the last 1 month, i have avoided leaving my home one or more times.","at any point in the last 1 month, have you avoided doing any of the following because of covid-19 concerns? (select all that apply)"
+"q41_3","survey question dummy","av_covid_trans","haven_labelled, vctrs_vctr, integer","0
+1","not 'in the last 1 month, i have avoided using public transportation one or more times'
+in the last 1 month, i have avoided using public transportation one or more times","at any point in the last 1 month, have you avoided doing any of the following because of covid-19 concerns? (select all that apply)"
+"q41_4","survey question dummy","av_covid_off","haven_labelled, vctrs_vctr, integer","0
+1","not 'in the last 1 month, i have avoided returning to a shared office space one or more times'
+in the last 1 month, i have avoided returning to a shared office space one or more times","at any point in the last 1 month, have you avoided doing any of the following because of covid-19 concerns? (select all that apply)"
+"q41_5","survey question dummy","av_covid_rest","haven_labelled, vctrs_vctr, integer","0
+1","not 'in the last 1 month, i have avoided eating at an indoor restaurant one or more times'
+in the last 1 month, i have avoided eating at an indoor restaurant one or more times","at any point in the last 1 month, have you avoided doing any of the following because of covid-19 concerns? (select all that apply)"
+"q41_6","survey question dummy","av_covid_enter","haven_labelled, vctrs_vctr, integer","0
+1","not 'in the last 1 month, i have avoided attending indoor entertainment one or more times'
+in the last 1 month, i have avoided attending indoor entertainment one or more times","at any point in the last 1 month, have you avoided doing any of the following because of covid-19 concerns? (select all that apply)"
+"q41_7","survey question dummy","av_covid_none","haven_labelled, vctrs_vctr, integer","0
+1","not 'i have not avoided any of my normal activities'
+i have not avoided any of my normal activities","at any point in the last 1 month, have you avoided doing any of the following because of covid-19 concerns? (select all that apply)"
+"q41_8","survey question dummy","av_covid_other","haven_labelled, vctrs_vctr, integer","0
+1","not 'other'
+other","at any point in the last 1 month, have you avoided doing any of the following because of covid-19 concerns? (select all that apply)"
+"q42_8_text","survey question","av_crim_text","character","te",NA,"at any point in the last 1 month, have you avoided doing any of the following because of crime or safety concerns? (select all that apply)"
+"q42","survey question","av_crime","character","mc","in the last 1 month, i have avoided going to a healthcare facility one or more times.; in the last 1 month, i have avoided leaving my home one or more times.; in the last 1 month, i have avoided using public transportation one or more times.; in the last 1 month, i have avoided returning to a shared office space one or more times.; in the last 1 month, i have avoided eating at an indoor restaurant one or more times; in the last 1 month, i have avoided attending indoor entertainment one or more times; i have not avoided any of my normal activities; other: ___","at any point in the last 1 month, have you avoided doing any of the following because of crime or safety concerns? (select all that apply)"
+"q42_1","survey question dummy","av_crime_hc","haven_labelled, vctrs_vctr, integer","0
+1","not 'in the last 1 month, i have avoided going to a healthcare facility one or more times.'
+in the last 1 month, i have avoided going to a healthcare facility one or more times.","at any point in the last 1 month, have you avoided doing any of the following because of crime or safety concerns? (select all that apply)"
+"q42_2","survey question dummy","av_crime_hm","haven_labelled, vctrs_vctr, integer","0
+1","not 'in the last 1 month, i have avoided leaving my home one or more times.'
+in the last 1 month, i have avoided leaving my home one or more times.","at any point in the last 1 month, have you avoided doing any of the following because of crime or safety concerns? (select all that apply)"
+"q42_3","survey question dummy","av_crime_trans","haven_labelled, vctrs_vctr, integer","0
+1","not 'in the last 1 month, i have avoided using public transportation one or more times.'
+in the last 1 month, i have avoided using public transportation one or more times.","at any point in the last 1 month, have you avoided doing any of the following because of crime or safety concerns? (select all that apply)"
+"q42_4","survey question dummy","av_crime_off","haven_labelled, vctrs_vctr, integer","0
+1","not 'in the last 1 month, i have avoided returning to a shared office space one or more times.'
+in the last 1 month, i have avoided returning to a shared office space one or more times.","at any point in the last 1 month, have you avoided doing any of the following because of crime or safety concerns? (select all that apply)"
+"q42_5","survey question dummy","av_crime_rest","haven_labelled, vctrs_vctr, integer","0
+1","not 'in the last 1 month, i have avoided eating at an indoor restaurant one or more times'
+in the last 1 month, i have avoided eating at an indoor restaurant one or more times","at any point in the last 1 month, have you avoided doing any of the following because of crime or safety concerns? (select all that apply)"
+"q42_6","survey question dummy","av_crime_enter","haven_labelled, vctrs_vctr, integer","0
+1","not 'in the last 1 month, i have avoided attending indoor entertainment one or more times'
+in the last 1 month, i have avoided attending indoor entertainment one or more times","at any point in the last 1 month, have you avoided doing any of the following because of crime or safety concerns? (select all that apply)"
+"q42_7","survey question dummy","av_crime_none","haven_labelled, vctrs_vctr, integer","0
+1","not 'i have not avoided any of my normal activities'
+i have not avoided any of my normal activities","at any point in the last 1 month, have you avoided doing any of the following because of crime or safety concerns? (select all that apply)"
+"q42_8","survey question dummy","av_crime_other","haven_labelled, vctrs_vctr, integer","0
+1","not 'other: ___'
+other: ___","at any point in the last 1 month, have you avoided doing any of the following because of crime or safety concerns? (select all that apply)"
+"q43","survey question","vrnts","haven_labelled, vctrs_vctr, integer","1
+2
+3","very concerned
+somewhat concerned
+not concerned at all","are you concerned about the spread of other potential variants (ex: delta or omicron) of covid-19? (select one)"
+"q43","created variable","vrnts_ve","haven_labelled, vctrs_vctr, integer","0
+1","somewhat or not at all concerned
+very concerned","binary indicating respondent worries about additional covid variants"
+"q43","created variable","vrnts_con","haven_labelled, vctrs_vctr, integer","0
+1","not at all concerned
+very or somewhat concerned","binary indicating the respondent is concerned about variants"
+"q44","survey question","test","haven_labelled, vctrs_vctr, integer","1
+2
+3
+4","0 times
+1-2 times
+3-4 times
+5 or more times","in the past month, how often have you sought a covid test for any reason? (select one)"
+"q45","survey question","test_diff","haven_labelled, vctrs_vctr, integer","0
+1","no
+yes","in the last month, have you had difficulty in getting a covid-19 test? consider both at-home and testing site tests. (select one)"
+"q46_7_text","survey question","test_diffs_text","character","te",NA,"what difficulty did you have when seeking out a test. (select all that apply)"
+"q46","survey question","test_diffs","character","mc","there were no testing sites close to me; i did not know how to get a test; lines at testing centers were too long; hours of testing location conflicted with work or childcare responsibilities; no at-home tests available; could not afford a test; other","what difficulty did you have when seeking out a test. (select all that apply)"
+"q46_1","survey question dummy","test_diffs_close","haven_labelled, vctrs_vctr, integer","0
+1","not 'there were no testing sites close to me'
+there were no testing sites close to me","what difficulty did you have when seeking out a test. (select all that apply)"
+"q46_2","survey question dummy","test_diffs_idk","haven_labelled, vctrs_vctr, integer","0
+1","not 'i did not know how to get a test'
+i did not know how to get a test","what difficulty did you have when seeking out a test. (select all that apply)"
+"q46_3","survey question dummy","test_diffs_line","haven_labelled, vctrs_vctr, integer","0
+1","not 'lines at testing centers were too long'
+lines at testing centers were too long","what difficulty did you have when seeking out a test. (select all that apply)"
+"q46_4","survey question dummy","test_diffs_hrs","haven_labelled, vctrs_vctr, integer","0
+1","not 'hours of testing location conflicted with work or childcare responsibilities'
+hours of testing location conflicted with work or childcare responsibilities","what difficulty did you have when seeking out a test. (select all that apply)"
+"q46_5","survey question dummy","test_diffs_at_hm","haven_labelled, vctrs_vctr, integer","0
+1","not 'no at-home tests available'
+no at-home tests available","what difficulty did you have when seeking out a test. (select all that apply)"
+"q46_6","survey question dummy","test_diffs_aff","haven_labelled, vctrs_vctr, integer","0
+1","not 'could not afford a test'
+could not afford a test","what difficulty did you have when seeking out a test. (select all that apply)"
+"q46_7","survey question dummy","test_diffs_other","haven_labelled, vctrs_vctr, integer","0
+1","not 'other'
+other","what difficulty did you have when seeking out a test. (select all that apply)"
+"q47","survey question","any_else","character","te",NA,"is there anything else you would like to tell us about your experience during the covid-19 pandemic?"
+"q48_4","survey question","email","character","te","free form entry","email address: by completing this survey, you are eligible to enter a raffle. if you are interested in being considered for the raffle, you must provide contact information here. if you are willing to be contacted by communities speak for prizes or future surveys, please provide your email or phone number below."
+"q48_5","survey question","phone","character","te","free form entry","phone number: by completing this survey, you are eligible to enter a raffle. if you are interested in being considered for the raffle, you must provide contact information here. if you are willing to be contacted by communities speak for prizes or future surveys, please provide your email or phone number below."
+NA,NA,"aid","character","l.6f0960b5-8b4f-40aa-9ce1-7...; NA",NA,NA
+NA,NA,"rate_neigh_code_good","logical","FALSE; TRUE; NA",NA,NA
+NA,NA,"rate_neigh_code_bad","logical","FALSE; TRUE; NA",NA,NA
+NA,NA,"race_census_asian","integer","0 to 1; NA",NA,NA
+NA,NA,"race_census_black","integer","0 to 1; NA",NA,NA
+NA,NA,"race_census_his_lat","integer","0 to 1; NA",NA,NA
+NA,NA,"race_census_ind","integer","0 to 1; NA",NA,NA
+NA,NA,"race_census_haw","integer","0 to 1; NA",NA,NA
+NA,NA,"race_census_other","integer","0 to 1; NA",NA,NA
+NA,NA,"race_census_twomore","integer","0 to 1; NA",NA,NA
+NA,NA,"race_census_white","integer","0 to 1; NA",NA,NA
