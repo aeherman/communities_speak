@@ -1,0 +1,73 @@
+Codebook – Created 06/11/2022
+Dataset: CPSBASIC202205
+
+Variables: 
+PESEX - Demographics-sex
+PWSSWGT - Weight-second stage weight (rake 6 final step weight)
+PEHSPNON - Demographics- hispanic/non-hispanic origin
+PTDTRACE - Demographics- race of respondent
+
+
+PESEX - Demographics-sex
+Topics: 
+Age and Sex
+Populations and People
+Suggested Weight : PWSSWGT
+Description : 
+Enter Appropriate Sex. <BR> Ask Only If Necessary: What is your sex? <BR> Edited Universe: <BR> Every Person <BR> Valid Entries<BR>
+Values: 
+1 - Male
+2 - Female
+
+PWSSWGT - Weight-second stage weight (rake 6 final step weight)
+Topics: 
+Description : 
+Second Stage Weight <BR> (length=10 With 4 Implied Decimal Places) <BR>
+
+PEHSPNON - Demographics- hispanic/non-hispanic origin
+Topics: 
+Race and Ethnicity
+Suggested Weight : PWSSWGT
+Description : 
+Hispanic or Non-Hispanic <BR>Edited Universe: <BR>PRPERTYP = 1,2, OR 3 <BR>Valid Entries<BR>
+Values: 
+1 - Hispanic
+2 - Non-Hispanic
+
+PTDTRACE - Demographics- race of respondent
+Topics: 
+Race and Ethnicity
+Suggested Weight : PWSSWGT
+Description : 
+Race <BR>Edited Universe: <BR>PRPERTYP = 1,2, OR 3 <BR>Valid Entries<BR>
+Values: 
+01 - White only
+02 - Black only
+03 - American Indian, Alaskan Native Only
+04 - Asian only
+05 - Hawaiian/Pacific Islander Only
+06 - White-Black
+07 - White-AI
+08 - White-Asian
+09 - White-HP
+10 - Black-AI
+11 - Black-Asian
+12 - Black-HP
+13 - AI-Asian
+14 - AI-HP
+15 - Asian-HP
+16 - W-B-AI
+17 - W-B-A
+18 - W-B-HP
+19 - W-AI-A
+20 - W-AI-HP
+21 - W-A-HP
+22 - B-AI-A
+23 - W-B-AI-A
+24 - W-AI-A-HP
+25 - Other 3 Race Combinations
+26 - Other 4 and 5 Race Combinations
+
+
+
+Selected Geographies (ucgid): 
