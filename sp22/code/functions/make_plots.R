@@ -1,4 +1,3 @@
-
 #' Make exploration plots, including testing unequal proportions
 #'
 #' Vectorised over `by_vars`.
@@ -10,12 +9,14 @@
 #' conf: 1 - the confidence interval
 #' title: the title of the plot.  automatically appends the "by" variable to the end of the title
 #' show: shows plots.  Plan to update such that the default is to show the plot. 
+#' .codebook: must have codebook already loaded into the environment.  currently solved with default_setup
 
 library(tidyverse)
 make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.01,
                        title = "Title", show = NULL,
                        .codebook = codebook) {
-  
+  stop(!exists("codebook"),
+       ": codebook not defined.  Run default_setup.R to load codebook into environment")
   
   hyp_var_labels <- .codebook %>% filter(variable %in% hyp_var) %>% select(variable, description) %>%
     mutate(hyp_var_label = glue::glue("{variable}: {description}")) %>% select(variable, hyp_var_label)
