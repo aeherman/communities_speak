@@ -1,14 +1,17 @@
+
+#' Make exploration plots, including testing unequal proportions
+#'
+#' Vectorised over `by_vars`.
+#' 
+#' df: the cleaned dataframe
+#' by_vars: the list of demographic variables (the denominator of comparison)
+#' hyp_var: the hypothesis variable (must be in logical format) and can be a list of variables
+#' min: the minimum number of observations a denominator category must have
+#' conf: 1 - the confidence interval
+#' title: the title of the plot.  automatically appends the "by" variable to the end of the title
+#' show: shows plots.  Plan to update such that the default is to show the plot. 
+
 library(tidyverse)
-
-# df: the dataframe
-# by_vars: generally the demographic variables, or the denominator by which we examine the variable of the hypothesis
-# hyp_var: the hypothesis variable (must be in logical format)
-# min: the minimum number of successes a category must have
-# conf: the confidence interval
-# title: the title of the plo
-# show: currently nonfunctional argument that I plan to use to allow more flexibility in showng plots with nonsignificant relationships
-
-# by_vars -> "by"
 make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.01,
                        title = "Title", show = NULL,
                        .codebook = codebook) {
