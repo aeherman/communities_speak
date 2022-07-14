@@ -1,0 +1,167 @@
+---
+title: "Why was the survey respondent unable to proceed past the Government Services Question Block?"
+author: "Arielle Herman"
+date: "6/12/2022"
+output:
+  pdf_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=F, message=F)
+library(tidyverse)
+source("default_setup.R")
+gov_ser <- survey_codebook_labelled %>% filter(block_title == "government services", origin == "survey question") %>% pull(q)
+```
+
+# Background
+
++ Survey respondent couldn't continue past a specific question (elder care), the last option for the third of five question in the government services block.
++ Assuming part of the response was recorded, the time the respondent submitted a complaint, Sat, Jun 11, 2022 at 1:40 PM, suggests that this respondent's record is either:
+  + `R_2DP6eVwqwFTGuft` recorded at 1:05 pm on June 11
+  + `R_zSHbk451t6Xt0Qx` recorded at 1:58 pm on June 11
+
+```{r}
+kableExtra::kable(final_clean %>% filter(responseid %in% c("r_2dp6evwqwftguft", "r_zshbk451t6xt0qx")) %>%
+  select(responseid, recordeddate, source, completion))
+```
+
++ Of these two, only respondent `R_2DP6eVwqwFTGuft` was unable to continue past the government services question.
+
+# About respondent `R_2DP6eVwqwFTGuft`:
+
++ There is no recorded response for any question in the Government Services question block.
++ The government services question block was last in the respondent's viewing order, and so the respondent should have seen the survey "thank you" message next but did not.
+
+```{r}
+kableExtra::kable(wrangled %>% filter(responseid == "r_2dp6evwqwftguft") %>% select(order))
+```
+
++ The source was Emerson, which created demographic quotas that kick out survey respondents once the quota has been filled.
++ This respondent was college-educated and submitted after the Emerson quota was completed.
+
+```{r message=F, warning=F}
+final_clean %>% filter(source == "eme", !is.na(q12), valid == 1) %>%
+  arrange(recordeddate) %>%
+  mutate(cs = cumsum(q12 >= 4), quota_met = cs >= 160) %>%
+  
+  ggplot(aes(x = recordeddate, y = cs)) +
+  geom_point(aes(color = responseid == "r_2dp6evwqwftguft",
+                 size = responseid == "r_2dp6evwqwftguft")) +
+  geom_hline(yintercept = 160) +
+  geom_text(aes(label = ifelse(responseid == "r_2dp6evwqwftguft",
+                                              glue::glue("{responseid}: {cs}"), "")),
+            hjust = 1) +
+  geom_text(aes(x = as.POSIXct("2022-06-02"), y = 165, label = "Quota: 160 Bachelor +")) +
+  theme(legend.position = "none") +
+  ggtitle("Total Emerson Respondents with at least a Bachelor's Degree") +
+  ylab("Total Respondents")
+```
+
+# Current Thoughts
+
+Perhaps the Emerson quota lagged before kicking out this respondent (such that they were able to complete most of the survey anyway)
+
+For example, there is even one Emerson college-educated respondent who completed the entire survey, even though they responded after the higher education quota was completed.
+
+```{r warning=F, message=F}
+# assuming that only the bachelor's requirement had been met...
+final_clean %>%
+  arrange(recordeddate) %>%
+  filter(source == "eme", !is.na(q12), valid == 1) %>%
+  mutate(sch_bach = q12 >= 4,
+         cs = cumsum(sch_bach),
+         quota_met = cs > 160,
+         color = sch_bach & completion == 1 & quota_met) %>%
+  #filter(sch_bach, quota_met) %>% select(responseid, recordeddate, order, completion, cs)
+  #filter(sch_bach, completion == 1, quota_met)
+  
+  ggplot(aes(x = recordeddate, y = cs)) +
+  geom_point(aes(color = color, size = color)) +
+  geom_hline(yintercept = 160) +
+  geom_text(aes(label = ifelse(color, glue::glue("{responseid}: {cs}"), "")),
+            hjust = 1) +
+  ggtitle("Respondent who completed the survey\nafter the 'bachelor +' quota was met") +
+  theme(legend.position = "none")
+```
+
+# Other Explanations
+
+I also explored the following:
+
+1. There is no drop-off in response rate in the government-services block.
+
+This is a little bit odd, because I would expect that some respondents would only complete 1 or 2 of the questions.
+
+```{r}
+y <- final_clean %>% filter(is.na(test_response)) %>% select(gov_ser) %>% is.na %>% colMeans()
+x <- as.integer(str_replace_all(names(y), c("q" = "", "_" = "\\.")))
+
+ggplot(tibble(x = x, y = y), aes(x, y)) + geom_line() + geom_point() +
+  xlab("\nQuestion Number") + ylab("Respondse Rate\n") +
+  ggtitle("Response Rate per question\nin the Government Services Block")
+```
+
+2. No respondents have only partially completed the Government Services Block.
+
+  + This may indicate that respondents are unable to complete part of the question block.
+  + If respondents are unable to complete a portion of the block, this may help illuminate the reason that the respondent was able to fill out the entire section, and then unable to proceed with the survey.
+
+```{r}
+kableExtra::kable(final_clean %>% filter(is.na(test_response)) %>% select(gov_ser) %>%
+  transmute(completion = rowMeans(across(everything(), is.na))) %>% count(completion))
+
+#kableExtra::kable(final_clean %>% filter(responseid == "r_2dp6evwqwftguft") %>% select(responseid, gov_ser))
+```
+
+3. Respondents have been able to partially complete other question blocks
+
+This suggests there might be a problem specifically with the government services question block.
+
+```{r}
+qs <- survey_codebook_labelled %>%
+  filter(origin == "survey question", !q %in% c("q1", "q2"), !str_detect(q, "text"),
+         !str_detect(q, "3[3-5]_[2-9]")) %>%#,
+  #       !q %in% c("q26_2", "q26_3", "q26_4")) %>%
+  # only q[:digit:]{1,2}_[1-9]_text formats
+  mutate(q_no = as.integer(str_replace_all(q, c("_?[:alpha:]{1,4}" = "", "_" = "\\.")))) %>%
+  group_by(block_title) %>% #filter(max(row_number()) < 20) %>% view %>%
+  summarize(q_names = list(q),
+            q_nos = list(q_no))
+
+lapply(setNames(qs$block_title, qs$block_title), function(block) {
+  filtered <- qs %>% filter(block_title == block)
+  q_names <- unlist(filtered$q_names)
+  q_nos <- unlist(filtered$q_nos)
+  
+  out <- final_clean %>% filter(is.na(test_response)) %>% select(q_names) %>%
+    mutate(completion = rowMeans(across(everything(), is.na)),
+           block = glue::glue("{block}: {length(q_names)} questions")) %>%
+    count(block, completion)
+  return(out %>% mutate(options = nrow(out)))
+}) %>% reduce(bind_rows) %>%
+  ggplot(aes(x = completion, y = n, fill = block)) + geom_col() +
+  facet_grid(block ~ .) +
+  theme(panel.border = element_rect(color = "grey30", fill = NA),
+        axis.text = element_blank(),
+        strip.text.y = element_text(angle = 0.5, hjust = 0),
+        legend.position = "none") +
+  ylab("Frequency") + xlab("Completion") + ggtitle("Completion Rates by Question Block")
+```
+
+# Suggested Action
+
+1. Take a practice survy to test
+Coordination with Emerson to better understand the implementation of the quotas
+2. Request removal of the quotas.  This may eliminate the problem that the particular respondent experienced, and would also ensure consistency in the data collection across partners and data cleaning (e.g. calculation of the completion rates).
+3. Take a practice Emerson survey.
+
+```{r eval=F, include=F}
+final_clean %>% filter(responseid == "r_2dp6evwqwftguft") %>%
+  select(responseid, completion, order, where(is.na), -test_response, -ends_with("text"))
+
+1 - final_clean %>% select(-ends_with("text")) %>%
+  filter(is.na(test_response), source == "eme") %>% is.na %>% colMeans
+
+```
+
