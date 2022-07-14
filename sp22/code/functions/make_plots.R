@@ -11,10 +11,11 @@ library(tidyverse)
 # by_vars -> "by"
 make_plots <- function(df, by_vars, hyp_var, min = 5, conf = 0.01,
                        title = "Title", show = NULL,
-                       .codebook = codebook) {
+                       codebook = read_csv(file.path(root, "data/output/codebook.csv"),
+                                           show_col_types = FALSE)) {
   
   
-  hyp_var_labels <- .codebook %>% filter(variable %in% hyp_var) %>% select(variable, description) %>%
+  hyp_var_labels <- codebook %>% filter(variable %in% hyp_var) %>% select(variable, description) %>%
     mutate(hyp_var_label = glue::glue("{variable}: {description}")) %>% select(variable, hyp_var_label)
   
   #sym_var <- sym(hyp_var)
