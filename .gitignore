@@ -35,5 +35,5 @@ sp22/data/processed/cleaned.csv
 sp22/data/output/codebook.csv
 #### wrangled data in stata format
 sp22/data/output/wrangled.dta
-#### wrangled data in readable format
+#### wrangled data in readable format for uploading to googledrive
 sp22/data/output/wrangled.csv
