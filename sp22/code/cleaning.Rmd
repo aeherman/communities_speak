@@ -274,7 +274,7 @@ wrangled <- final_clean %>% #mutate(completion = rowSums(!is.na(final_clean))/nc
     
     #### household variables ####
     ## q5 = age
-    decade = paste0(floor(q5/10)*10, "s"),
+    decade = floor(q5/10),
     
     hh_sn_65_bi = q26_1 >= 1, # fixed 
     hh_ch_4_17_bi = q26_3 >= 1,
