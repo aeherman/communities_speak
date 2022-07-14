@@ -1,3 +1,13 @@
+#' Upload a folder to a google drive folder
+#'
+#' This will iterate through a list of documents in a specified folder
+#' to update them to a specified google drive file path.
+#' 
+#' googledrive_path: folder to upload to.  defaults to sp22 currently.
+#' project_path: filepath of the root folder (e.g. ~communities_speak/sp22)
+#' today: today's date, which is automatically appended to the name of the file upon upload
+#' pattern.: optional argument to specify the file pattern of the documents to upload
+#' file_path: the folder of the documents to be uploaded
 upload_folder <- function(googledrive_path = "Communities Speak/Subteams/Data Subteam/cleaning/sp22",
                           project_path = rprojroot::find_root_file("sp22",
                                                                    criterion = rprojroot::has_file(".git/index")),
