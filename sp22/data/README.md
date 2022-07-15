@@ -10,6 +10,7 @@ Contains all data inputs (except shapefiles).
 2. Census | relevant census data from 2020 decennial census and CPS monthly
 3. Labeling sheet (only on google drive)
 4. boroughs (only on github)
+5. individual_survey_s22.qsf (only on github)
 
 # Processed
 This folder contains dataframes created in rstudio and were used to make the final data outputs.
