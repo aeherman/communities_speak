@@ -5,7 +5,7 @@ library("rprojroot")
 
 # update root file for every new survey
 criterion <- rprojroot::has_file(".git/index")
-root <- find_root_file("sp22", criterion = criterion
+root <- find_root_file("sp22", criterion = criterion)
 
 # code
 source(file.path(root, "code/communities_speak_theme.R"))
