@@ -11,8 +11,8 @@ Each survey is represented by the semester it was administered.
 - [reports](https://github.com/aeherman/communities_speak/tree/main/fa21/reports) | individually requested reports
 
 ## [sp22](https://github.com/aeherman/communities_speak/tree/main/sp22)
-- [data](https://github.com/aeherman/communities_speak/tree/main/sp22/code) | input, processed, and output data elements
-- [code](https://github.com/aeherman/communities_speak/tree/main/sp22/code) | any code to written to produce the processed and output data elements
+- [data](https://github.com/aeherman/communities_speak/tree/main/sp22/code) | input, processed, and output data elements.  only the codebook, and cleaned and wrangled data elements are pushed to github to facilitate running and sharing of the poas and other analytical scripts.
+- [code](https://github.com/aeherman/communities_speak/tree/main/sp22/code) | any code written to produce the processed and output data elements
 - [reports](https://github.com/aeherman/communities_speak/tree/main/sp22/reports) | any reports written to analyze the cleaned or wrangled data elements
 
 # Google Drive Contents
