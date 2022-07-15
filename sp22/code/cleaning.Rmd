@@ -30,7 +30,8 @@ gs4_found <- gs4_find()
 
 # update name of survey
 survey_id <- gs4_found %>% filter(str_detect(name, "Individual Survey- English - S22"),
-                                  str_detect(name, "June")) %>% select(id, name)
+                                  str_detect(name, "July"),
+                                  !str_detect(name, "Copy")) %>% select(id, name)
 
 survey <- read_sheet(survey_id$id, sheet = "Sheet1") %>%
   rename_all(stringr::str_to_lower) %>%
