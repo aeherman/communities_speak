@@ -8,5 +8,5 @@ Run these scripts if this is the first time running the code on your laptop or i
 
 ## Part II: Cleaning
 Run these scripts after adding a new version of the data from Qualtrics to GoogleDrive
-1. [cleaning.Rmd]([url](https://github.com/aeherman/communities_speak/blob/main/sp22/code/cleaning.Rmd)) | cleans the data with automatic steps (any manual necessary manual steps must be performed on wrangled after this step).
+1. [cleaning.Rmd](https://github.com/aeherman/communities_speak/blob/main/sp22/code/cleaning.Rmd) | cleans the data with automatic steps (any manual necessary manual steps must be performed on wrangled after this step).
 2. [upload.R](https://github.com/aeherman/communities_speak/blob/main/sp22/code/upload.R) | uploads new outputs to googledrive
