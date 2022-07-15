@@ -8,7 +8,8 @@ NOTE: only the cleaned and wrangled data outputs, in addition to the codebook, a
 Contains all data inputs (except shapefiles).
 1. Survey | old and most recent copies of the Communities Speak survey data
 2. Census | relevant census data from 2020 decennial census and CPS monthly
-3. Labeling sheet
+3. Labeling sheet (only on google drive)
+4. boroughs (only on github)
 
 # Processed
 This folder contains dataframes created in rstudio and were used to make the final data outputs.
