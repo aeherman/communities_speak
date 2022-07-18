@@ -10,6 +10,7 @@ source(file.path(root, "code/functions/upload_folder.R"))
 upload_folder(file_path = "data/processed")
 upload_folder(file_path = "data/output")
 upload_folder(file_path = "reports/poa", pattern. = "pdf")
+upload_folder(file_path = "reports/data_exploration", pattern. = "pdf")
 
 today <- gsub("-", "", Sys.Date())
 googledrive_path <- "Communities Speak/Subteams/Data Subteam/cleaning/sp22/"
