@@ -1,3 +1,6 @@
+# Archived
+This repo was archived on July 18th.
+
 # Communities Speak Data Cleaning
 This document describes the content of this respository and its relationship to the [Communities Speak Google Drive](https://drive.google.com/drive/folders/18a16hC4ErMk2orlpa69r55XGdINT00CU).  Both information-sharing platforms are utilized here in order to make all elements of the process as accessible as possible to those familiar and unfamiliar with coding.  This document is edited as necessary when new surveys are administered or the organization of any folder changes.
 
