@@ -1,21 +1,22 @@
 ---
-title: "survey_report"
+title: "Response Duration and Completion"
 author: "Arielle Herman"
 date: "7/12/2022"
-output: html_document
+output:
+  pdf_document:
+    toc: true
 ---
 
 ```{r setup, include=FALSE}
-source("../code/default_setup.R")
+source("../../code/default_setup.R")
 ```
 
-# How long does it take respondents to complete the survey?
+# Median Response Duration: 9 minutes
 
-```{r}
+```{r, echo=F, warning=F, message=F}
 
 med_min <- median(round(wrangled$duration/60))
 quant_range <- quantile(wrangled$duration, probs = seq(0, 1, 0.1))[c(2, 10)]
-wrangled$completion
 
 wrangled %>% mutate(minutes = round(duration/60)) %>%
   filter(duration > quant_range[1], duration < quant_range[2]) %>%
@@ -27,14 +28,29 @@ wrangled %>% mutate(minutes = round(duration/60)) %>%
             hjust = 0) +
   ylab("Frequency\n") + xlab("\nMinutes") +
   labs(title = "Response Duration of Valid Surveys",
-       subtitle = "Bottom and top 10% percentiles removed\nto control for outliers") +
+       subtitle = "Bottom and top 10% percentiles removed to visualize data.\nMedian calculated including the outliers.") +
   scale_fill_manual("Completion > 90%", values = project_pal[c(3,1)]) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") +
+  guides(fill = guide_legend(reverse = TRUE))
 ```
 
-# Response Drop offs
+# Response Drop-offs
 
-```{r}
+- **Please find the July 14th copy of the codebook here:** https://docs.google.com/spreadsheets/d/1hUvzmYnKkgpFb-Y0R6fP_OdpbrtimnruGnGNQxMBPNE/edit#gid=968407043
+- **If this is no longer the most recent copy, check here:** https://drive.google.com/drive/u/0/folders/1tGyqURIx_wTUwYf_lzD963RRs4HQ90yV
+
+## In comparison to last survey
+
+1. **The overall response rate per question is much more consistent than in the last round**, including before and after the conditional children questions (q26-q33), suggesting that randomizing the questions **successfully promoted** the average response rate.
+2. **There is no drop-off at the first income bracket question (unlike the last survey)**, q13, suggesting that the change in phrasing **improved** respondent retention.
+3. **The experience of difficulty matrix continues to have a huge drop-off** in response rate or increase in nonresponses, suggesting that it is important to attempt customized methods for requiring responses to this question before proceeding through the survey.
+4. **There is still a large drop-off in retention at the zipcode question, q3**.
+
+## New Pattern
+
+1. There is oddly an increase in response rate at the first question of the covid status block, and an immediate return to the average response rate per question in the survey.  The reason for this pattern should be researched further, especially regarding whether respondents drop out at q39.
+
+```{r, echo=F, warning=F, message=F}
 selected <- final_clean %>% filter(is.na(test_response), q2 == 1) %>%
   select(contains("q"), order) %>% select(!matches("text"))
 
@@ -53,21 +69,23 @@ to_plot_tibble <- distinct(tibble(no = as.integer(str_extract(colnames(to_plot),
                                   #sum = colSums(to_plot))
 
 to_plot_tibble %>% ggplot(aes(x = no, y = mean)) + geom_line(lty = "dashed") +
-  geom_point(aes(color = no %in% c(3, 13, 21, 25, 32))) +
+  geom_point(aes(color = no %in% c(3, 13, 17, 18, 19, 22, 26:33, 38, 45:46))) +
   scale_y_continuous(label = scales::percent) +
   labs(title = "Proportion Incomplete Responses per Question") +#,
        #subtitle = "among respondents who completed less than 50% of the survey") +
   ylab(NULL) + xlab(NULL) +
   ggrepel::geom_text_repel(aes(x = no, y = mean,
                                #label = ifelse(no %in% c(3, 13, 22, 25, 32, 38, 45), paste0("q", no), "")
-                               label = ifelse(no %in% c(3, 13, 21, 25, 32), glue::glue("q{no}"), "")
+                               label = ifelse(no %in% c(3, 13, 33), glue::glue("q{no}"), "")
                                )) +
   theme(legend.position = "none") +
-  annotate("text", x = 29, y = .96, label = "Conditional\nChildren Qs: q26-q31", hjust = 0) +
-  annotate("text", x = 16, y = .96, label = "Conditional\nUnemployment Qs: q17-q18", hjust = 1) +
-  annotate("text", x = 40, y = .51, label = "Conditional\nBooster\nQuestion q40", hjust = 0.5) +
-  annotate("text", x = 40, y = .10, label = glue::glue("{nrow(to_plot)} Total\nRespondents")) +
-  scale_color_manual(values = project_pal[c(4, 3)])
+  annotate("text", x = 20, y = .60, label = "Expereince\nof Difficulty\nMatrix: q22", hjust = 0) +
+  annotate("text", x = 30, y = .96, label = "Conditional\nChildren q26-q33", hjust = 0) +
+  annotate("text", x = 16, y = .96, label = "Conditional\nUnemployment\nq17-q19", hjust = 1) +
+  annotate("text", x = 38, y = .33, label = "First Question\nof Covid Status\nBlock: q38", hjust = 0.5) +
+  annotate("text", x = 45, y = .75, label = "Conditional\nTesting:\nq45-q46", hjust = 1) +
+  annotate("text", x = 45, y = .1, label = glue::glue("{nrow(to_plot)} Total\nRespondents")) +
+  scale_color_manual(values = project_pal[c(1, 3)])
 
 ```
 
