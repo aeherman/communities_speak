@@ -2,6 +2,8 @@
 #'
 #' This will iterate through a list of documents in a specified folder
 #' to update them to a specified google drive file path.
+#' NOTE: this function assumes the git repository and google folders have the same
+#' internal structure.
 #' 
 #' googledrive_path: folder to upload to.  defaults to sp22 currently.
 #' project_path: filepath of the root folder (e.g. ~communities_speak/sp22)
